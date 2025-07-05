@@ -108,12 +108,11 @@ class NetAnimalChessManager extends BaseManager {
       gameStep.value = TurnGameStep.frontWait;
     } else if (gameStep.value == TurnGameStep.frontWait && isEnemy) {
       gameStep.value = TurnGameStep.action;
-    }
+    } else
     // 后手
     // 1.在connected收到对手的配置信息，匹配对手，更新阶段到rearWait，等待对手配置完成，防止之前未匹配成功
     // 2.在rearWait收到对手的配置信息，更新阶段到rearWait，等待对手配置完成
     // 3.在rearConfig收到自己的信息(实际仅是回应)，更新阶段到行动阶段，轮到对方行动
-
     if (gameStep.value == TurnGameStep.connected && !isSelf) {
       enemyIdentify = message.id;
       _stringToMap(message.content);
@@ -153,8 +152,7 @@ class NetAnimalChessManager extends BaseManager {
 
   void sendActionMessage(int index) {
     if ((gameStep.value == TurnGameStep.action &&
-            currentGamer.value == selfType) ||
-        index == -1) {
+        currentGamer.value == selfType)) {
       networkEngine.sendNetworkMessage(
         MessageType.action,
         jsonEncode({'index': index}),
@@ -164,18 +162,14 @@ class NetAnimalChessManager extends BaseManager {
 
   void _handleActionMessage(NetworkMessage message) {
     int index = jsonDecode(message.content)['index'];
-    if (index < 0 || index >= displayMap.length) {
-      // 视为投降
-      showChessResult(currentGamer.value == GamerType.rear);
-      return;
-    }
 
     bool isSelf =
         message.id == networkEngine.identify &&
         message.source == networkEngine.userName;
     bool isEnemy = message.id == enemyIdentify;
 
-    if (gameStep.value == TurnGameStep.action) {
+    if (index < 0 || index >= displayMap.length) {
+    } else if (gameStep.value == TurnGameStep.action) {
       if (currentGamer.value == selfType && isSelf) {
         selectGrid(index);
       } else if (isEnemy) {
@@ -199,6 +193,6 @@ class NetAnimalChessManager extends BaseManager {
 
   @override
   void leaveChess() {
-    sendActionMessage(-1);
+    showChessResult(currentGamer.value == GamerType.rear);
   }
 }

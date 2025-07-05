@@ -51,6 +51,7 @@ class NetAnimalChessPage extends StatelessWidget {
                 ? _buildPrepare(step)
                 : [
                     Expanded(
+                      flex: 3,
                       child: BasePage(
                         displayMap: _chessManager.displayMap,
                         currentGamer: _chessManager.currentGamer,
@@ -61,6 +62,7 @@ class NetAnimalChessPage extends StatelessWidget {
                   ]),
 
             Expanded(
+              flex: 1,
               child: MessageList(networkEngine: _chessManager.networkEngine),
             ),
             MessageInput(networkEngine: _chessManager.networkEngine),

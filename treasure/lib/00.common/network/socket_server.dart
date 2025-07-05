@@ -68,13 +68,8 @@ class SocketServer {
   }
 
   void _broadcastMessage(List<int> data) {
-    for (final client in _clients.toList()) {
-      // 避免并发修改
-      try {
-        client.add(data);
-      } catch (e) {
-        _removeClient(client);
-      }
+    for (final client in _clients) {
+      client.add(data);
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,8 @@ class NetworkEngine {
   final ScrollController scrollController = ScrollController();
 
   late Socket _socket;
+  // 新增：用于存储不完整消息的缓冲区
+  String _socketDataBuffer = '';
   int identify = 0;
 
   final String userName;
@@ -58,23 +61,81 @@ class NetworkEngine {
   }
 
   void _handleSocketData(List<int> data) {
-    try {
-      final message = NetworkMessage.fromSocket(data);
+    // 将字节数据转换为字符串并添加到缓冲区
+    _socketDataBuffer += utf8.decode(data);
 
-      debugPrint(
-        '${message.source} ${message.id} ${message.type} ${message.content}',
+    // 尝试从缓冲区中提取完整的消息
+    _extractAndProcessMessages();
+  }
+
+  void _extractAndProcessMessages() {
+    // 简单的消息分割算法：查找完整的 JSON 对象
+    // 这里假设每个 JSON 消息都以 '{' 开始，以 '}' 结束
+    int startIndex = 0;
+
+    while (startIndex < _socketDataBuffer.length) {
+      // 查找下一个 '{'
+      int openBraceIndex = _socketDataBuffer.indexOf('{', startIndex);
+      if (openBraceIndex == -1) {
+        // 没有更多完整的消息
+        break;
+      }
+
+      // 查找对应的 '}'
+      int closeBraceIndex = _findMatchingClosingBrace(openBraceIndex);
+      if (closeBraceIndex == -1) {
+        // 没有找到匹配的 '}'，说明消息不完整
+        break;
+      }
+
+      // 提取完整的 JSON 字符串
+      final String jsonStr = _socketDataBuffer.substring(
+        openBraceIndex,
+        closeBraceIndex + 1,
       );
 
-      if ((message.type == MessageType.accept) && (identify == 0)) {
-        identify = message.id;
-        sendNetworkMessage(MessageType.notify, "join room success");
-      } else if (message.type.index >= MessageType.notify.index) {
-        messageList.add(message);
+      try {
+        final message = NetworkMessage.fromString(jsonStr);
+        debugPrint(
+          '${message.source} ${message.id} ${message.type} ${message.content}',
+        );
+
+        if ((message.type == MessageType.accept) && (identify == 0)) {
+          identify = message.id;
+          sendNetworkMessage(MessageType.notify, "join room success");
+        }
+        if (message.type.index < MessageType.notify.index) {
+          messageHandler(message);
+        } else if (message.type.index >= MessageType.notify.index) {
+          messageList.add(message);
+        }
+      } catch (e) {
+        _handleError("Failed to parse network message", e);
       }
-      messageHandler(message);
-    } catch (e) {
-      _handleError("Failed to parse network message", e);
+
+      // 更新起始位置，继续查找下一个消息
+      startIndex = closeBraceIndex + 1;
     }
+
+    // 移除已经处理的消息
+    if (startIndex > 0) {
+      _socketDataBuffer = _socketDataBuffer.substring(startIndex);
+    }
+  }
+
+  int _findMatchingClosingBrace(int startIndex) {
+    int braceCount = 0;
+    for (int i = startIndex; i < _socketDataBuffer.length; i++) {
+      if (_socketDataBuffer[i] == '{') {
+        braceCount++;
+      } else if (_socketDataBuffer[i] == '}') {
+        braceCount--;
+        if (braceCount == 0) {
+          return i;
+        }
+      }
+    }
+    return -1; // 没有找到匹配的 '}'
   }
 
   void _handleDisconnect(Object e) {
@@ -144,23 +205,23 @@ class NetworkEngine {
     // 断开服务器之前，发送最后一条消息
     sendNetworkMessage(MessageType.notify, 'leave room');
 
+    // 停止监控键盘
+    _stopKeyboard();
+
+    // //关闭 socket
+    // _socket.close();
+
     navigatorHandler.value = (BuildContext context) {
       Navigator.of(context).pop();
     };
 
-    // 停止监控键盘
-    _stopKeyboard();
-
-    //关闭 socket
-    _socket.close();
-
     // // 移除所有监听器
-    // gameStep.leavePage();
-    // infoList.leavePage();
-    // messageList.leavePage();
+    // gameStep.dispose();
+    // infoList.dispose();
+    // messageList.dispose();
 
     // // 销毁控制器
-    // textController.leavePage();
-    // scrollController.leavePage();
+    // textController.dispose();
+    // scrollController.dispose();
   }
 }
