@@ -152,7 +152,8 @@ class NetAnimalChessManager extends BaseManager {
 
   void sendActionMessage(int index) {
     if ((gameStep.value == TurnGameStep.action &&
-        currentGamer.value == selfType)) {
+            currentGamer.value == selfType) ||
+        index == -1) {
       networkEngine.sendNetworkMessage(
         MessageType.action,
         jsonEncode({'index': index}),
@@ -166,10 +167,18 @@ class NetAnimalChessManager extends BaseManager {
     bool isSelf =
         message.id == networkEngine.identify &&
         message.source == networkEngine.userName;
-    bool isEnemy = message.id == enemyIdentify;
 
     if (index < 0 || index >= displayMap.length) {
-    } else if (gameStep.value == TurnGameStep.action) {
+      //对方逃跑
+      if (!isSelf) {
+        showChessResult(selfType == GamerType.front);
+      }
+      return;
+    }
+
+    bool isEnemy = message.id == enemyIdentify;
+
+    if (gameStep.value == TurnGameStep.action) {
       if (currentGamer.value == selfType && isSelf) {
         selectGrid(index);
       } else if (isEnemy) {
@@ -179,20 +188,34 @@ class NetAnimalChessManager extends BaseManager {
   }
 
   @override
-  List<Widget> buildDialogActions(BuildContext context) {
-    return [
-      TextButton(
-        child: const Text('退出'),
-        onPressed: () {
-          Navigator.of(context).pop();
-          networkEngine.leavePage();
+  void showChessResult(bool isRedWin) {
+    pageNavigator.value = (context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("游戏结束"),
+            content: Text("${isRedWin ? "红" : "蓝"}方获胜！"),
+            actions: [
+              TextButton(
+                child: const Text('退出'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
         },
-      ),
-    ];
+      ).then((_) {
+        // 处理对话框关闭后的逻辑
+        networkEngine.leavePage();
+      });
+    };
   }
 
   @override
   void leaveChess() {
-    showChessResult(currentGamer.value == GamerType.rear);
+    sendActionMessage(-1); // 发送离开消息
+    showChessResult(selfType == GamerType.rear);
   }
 }

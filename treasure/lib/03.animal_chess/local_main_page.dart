@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../00.common/game/gamer.dart';
+import '../00.common/style/theme.dart';
 import '../00.common/widget/notifier_navigator.dart';
 
 import 'local_chess_manager.dart';
@@ -26,14 +28,29 @@ class LoaclAnimalChessPage extends StatelessWidget {
   Widget _buildBody() => Column(
     children: [
       NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
+      _buildTurnIndicator(),
       Expanded(
         child: BasePage(
           displayMap: _chessManager.displayMap,
-          currentGamer: _chessManager.currentGamer,
-          onGridSelected: _chessManager.selectGrid,
           boardSize: _chessManager.boardSize,
+          onGridSelected: _chessManager.selectGrid,
         ),
       ),
     ],
+  );
+
+  Widget _buildTurnIndicator() => ValueListenableBuilder(
+    valueListenable: _chessManager.currentGamer,
+    builder: (_, gamer, __) => Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: gamer == GamerType.front ? Colors.red : Colors.blue,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        '${gamer == GamerType.front ? "红" : "蓝"}方回合',
+        style: globalTheme.textTheme.titleMedium?.copyWith(color: Colors.white),
+      ),
+    ),
   );
 }

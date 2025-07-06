@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
-import '../00.common/style/theme.dart';
 import '../00.common/utils/custom_notifier.dart';
 
 import 'base.dart';
@@ -9,42 +8,20 @@ import 'extension.dart';
 
 class BasePage extends StatelessWidget {
   final ListNotifier<GridNotifier> displayMap;
-  final ValueNotifier<GamerType> currentGamer;
-  final Function(int) onGridSelected;
   final int boardSize;
+  final Function(int) onGridSelected;
 
   const BasePage({
     super.key,
     required this.displayMap,
-    required this.currentGamer,
-    required this.onGridSelected,
     required this.boardSize,
+    required this.onGridSelected,
   });
 
   @override
   Widget build(BuildContext context) => _buildBody();
 
-  Widget _buildBody() => Column(
-    children: [
-      _buildTurnIndicator(),
-      Expanded(child: _buildChessBoard()),
-    ],
-  );
-
-  Widget _buildTurnIndicator() => ValueListenableBuilder(
-    valueListenable: currentGamer,
-    builder: (_, gamer, __) => Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: gamer == GamerType.front ? Colors.red : Colors.blue,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        '${gamer == GamerType.front ? "红" : "蓝"}方回合',
-        style: globalTheme.textTheme.titleMedium?.copyWith(color: Colors.white),
-      ),
-    ),
-  );
+  Widget _buildBody() => _buildChessBoard();
 
   Widget _buildChessBoard() => AspectRatio(
     aspectRatio: 1,

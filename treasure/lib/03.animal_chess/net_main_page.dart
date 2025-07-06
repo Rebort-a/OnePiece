@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../00.common/game/gamer.dart';
+import '../00.common/style/theme.dart';
 import '../00.common/widget/chat_component.dart';
 import '../00.common/game/step.dart';
 import '../00.common/network/network_room.dart';
@@ -50,13 +52,13 @@ class NetAnimalChessPage extends StatelessWidget {
             ...(step.index < TurnGameStep.action.index
                 ? _buildPrepare(step)
                 : [
+                    _buildTurnIndicator(),
                     Expanded(
                       flex: 3,
                       child: BasePage(
                         displayMap: _chessManager.displayMap,
-                        currentGamer: _chessManager.currentGamer,
-                        onGridSelected: _chessManager.sendActionMessage,
                         boardSize: _chessManager.boardSize,
+                        onGridSelected: _chessManager.sendActionMessage,
                       ),
                     ),
                   ]),
@@ -71,6 +73,21 @@ class NetAnimalChessPage extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildTurnIndicator() => ValueListenableBuilder(
+    valueListenable: _chessManager.currentGamer,
+    builder: (_, gamer, __) => Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: gamer == GamerType.front ? Colors.red : Colors.blue,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        '${gamer == _chessManager.selfType ? "你的" : "对方"}回合',
+        style: globalTheme.textTheme.titleMedium?.copyWith(color: Colors.white),
+      ),
+    ),
+  );
 
   List<Widget> _buildPrepare(TurnGameStep step) {
     String statusMessage = _getStatusMessage(step);
