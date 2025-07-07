@@ -231,20 +231,4 @@ class ImageManager {
         return const Text('❓'); // 未知
     }
   }
-
-  static Widget getCombatEmoji(double emoji) {
-    if (emoji < 0.125) {
-      return const Text('😢');
-    } else if (emoji < 0.25) {
-      return const Text('😞');
-    } else if (emoji < 0.5) {
-      return const Text('😮');
-    } else if (emoji < 0.75) {
-      return const Text('😐');
-    } else if (emoji < 0.875) {
-      return const Text('😊');
-    } else {
-      return const Text('😎');
-    }
-  }
 }

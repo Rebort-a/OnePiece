@@ -29,48 +29,72 @@ class NetAnimalChessPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      Scaffold(appBar: _buildAppBar(), body: _buildBody());
+  Widget build(BuildContext context) {
+    return PopScope(canPop: false, child: _buildPage(context));
+  }
 
-  AppBar _buildAppBar() => AppBar(
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: _chessManager.leaveChess,
-    ),
-    title: const Text('斗兽棋'),
-    centerTitle: true,
-  );
-
-  Widget _buildBody() {
+  Widget _buildPage(BuildContext context) {
     return ValueListenableBuilder<TurnGameStep>(
-      valueListenable: _chessManager.gameStep,
+      valueListenable: _chessManager.netTurnEngine.gameStep,
       builder: (__, step, _) {
-        return Column(
-          children: [
-            // 弹出页面
-            NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
-            ...(step.index < TurnGameStep.action.index
-                ? _buildPrepare(step)
-                : [
-                    _buildTurnIndicator(),
-                    Expanded(
-                      flex: 3,
-                      child: BasePage(
-                        displayMap: _chessManager.displayMap,
-                        boardSize: _chessManager.boardSize,
-                        onGridSelected: _chessManager.sendActionMessage,
-                      ),
-                    ),
-                  ]),
-
-            Expanded(
-              flex: 1,
-              child: MessageList(networkEngine: _chessManager.networkEngine),
-            ),
-            MessageInput(networkEngine: _chessManager.networkEngine),
-          ],
-        );
+        return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
       },
+    );
+  }
+
+  AppBar _buildAppBar(TurnGameStep step) {
+    // 根据游戏步骤确定图标和点击事件
+    IconData icon;
+    VoidCallback? onPressed;
+
+    if (step.index < TurnGameStep.action.index) {
+      // 游戏准备阶段 - 返回按钮
+      icon = Icons.arrow_back;
+      onPressed = _chessManager.leaveRoom;
+    } else if (step.index == TurnGameStep.action.index) {
+      // 游戏进行阶段 - 投降按钮
+      icon = Icons.flag; // 使用旗帜图标表示投降
+      onPressed = _chessManager.surrender; // 假设存在surrender方法
+    } else {
+      // 游戏结束阶段 - 退出房间
+      icon = Icons.exit_to_app;
+      onPressed = _chessManager.exitRoom; // 假设存在exitRoom方法
+    }
+
+    return AppBar(
+      leading: IconButton(icon: Icon(icon), onPressed: onPressed),
+      title: const Text('斗兽棋'),
+      centerTitle: true,
+    );
+  }
+
+  Widget _buildBody(TurnGameStep step) {
+    return Column(
+      children: [
+        // 弹出页面
+        NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
+        ...(step.index < TurnGameStep.action.index
+            ? _buildPrepare(step)
+            : [
+                _buildTurnIndicator(),
+                Expanded(
+                  flex: 3,
+                  child: BasePage(
+                    displayMap: _chessManager.displayMap,
+                    boardSize: _chessManager.boardSize,
+                    onGridSelected: _chessManager.sendActionMessage,
+                  ),
+                ),
+              ]),
+
+        Expanded(
+          flex: 1,
+          child: MessageList(
+            networkEngine: _chessManager.netTurnEngine.networkEngine,
+          ),
+        ),
+        MessageInput(networkEngine: _chessManager.netTurnEngine.networkEngine),
+      ],
     );
   }
 
@@ -83,7 +107,7 @@ class NetAnimalChessPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        '${gamer == _chessManager.selfType ? "你的" : "对方"}回合',
+        '${gamer == _chessManager.netTurnEngine.playerType ? "你的" : "对方"}回合',
         style: globalTheme.textTheme.titleMedium?.copyWith(color: Colors.white),
       ),
     ),

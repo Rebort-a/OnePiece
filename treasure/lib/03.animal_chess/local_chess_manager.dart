@@ -7,7 +7,7 @@ class LoaclAnimalChessManager extends BaseManager {
   }
 
   @override
-  void leaveChess() {
+  void leaveRoom() {
     showChessResult(currentGamer.value == GamerType.rear);
   }
 }

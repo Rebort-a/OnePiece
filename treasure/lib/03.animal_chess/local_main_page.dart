@@ -19,7 +19,7 @@ class LoaclAnimalChessPage extends StatelessWidget {
   AppBar _buildAppBar() => AppBar(
     leading: IconButton(
       icon: const Icon(Icons.arrow_back),
-      onPressed: _chessManager.leaveChess,
+      onPressed: _chessManager.leaveRoom,
     ),
     title: const Text('斗兽棋'),
     centerTitle: true,

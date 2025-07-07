@@ -102,7 +102,7 @@ class NetworkEngine {
 
         if ((message.type == MessageType.accept) && (identify == 0)) {
           identify = message.id;
-          sendNetworkMessage(MessageType.notify, "join room success");
+          sendNetworkMessage(MessageType.notify, "join in room");
         }
         if (message.type.index < MessageType.notify.index) {
           messageHandler(message);

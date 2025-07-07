@@ -2,16 +2,12 @@
 enum TurnGameStep {
   disconnect,
   connected,
+
   frontConfig,
   rearWait,
   frontWait,
   rearConfig,
 
-  playerTrun,
-  enemyTurn,
   action,
-  victory,
-  defeat,
-  escape,
-  draw,
+  gamerOver,
 }

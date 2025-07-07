@@ -263,7 +263,7 @@ abstract class BaseManager {
     initializeGame();
   }
 
-  void leaveChess() {
+  void leaveRoom() {
     _navigateToBack();
   }
 

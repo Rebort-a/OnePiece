@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:treasure/00.common/game/gamer.dart';
 
 import '../../00.common/utils/template_dialog.dart';
 import '../../00.common/utils/custom_notifier.dart';
@@ -321,8 +322,11 @@ class MapManager {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            LocalCombatPage(player: player, enemy: enemy, offensive: true),
+        builder: (context) => LocalCombatPage(
+          player: player,
+          enemy: enemy,
+          playerType: GamerType.front,
+        ),
       ),
     ).then((_) {
       player.restoreAllAttributesAndEffects();
@@ -332,7 +336,7 @@ class MapManager {
   void navigateToCombatPage(
     BuildContext context,
     RandomEnemy enemy,
-    bool offensive,
+    GamerType playerType,
   ) {
     if (_stopActive()) {
       Navigator.push(
@@ -341,7 +345,7 @@ class MapManager {
           builder: (context) => LocalCombatPage(
             player: player,
             enemy: enemy,
-            offensive: offensive,
+            playerType: playerType,
           ),
         ),
       ).then((value) {
@@ -402,7 +406,7 @@ class MapManager {
               break;
             case EntityType.player:
               pageNavigator.value = (BuildContext context) {
-                navigateToCombatPage(context, entity, false);
+                navigateToCombatPage(context, entity, GamerType.rear);
               };
               break;
             default:
@@ -514,7 +518,7 @@ class MapManager {
             if ((entity.y == newY) && (entity.x == newX)) {
               if (entity is RandomEnemy) {
                 pageNavigator.value = (BuildContext context) {
-                  navigateToCombatPage(context, entity, true);
+                  navigateToCombatPage(context, entity, GamerType.front);
                 };
               }
             }
