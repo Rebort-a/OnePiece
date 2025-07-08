@@ -38,7 +38,7 @@ class BaseAnimalChessPage extends StatelessWidget {
                 return SizedBox(
                   width: size,
                   height: size,
-                  child: _buildBoardGrid(map, boardSize),
+                  child: _buildBoardGrid(map, boardSize), // 传递boardSize
                 );
               },
             ),
@@ -65,21 +65,25 @@ class BaseAnimalChessPage extends StatelessWidget {
         crossAxisCount: boardSize,
       ),
       itemCount: map.length,
-      itemBuilder: (_, index) => _buildGridCell(map[index]),
+      itemBuilder: (_, index) =>
+          _buildGridCell(map[index], boardSize), // 传递boardSize
     );
   }
 
-  Widget _buildGridCell(GridNotifier notifier) => ValueListenableBuilder(
-    valueListenable: notifier,
-    builder: (_, grid, __) => GestureDetector(
-      onTap: () => onGridSelected(grid.coordinate),
-      child: Container(
-        margin: const EdgeInsets.all(2),
-        decoration: _gridDecoration(grid),
-        child: grid.hasAnimal ? _buildAnimal(grid.animal!) : null,
-      ),
-    ),
-  );
+  Widget _buildGridCell(GridNotifier notifier, int boardSize) =>
+      ValueListenableBuilder(
+        valueListenable: notifier,
+        builder: (_, grid, __) => GestureDetector(
+          onTap: () => onGridSelected(grid.coordinate),
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: _gridDecoration(grid),
+            child: grid.hasAnimal
+                ? _buildAnimal(grid.animal!, boardSize)
+                : null, // 传递boardSize
+          ),
+        ),
+      );
 
   BoxDecoration _gridDecoration(Grid grid) => BoxDecoration(
     color: _gridColor(grid),
@@ -110,16 +114,25 @@ class BaseAnimalChessPage extends StatelessWidget {
     return 1.0;
   }
 
-  Widget _buildAnimal(Animal animal) => Container(
-    margin: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: _animalColor(animal),
-      borderRadius: BorderRadius.circular(5),
-    ),
-    child: Center(
-      child: Text(_animalContent(animal), style: const TextStyle(fontSize: 32)),
-    ),
-  );
+  Widget _buildAnimal(Animal animal, int boardSize) {
+    double fontSize = 32 * (5 / boardSize);
+
+    fontSize = fontSize.clamp(4.0, 32.0);
+
+    return Container(
+      margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: _animalColor(animal),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Center(
+        child: Text(
+          _animalContent(animal),
+          style: TextStyle(fontSize: fontSize),
+        ),
+      ),
+    );
+  }
 
   Color _animalColor(Animal animal) {
     return animal.isHidden

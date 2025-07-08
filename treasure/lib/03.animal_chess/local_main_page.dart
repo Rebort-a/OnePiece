@@ -26,7 +26,8 @@ class LoaclAnimalChessPage extends StatelessWidget {
     // 添加设置按钮
     actions: [
       IconButton(
-        icon: const Icon(Icons.settings),
+        icon: const Icon(Icons.multitrack_audio_sharp),
+        // icon: const Icon(Icons.equalizer),
         onPressed: _chessManager.showBoardSizeSelector,
       ),
     ],
