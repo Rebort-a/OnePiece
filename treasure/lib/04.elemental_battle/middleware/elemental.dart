@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -192,7 +191,7 @@ class Elemental {
     switchPrevious();
   }
 
-  // 从配置创建策略（EnergyManager映射）
+  // 从配置创建策略
   static Map<EnergyType, EnergyManager> createStrategyFromConfigs(
     String baseName,
     Map<EnergyType, EnergyConfig> configs,
@@ -210,7 +209,7 @@ class Elemental {
     );
   }
 
-  // 从策略创建配置（反向转换函数）
+  // 从策略创建配置
   static Map<EnergyType, EnergyConfig> createConfigsFromStrategy(
     Map<EnergyType, EnergyManager> strategy,
   ) {
@@ -439,18 +438,6 @@ class Elemental {
     );
     final int current = Elemental.currentFromJson(json);
     return Elemental(baseName: baseName, configs: configs, current: current);
-  }
-
-  factory Elemental.fromSocket(List<int> data) {
-    return Elemental.fromJson(jsonDecode(utf8.decode(data)));
-  }
-
-  List<int> toSocketData() {
-    return utf8.encode(
-      jsonEncode(
-        configsToJson(name, createConfigsFromStrategy(_strategy), _current),
-      ),
-    );
   }
 
   // 默认配置

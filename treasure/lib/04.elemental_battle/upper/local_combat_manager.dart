@@ -86,45 +86,38 @@ class LocalCombatManager extends BaseCombatManager {
 
   @override
   void handleEnemyAction() {
-    ConationType action = _getEnemyAction();
-    addCombatInfo(
-      '${enemy.getAppointName(enemy.current)} 选择了 ${BaseCombatManager.conationNames[action]}',
-    );
+    if (currentGamer.value != playerType) {
+      ConationType action = _getEnemyAction();
+      addCombatInfo(
+        '${enemy.getAppointName(enemy.current)} 选择了 ${BaseCombatManager.conationNames[action]}',
+      );
 
-    switch (action) {
-      case ConationType.attack:
-        handleAttack(false);
-        break;
-      case ConationType.parry:
-        handleSkill(
-          false,
-          GameAction(
-            actionIndex: ConationType.parry.index,
-            targetIndex: enemy.current,
-          ),
-        );
-        break;
-      case ConationType.skill:
-        handleSkill(
-          false,
-          GameAction(
-            actionIndex: ConationType.skill.index + 1,
-            targetIndex: enemy.current,
-          ),
-        );
-        break;
-      case ConationType.escape:
-        handleEscape(false);
-        break;
+      switch (action) {
+        case ConationType.attack:
+          handleAttack(false);
+          break;
+        case ConationType.parry:
+          handleSkill(
+            false,
+            GameAction(
+              actionIndex: ConationType.parry.index,
+              targetIndex: enemy.current,
+            ),
+          );
+          break;
+        case ConationType.skill:
+          handleSkill(
+            false,
+            GameAction(
+              actionIndex: ConationType.skill.index + 1,
+              targetIndex: enemy.current,
+            ),
+          );
+          break;
+        case ConationType.escape:
+          handleEscape(false);
+          break;
+      }
     }
-  }
-
-  @override
-  void leavePage() => _navigateToHomePage();
-
-  void _navigateToHomePage() {
-    pageNavigator.value = (BuildContext context) {
-      Navigator.pop(context, combatResult);
-    };
   }
 }

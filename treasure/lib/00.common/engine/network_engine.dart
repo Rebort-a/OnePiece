@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../utils/template_dialog.dart';
-import '../utils/custom_notifier.dart';
+import '../widget/template_dialog.dart';
+import '../model/notifier.dart';
 import '../network/network_message.dart';
 import '../network/network_room.dart';
 
@@ -15,7 +15,6 @@ class NetworkEngine {
   final ScrollController scrollController = ScrollController();
 
   late Socket _socket;
-  // 新增：用于存储不完整消息的缓冲区
   String _socketDataBuffer = '';
   int identify = 0;
 
@@ -61,6 +60,7 @@ class NetworkEngine {
   }
 
   void _handleSocketData(List<int> data) {
+    //避免粘包
     // 将字节数据转换为字符串并添加到缓冲区
     _socketDataBuffer += utf8.decode(data);
 
@@ -70,7 +70,7 @@ class NetworkEngine {
 
   void _extractAndProcessMessages() {
     // 简单的消息分割算法：查找完整的 JSON 对象
-    // 这里假设每个 JSON 消息都以 '{' 开始，以 '}' 结束
+    // 由于约定好的消息都是JSON格式，而JSON消息都以 '{' 开始，以 '}' 结束
     int startIndex = 0;
 
     while (startIndex < _socketDataBuffer.length) {

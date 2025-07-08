@@ -19,37 +19,45 @@ import '../upper/cast_page.dart';
 import '../upper/status_page.dart';
 
 class NetCombatManager extends BaseCombatManager {
-  late final NetTurnEngine netTurnEngine;
+  late final NetTurnGameEngine netTurnEngine;
 
   NetCombatManager({required String userName, required RoomInfo roomInfo}) {
     // 使用局部函数初始化NetTurnEngine
-    netTurnEngine = NetTurnEngine(
+    netTurnEngine = NetTurnGameEngine(
       userName: userName,
       roomInfo: roomInfo,
       pageNavigator: pageNavigator,
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
+      endHandler: _endHandler,
     );
   }
 
-  // 定义搜索处理局部函数（空实现）
-  void _searchHandler() {}
+  void _searchHandler() {
+    // 由于NetCombatPage在游戏阶段更新为frontConfig时，会出现配置按钮，点击后会生成配置并发送，所以这里不需要处理
+  }
 
-  // 定义资源处理局部函数
   void _resourceHandler(TurnGameStep step, NetworkMessage message) {
+    final jsonData = jsonDecode(message.content);
+
     if (step == TurnGameStep.frontConfig) {
-      player = Elemental.fromSocket(jsonDecode(message.content));
+      // 先手收到自己的信息，初始化player
+      player = Elemental.fromJson(jsonData);
     } else if (step == TurnGameStep.frontWait) {
-      enemy = Elemental.fromSocket(jsonDecode(message.content));
+      // 先手收到敌人的信息，初始化enemy，并开始战斗
+      enemy = Elemental.fromJson(jsonData);
       initCombat(netTurnEngine.playerType);
     } else if (step == TurnGameStep.connected) {
+      // 后手收到敌人的信息，匹配到敌人，初始化enemy
       netTurnEngine.enemyIdentify = message.id;
-      enemy = Elemental.fromSocket(jsonDecode(message.content));
+      enemy = Elemental.fromJson(jsonData);
     } else if (step == TurnGameStep.rearConfig) {
-      enemy = Elemental.fromSocket(jsonDecode(message.content));
-    } else if (step == TurnGameStep.rearConfig) {
-      player = Elemental.fromSocket(jsonDecode(message.content));
+      // 后手收到敌人的信息，初始化enemy
+      enemy = Elemental.fromJson(jsonData);
+    } else if (step == TurnGameStep.rearWait) {
+      // 后手收到自己的信息，初始化player，并开始战斗
+      player = Elemental.fromJson(jsonData);
       initCombat(netTurnEngine.playerType);
     }
   }
@@ -76,6 +84,11 @@ class NetCombatManager extends BaseCombatManager {
 
     actionHandlers[actionType]?.call();
   }
+
+  void _endHandler() {}
+
+  @override
+  void handleEnemyAction() {}
 
   void navigateToCastPage() {
     pageNavigator.value = (context) {
@@ -134,15 +147,10 @@ class NetCombatManager extends BaseCombatManager {
           showSkillSelection();
           break;
         case ConationType.escape:
-          handleConationEscape();
+          surrender();
           break;
       }
     }
-  }
-
-  void handleConationEscape() {
-    _sendActionMessage(ConationType.escape.index, player.current);
-    updateGameStepAfterAction(true, 2); // 直接处理，不需要服务器返回，防止服务器断开时无法退出
   }
 
   @override
@@ -187,6 +195,15 @@ class NetCombatManager extends BaseCombatManager {
 
   @override
   void leavePage() {
+    netTurnEngine.networkEngine.leavePage();
+  }
+
+  void surrender() {
+    _sendActionMessage(ConationType.escape.index, player.current);
+    updateGameStepAfterAction(true, 2); // 直接处理，不需要服务器返回，防止服务器断开时无法退出
+  }
+
+  void exitRoom() {
     netTurnEngine.networkEngine.leavePage();
   }
 }

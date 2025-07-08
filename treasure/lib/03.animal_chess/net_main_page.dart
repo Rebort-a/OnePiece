@@ -50,7 +50,7 @@ class NetAnimalChessPage extends StatelessWidget {
     if (step.index < TurnGameStep.action.index) {
       // 游戏准备阶段 - 返回按钮
       icon = Icons.arrow_back;
-      onPressed = _chessManager.leaveRoom;
+      onPressed = _chessManager.leavePage;
     } else if (step.index == TurnGameStep.action.index) {
       // 游戏进行阶段 - 投降按钮
       icon = Icons.flag; // 使用旗帜图标表示投降
@@ -79,7 +79,7 @@ class NetAnimalChessPage extends StatelessWidget {
                 _buildTurnIndicator(),
                 Expanded(
                   flex: 3,
-                  child: BasePage(
+                  child: BaseAnimalChessPage(
                     displayMap: _chessManager.displayMap,
                     boardSize: _chessManager.boardSize,
                     onGridSelected: _chessManager.sendActionMessage,
@@ -114,31 +114,10 @@ class NetAnimalChessPage extends StatelessWidget {
   );
 
   List<Widget> _buildPrepare(TurnGameStep step) {
-    String statusMessage = _getStatusMessage(step);
-
     return [
       const CircularProgressIndicator(),
       const SizedBox(height: 20),
-      Text(statusMessage),
+      Text(step.getExplaination()),
     ];
-  }
-
-  String _getStatusMessage(TurnGameStep gameStep) {
-    switch (gameStep) {
-      case TurnGameStep.disconnect:
-        return "等待连接";
-      case TurnGameStep.connected:
-        return "已连接，等待对手加入...";
-      case TurnGameStep.frontConfig:
-        return "请配置";
-      case TurnGameStep.rearWait:
-        return "等待先手配置";
-      case TurnGameStep.frontWait:
-        return "等待后手配置";
-      case TurnGameStep.rearConfig:
-        return "请配置或查看对方配置";
-      default:
-        return "游戏结束";
-    }
   }
 }

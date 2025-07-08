@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../00.common/game/gamer.dart';
-import '../../00.common/utils/template_dialog.dart';
-import '../../00.common/utils/custom_notifier.dart';
+import '../../00.common/widget/template_dialog.dart';
+import '../../00.common/model/notifier.dart';
 import '../middleware/elemental.dart';
 import '../foundation/skill.dart';
 import 'common.dart';
@@ -15,7 +15,6 @@ abstract class BaseCombatManager {
     ConationType.skill: '技能',
     ConationType.escape: '逃跑',
   };
-
   static const resultTitles = {
     ResultType.victory: '胜利',
     ResultType.defeat: '失败',
@@ -28,7 +27,6 @@ abstract class BaseCombatManager {
     ResultType.escape: '你成功逃脱了战斗',
     ResultType.draw: '对方逃跑了',
   };
-
   static const stepResultMapping = {
     1: {true: ResultType.victory, false: ResultType.defeat},
     -1: {true: ResultType.defeat, false: ResultType.victory},
@@ -77,7 +75,7 @@ abstract class BaseCombatManager {
     addCombatInfo('${attacker.getAppointName(attacker.current)} 选择了 攻击');
 
     final result = attacker.combatRequest(defender, defender.current, infoList);
-    handleActionResult(result, isSelf);
+    handleActionResult(isSelf, result);
   }
 
   void showSkillSelection() {
@@ -90,7 +88,7 @@ abstract class BaseCombatManager {
     };
   }
 
-  void handlePlayerSkillTarget(int skillIndex) {}
+  void handlePlayerSkillTarget(int skillIndex);
 
   bool getSkillCategory(CombatSkill skill) {
     return skill.targetType == SkillTarget.selfFront ||
@@ -152,7 +150,7 @@ abstract class BaseCombatManager {
       default:
     }
 
-    handleActionResult(result, isSelf);
+    handleActionResult(isSelf, result);
   }
 
   void _switchAppoint(Elemental elemental, int targetIndex) {
@@ -163,7 +161,7 @@ abstract class BaseCombatManager {
 
   void handleEscape(bool isSelf) {
     if (!isSelf) {
-      handleActionResult(2, false);
+      updateGameStepAfterAction(false, 2);
     }
   }
 
@@ -171,7 +169,7 @@ abstract class BaseCombatManager {
     return handleSkill(isSelf, action);
   }
 
-  void handleActionResult(int result, bool isSelf) {
+  void handleActionResult(bool isSelf, int result) {
     final shouldSwitch = _shouldSwitchElemental(result, isSelf);
     if (shouldSwitch != null && _switchNext(shouldSwitch)) {
       result = 0;
@@ -209,10 +207,11 @@ abstract class BaseCombatManager {
   void _switchRound(bool isSelf) {
     addCombatInfo(isSelf ? '\n敌人的回合，请等待\n' : '\n你的回合，请行动\n');
     currentGamer.value = currentGamer.value.opponent;
+
     handleEnemyAction();
   }
 
-  void handleEnemyAction() {}
+  void handleEnemyAction();
 
   void _showGameResult() {
     pageNavigator.value = (BuildContext context) {
@@ -231,5 +230,13 @@ abstract class BaseCombatManager {
     infoList.value += "$message\n";
   }
 
-  void leavePage();
+  void leavePage() {
+    _navigateToBack();
+  }
+
+  void _navigateToBack() {
+    pageNavigator.value = (context) {
+      Navigator.of(context).pop();
+    };
+  }
 }

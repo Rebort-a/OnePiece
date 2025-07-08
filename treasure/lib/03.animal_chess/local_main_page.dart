@@ -19,7 +19,7 @@ class LoaclAnimalChessPage extends StatelessWidget {
   AppBar _buildAppBar() => AppBar(
     leading: IconButton(
       icon: const Icon(Icons.arrow_back),
-      onPressed: _chessManager.leaveRoom,
+      onPressed: _chessManager.leavePage,
     ),
     title: const Text('斗兽棋'),
     centerTitle: true,
@@ -30,7 +30,7 @@ class LoaclAnimalChessPage extends StatelessWidget {
       NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
       _buildTurnIndicator(),
       Expanded(
-        child: BasePage(
+        child: BaseAnimalChessPage(
           displayMap: _chessManager.displayMap,
           boardSize: _chessManager.boardSize,
           onGridSelected: _chessManager.selectGrid,

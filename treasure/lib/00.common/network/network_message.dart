@@ -1,12 +1,18 @@
 import 'dart:convert';
 
 enum MessageType {
+  // 系统信息
   broadcast,
   accept,
+
+  // 游戏信息
   search,
   match,
   resource,
   action,
+  end,
+
+  // 聊天信息
   notify,
   text,
   image,

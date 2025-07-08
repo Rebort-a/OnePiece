@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '00.common/style/theme.dart';
 import '01.home/home_page.dart';
 
 void main() {
@@ -11,6 +12,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: HomePage());
+    return MaterialApp(theme: globalTheme, home: HomePage());
   }
 }

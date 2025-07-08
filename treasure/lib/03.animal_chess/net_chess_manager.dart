@@ -10,58 +10,60 @@ import '../00.common/network/network_room.dart';
 import 'extension.dart';
 import 'foundation_manager.dart';
 
-class NetAnimalChessManager extends BaseManager {
-  late final NetTurnEngine netTurnEngine;
+class NetAnimalChessManager extends BaseAnimalChessManager {
+  late final NetTurnGameEngine netTurnEngine;
 
   NetAnimalChessManager({
     required String userName,
     required RoomInfo roomInfo,
   }) {
-    // 使用局部函数初始化NetTurnEngine
-    netTurnEngine = NetTurnEngine(
+    // 构建网络回合制游戏对战引擎
+    netTurnEngine = NetTurnGameEngine(
       userName: userName,
       roomInfo: roomInfo,
       pageNavigator: pageNavigator,
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
+      endHandler: _endHandler,
     );
   }
 
-  // 定义局部函数 - 搜索处理
   void _searchHandler() {
-    initializeGame(); // 这个时候我们直接生成棋牌
+    initializeGame();
     netTurnEngine.networkEngine.sendNetworkMessage(
       MessageType.resource,
       _mapToString(),
     ); // 然后通过网络发送
   }
 
-  // 定义局部函数 - 资源处理
   void _resourceHandler(TurnGameStep step, NetworkMessage message) {
-    if (step == TurnGameStep.connected || step == TurnGameStep.rearConfig) {
+    if (step == TurnGameStep.connected || step == TurnGameStep.rearWait) {
       _stringToMap(message.content);
+      netTurnEngine.networkEngine.sendNetworkMessage(
+        MessageType.resource,
+        "ok",
+      );
     }
   }
 
-  // 定义局部函数 - 动作处理
   void _actionHandler(bool isSelf, NetworkMessage message) {
-    int index = jsonDecode(message.content)['index'];
-    if (index < 0 || index >= displayMap.length) {
-      //对方逃跑
-      if (!isSelf) {
-        showChessResult(netTurnEngine.playerType == GamerType.front);
-      }
-      return;
-    }
-
     if (netTurnEngine.gameStep.value == TurnGameStep.action) {
-      if (currentGamer.value == netTurnEngine.playerType && isSelf) {
-        selectGrid(index);
-      } else if (!isSelf) {
-        selectGrid(index);
+      int index = jsonDecode(message.content)['index'];
+      if (index >= 0 && index < displayMap.length) {
+        if (currentGamer.value == netTurnEngine.playerType && isSelf) {
+          // 自己回合中，自己行动才能生效
+          selectGrid(index);
+        } else if (!isSelf) {
+          // 敌人行为直接生效，然后回合会切换为自己回合
+          selectGrid(index);
+        }
       }
     }
+  }
+
+  void _endHandler() {
+    showChessResult(netTurnEngine.playerType == GamerType.front);
   }
 
   String _mapToString() {
@@ -88,9 +90,8 @@ class NetAnimalChessManager extends BaseManager {
   }
 
   void sendActionMessage(int index) {
-    if ((netTurnEngine.gameStep.value == TurnGameStep.action &&
-            currentGamer.value == netTurnEngine.playerType) ||
-        index == -1) {
+    if (netTurnEngine.gameStep.value == TurnGameStep.action &&
+        currentGamer.value == netTurnEngine.playerType) {
       netTurnEngine.networkEngine.sendNetworkMessage(
         MessageType.action,
         jsonEncode({'index': index}),
@@ -126,13 +127,18 @@ class NetAnimalChessManager extends BaseManager {
   }
 
   @override
-  void leaveRoom() {
+  void leavePage() {
     netTurnEngine.networkEngine.leavePage();
   }
 
   void surrender() {
-    sendActionMessage(-1); // 发送投降消息
-    showChessResult(netTurnEngine.playerType == GamerType.rear); //显示游戏结果
+    netTurnEngine.networkEngine.sendNetworkMessage(
+      MessageType.end,
+      'give up',
+    ); // 发送投降消息
+    showChessResult(
+      netTurnEngine.playerType == GamerType.rear,
+    ); //直接显示游戏结果，不必等到服务器响应，防止网络异常时无法退出
   }
 
   void exitRoom() {

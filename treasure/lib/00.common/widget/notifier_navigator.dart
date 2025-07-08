@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../utils/custom_notifier.dart';
+import '../model/notifier.dart';
 
 class NotifierNavigator extends StatelessWidget {
   final AlwaysNotifier<void Function(BuildContext)> navigatorHandler;

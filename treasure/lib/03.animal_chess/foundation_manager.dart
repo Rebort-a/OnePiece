@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
-import '../00.common/game/direction.dart';
-import '../00.common/utils/custom_notifier.dart';
+import '../00.common/game/map.dart';
+import '../00.common/model/notifier.dart';
 import 'base.dart';
 import 'extension.dart';
 
-abstract class BaseManager {
+abstract class BaseAnimalChessManager {
   int boardSize = boardLevel * 2 + 1;
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
@@ -263,7 +263,7 @@ abstract class BaseManager {
     initializeGame();
   }
 
-  void leaveRoom() {
+  void leavePage() {
     _navigateToBack();
   }
 

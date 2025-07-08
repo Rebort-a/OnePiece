@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:treasure/00.common/game/gamer.dart';
 
-import '../../00.common/utils/template_dialog.dart';
-import '../../00.common/utils/custom_notifier.dart';
+import '../../00.common/widget/template_dialog.dart';
+import '../../00.common/model/notifier.dart';
 import '../../00.common/image/entity.dart';
-import '../../00.common/game/direction.dart';
+import '../../00.common/game/map.dart';
 
 import '../foundation/energy.dart';
 import '../foundation/map.dart';
