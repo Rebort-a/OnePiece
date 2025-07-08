@@ -1,7 +1,5 @@
 import '../00.common/game/gamer.dart';
 
-const int boardLevel = 2;
-
 enum AnimalType { elephant, tiger, lion, leopard, wolf, dog, cat, mouse }
 
 enum GridType { land, river, road, bridge, tree }

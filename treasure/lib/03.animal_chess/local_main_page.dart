@@ -23,6 +23,13 @@ class LoaclAnimalChessPage extends StatelessWidget {
     ),
     title: const Text('斗兽棋'),
     centerTitle: true,
+    // 添加设置按钮
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.settings),
+        onPressed: _chessManager.showBoardSizeSelector,
+      ),
+    ],
   );
 
   Widget _buildBody() => Column(
@@ -32,7 +39,6 @@ class LoaclAnimalChessPage extends StatelessWidget {
       Expanded(
         child: BaseAnimalChessPage(
           displayMap: _chessManager.displayMap,
-          boardSize: _chessManager.boardSize,
           onGridSelected: _chessManager.selectGrid,
         ),
       ),

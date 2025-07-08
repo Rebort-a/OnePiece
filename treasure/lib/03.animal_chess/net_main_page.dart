@@ -81,7 +81,6 @@ class NetAnimalChessPage extends StatelessWidget {
                   flex: 3,
                   child: BaseAnimalChessPage(
                     displayMap: _chessManager.displayMap,
-                    boardSize: _chessManager.boardSize,
                     onGridSelected: _chessManager.sendActionMessage,
                   ),
                 ),

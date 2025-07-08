@@ -7,7 +7,8 @@ import 'base.dart';
 import 'extension.dart';
 
 abstract class BaseAnimalChessManager {
-  int boardSize = boardLevel * 2 + 1;
+  int boardLevel = 2;
+  int boardSize = 2 * 2 + 1;
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
@@ -15,13 +16,70 @@ abstract class BaseAnimalChessManager {
   final ListNotifier<GridNotifier> displayMap = ListNotifier([]);
   final List<int> _markedGrid = [];
 
+  int _redAnimalsCount = AnimalType.values.length;
+  int _blueAnimalsCount = AnimalType.values.length;
+
+  void showBoardSizeSelector() {
+    pageNavigator.value = (context) {
+      int currentLevel = boardLevel;
+      showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('设置棋盘大小'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '当前等级: $currentLevel (${currentLevel * 2 + 1}×${currentLevel * 2 + 1})',
+                ),
+                const SizedBox(height: 20),
+                Slider(
+                  value: currentLevel.toDouble(),
+                  min: 2,
+                  max: 8,
+                  divisions: 6,
+                  label: '等级 $currentLevel',
+                  onChanged: (value) {
+                    setState(() {
+                      currentLevel = value.round();
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: const Text('取消'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: const Text('确定'),
+                onPressed: () {
+                  updateBoardLevel(currentLevel);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    };
+  }
+
+  void updateBoardLevel(int level) {
+    boardLevel = level;
+    boardSize = level * 2 + 1;
+    initializeGame();
+  }
+
   void initializeGame() {
-    _setupBoard();
+    setupBoard();
     _placePieces();
     _resetGameState();
   }
 
-  void _setupBoard() {
+  void setupBoard() {
     displayMap.value = List.generate(boardSize * boardSize, (index) {
       return GridNotifier(Grid(coordinate: index, type: _getGridType(index)));
     });
@@ -47,14 +105,16 @@ abstract class BaseAnimalChessManager {
     void placePlayerPieces(GamerType player) {
       for (int i = 0; i < pieces.length; i++) {
         final index = landPositions.removeLast();
-        displayMap.value[index].placeAnimal(
-          Animal(type: pieces[i], owner: player),
-        );
+        placeAnimal(index, Animal(type: pieces[i], owner: player));
       }
     }
 
     placePlayerPieces(GamerType.front);
     placePlayerPieces(GamerType.rear);
+  }
+
+  void placeAnimal(int index, Animal animal) {
+    displayMap.value[index].placeAnimal(animal);
   }
 
   List<int> _getLandPositions() {
@@ -69,6 +129,9 @@ abstract class BaseAnimalChessManager {
   void _resetGameState() {
     _markedGrid.clear();
     currentGamer.value = GamerType.front;
+    // 重置动物数量
+    _redAnimalsCount = AnimalType.values.length;
+    _blueAnimalsCount = AnimalType.values.length;
   }
 
   void selectGrid(int index) {
@@ -142,9 +205,23 @@ abstract class BaseAnimalChessManager {
 
     if (attackerWins && defenderWins) {
       displayMap.value[targetPos].clearAnimal();
+      _redAnimalsCount--;
+      _blueAnimalsCount--;
     } else if (attackerWins) {
       displayMap.value[targetPos].placeAnimal(attacker);
       _markedGrid.first = targetPos;
+
+      if (defender.owner == GamerType.front) {
+        _redAnimalsCount--;
+      } else {
+        _blueAnimalsCount--;
+      }
+    } else if (defenderWins) {
+      if (attacker.owner == GamerType.front) {
+        _redAnimalsCount--;
+      } else {
+        _blueAnimalsCount--;
+      }
     }
   }
 
@@ -200,19 +277,11 @@ abstract class BaseAnimalChessManager {
   }
 
   void _checkGameEnd() {
-    int redCount = 0, blueCount = 0;
-
-    for (final gridNotifier in displayMap.value) {
-      final animal = gridNotifier.value.animal;
-      if (animal != null) {
-        animal.owner == GamerType.front ? redCount++ : blueCount++;
-      }
-    }
-
-    if (redCount == 0) {
-      showChessResult(false);
-    } else if (blueCount == 0) {
-      showChessResult(true);
+    // 使用计数器检查游戏结束
+    if (_redAnimalsCount <= 0) {
+      showChessResult(false); // 蓝方获胜
+    } else if (_blueAnimalsCount <= 0) {
+      showChessResult(true); // 红方获胜
     }
   }
 

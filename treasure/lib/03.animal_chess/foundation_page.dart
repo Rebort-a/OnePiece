@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
@@ -8,13 +10,11 @@ import 'extension.dart';
 
 class BaseAnimalChessPage extends StatelessWidget {
   final ListNotifier<GridNotifier> displayMap;
-  final int boardSize;
   final Function(int) onGridSelected;
 
   const BaseAnimalChessPage({
     super.key,
     required this.displayMap,
-    required this.boardSize,
     required this.onGridSelected,
   });
 
@@ -23,27 +23,30 @@ class BaseAnimalChessPage extends StatelessWidget {
 
   Widget _buildBody() => _buildChessBoard();
 
-  Widget _buildChessBoard() => AspectRatio(
-    aspectRatio: 1,
-    child: Center(
-      child: Container(
-        decoration: _boardDecoration(),
-        child: ValueListenableBuilder(
-          valueListenable: displayMap,
-          builder: (_, gridNotifiers, __) => LayoutBuilder(
-            builder: (context, constraints) {
-              final size = _calculateBoardSize(constraints, boardSize);
-              return SizedBox(
-                width: size,
-                height: size,
-                child: _buildBoardGrid(),
-              );
-            },
+  Widget _buildChessBoard() {
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Center(
+        child: Container(
+          decoration: _boardDecoration(),
+          child: ValueListenableBuilder(
+            valueListenable: displayMap,
+            builder: (_, map, __) => LayoutBuilder(
+              builder: (context, constraints) {
+                int boardSize = sqrt(map.length).floor();
+                final size = _calculateBoardSize(constraints, boardSize);
+                return SizedBox(
+                  width: size,
+                  height: size,
+                  child: _buildBoardGrid(map, boardSize),
+                );
+              },
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   BoxDecoration _boardDecoration() => BoxDecoration(
     color: Colors.white,
@@ -55,14 +58,14 @@ class BaseAnimalChessPage extends StatelessWidget {
     return (maxSize ~/ boardSize) * boardSize.toDouble();
   }
 
-  Widget _buildBoardGrid() {
+  Widget _buildBoardGrid(List<GridNotifier> map, int boardSize) {
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: boardSize,
       ),
-      itemCount: displayMap.length,
-      itemBuilder: (_, index) => _buildGridCell(displayMap.value[index]),
+      itemCount: map.length,
+      itemBuilder: (_, index) => _buildGridCell(map[index]),
     );
   }
 

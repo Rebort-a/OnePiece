@@ -7,7 +7,7 @@ import '../00.common/game/step.dart';
 import '../00.common/network/network_message.dart';
 import '../00.common/network/network_room.dart';
 
-import 'extension.dart';
+import 'base.dart';
 import 'foundation_manager.dart';
 
 class NetAnimalChessManager extends BaseAnimalChessManager {
@@ -67,26 +67,42 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
   }
 
   String _mapToString() {
-    return jsonEncode({
-      '_boardSize': boardSize,
-      'board': displayMap.value
-          .map((notifier) => notifier.value.toJson())
-          .toList(),
-    });
+    // 只序列化动物分布信息
+    List<List<int>> animalDistribution = displayMap.value
+        .asMap()
+        .entries
+        .where((entry) => entry.value.value.hasAnimal)
+        .map((entry) {
+          final animal = entry.value.value.animal!;
+          return [
+            entry.key, // 坐标位置
+            animal.owner.index, // 所属玩家索引
+            animal.type.index, // 动物类型索引
+            animal.isHidden ? 1 : 0, // 是否隐藏
+          ];
+        })
+        .toList();
+
+    return jsonEncode({'boardSize': boardSize, 'animals': animalDistribution});
   }
 
   void _stringToMap(String content) {
-    final decodedContent = jsonDecode(content);
-    boardSize = decodedContent['_boardSize'];
+    final jsonData = jsonDecode(content);
+    boardSize = jsonData['boardSize'];
 
-    // 将 JSON 数据转换为 GridNotifier 对象列表
-    final boardData = decodedContent['board'] as List<dynamic>;
-    final gridNotifiers = boardData.map((gridJson) {
-      final grid = GridSerialization.fromJson(gridJson as Map<String, dynamic>);
-      return GridNotifier(grid);
-    }).toList();
+    setupBoard();
 
-    displayMap.value = gridNotifiers;
+    // 放置动物
+    final animalDistribution = jsonData['animals'] as List<dynamic>;
+    for (final animalData in animalDistribution) {
+      final data = animalData as List<dynamic>;
+      final index = data[0] as int;
+      final owner = GamerType.values[data[1] as int];
+      final type = AnimalType.values[data[2] as int];
+      final isHidden = data[3] == 1;
+
+      placeAnimal(index, Animal(type: type, owner: owner, isHidden: isHidden));
+    }
   }
 
   void sendActionMessage(int index) {
