@@ -6,10 +6,12 @@ import '../03.animal_chess/local_main_page.dart';
 import '../03.animal_chess/net_main_page.dart';
 import '../04.elemental_battle/upper/main_page.dart';
 import '../04.elemental_battle/upper/net_combat_page.dart';
+import '../05.gobang/local_main_page.dart';
+import '../05.gobang/net_main_page.dart';
 
-enum LocalItemType { animalChess, elementalBattle }
+enum LocalItemType { animalChess, elementalBattle, gobang }
 
-enum NetItemType { onlyChat, animalChess, elementalBattle }
+enum NetItemType { onlyChat, animalChess, elementalBattle, gobang }
 
 class RouteManager {
   static void navigateToLocalPage(
@@ -27,6 +29,10 @@ class RouteManager {
           context,
         ).push(MaterialPageRoute(builder: (_) => MapPage()));
         break;
+      case LocalItemType.gobang:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => LocalGomokuPage()));
     }
   }
 
@@ -59,6 +65,13 @@ class RouteManager {
           ),
         );
         break;
+      case NetItemType.gobang:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                NetGomokuPage(userName: userName, roomInfo: roomInfo),
+          ),
+        );
     }
   }
 }
