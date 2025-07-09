@@ -173,7 +173,7 @@ class TemplateDialog {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(title),
+          title: Center(child: Text(title)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

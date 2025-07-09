@@ -34,11 +34,12 @@ class BaseAnimalChessPage extends StatelessWidget {
             builder: (_, map, __) => LayoutBuilder(
               builder: (context, constraints) {
                 int boardSize = sqrt(map.length).floor();
-                final size = _calculateBoardSize(constraints, boardSize);
+                double size = _calculateBoardSize(constraints, boardSize);
+                double scaleFactor = (5 / boardSize);
                 return SizedBox(
                   width: size,
                   height: size,
-                  child: _buildBoardGrid(map, boardSize), // 传递boardSize
+                  child: _buildBoardGrid(map, boardSize, scaleFactor),
                 );
               },
             ),
@@ -58,7 +59,11 @@ class BaseAnimalChessPage extends StatelessWidget {
     return (maxSize ~/ boardSize) * boardSize.toDouble();
   }
 
-  Widget _buildBoardGrid(List<GridNotifier> map, int boardSize) {
+  Widget _buildBoardGrid(
+    List<GridNotifier> map,
+    int boardSize,
+    double scaleFactor,
+  ) {
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -66,29 +71,32 @@ class BaseAnimalChessPage extends StatelessWidget {
       ),
       itemCount: map.length,
       itemBuilder: (_, index) =>
-          _buildGridCell(map[index], boardSize), // 传递boardSize
+          _buildGridCell(map[index], boardSize, scaleFactor),
     );
   }
 
-  Widget _buildGridCell(GridNotifier notifier, int boardSize) =>
-      ValueListenableBuilder(
-        valueListenable: notifier,
-        builder: (_, grid, __) => GestureDetector(
-          onTap: () => onGridSelected(grid.coordinate),
-          child: Container(
-            margin: const EdgeInsets.all(2),
-            decoration: _gridDecoration(grid),
-            child: grid.hasAnimal
-                ? _buildAnimal(grid.animal!, boardSize)
-                : null, // 传递boardSize
-          ),
-        ),
-      );
+  Widget _buildGridCell(
+    GridNotifier notifier,
+    int boardSize,
+    double scaleFactor,
+  ) => ValueListenableBuilder(
+    valueListenable: notifier,
+    builder: (_, grid, __) => GestureDetector(
+      onTap: () => onGridSelected(grid.coordinate),
+      child: Container(
+        margin: EdgeInsets.all(2 * scaleFactor), // 缩放边距
+        decoration: _gridDecoration(grid, scaleFactor),
+        child: grid.hasAnimal
+            ? _buildAnimal(grid.animal!, boardSize, scaleFactor)
+            : null,
+      ),
+    ),
+  );
 
-  BoxDecoration _gridDecoration(Grid grid) => BoxDecoration(
+  BoxDecoration _gridDecoration(Grid grid, double scaleFactor) => BoxDecoration(
     color: _gridColor(grid),
-    border: _gridBorder(grid),
-    borderRadius: BorderRadius.circular(4),
+    border: _gridBorder(grid, scaleFactor),
+    borderRadius: BorderRadius.circular(4 * scaleFactor), // 缩放圆角
   );
 
   Color _gridColor(Grid grid) {
@@ -99,8 +107,10 @@ class BaseAnimalChessPage extends StatelessWidget {
     };
   }
 
-  Border _gridBorder(Grid grid) =>
-      Border.all(color: _borderColor(grid), width: _borderWidth(grid));
+  Border _gridBorder(Grid grid, double scaleFactor) => Border.all(
+    color: _borderColor(grid),
+    width: _borderWidth(grid, scaleFactor),
+  );
 
   Color _borderColor(Grid grid) {
     if (grid.hasAnimal && grid.animal!.isSelected) return Colors.yellow;
@@ -108,22 +118,22 @@ class BaseAnimalChessPage extends StatelessWidget {
     return Colors.grey;
   }
 
-  double _borderWidth(Grid grid) {
-    if (grid.isHighlighted) return 4.0;
-    if (grid.hasAnimal && grid.animal!.isSelected) return 3.0;
-    return 1.0;
+  double _borderWidth(Grid grid, double scaleFactor) {
+    if (grid.isHighlighted) return 4.0 * scaleFactor; // 缩放边框宽度
+    if (grid.hasAnimal && grid.animal!.isSelected) {
+      return 3.0 * scaleFactor; // 缩放边框宽度
+    }
+    return 1.0 * scaleFactor; // 缩放边框宽度
   }
 
-  Widget _buildAnimal(Animal animal, int boardSize) {
-    double fontSize = 32 * (5 / boardSize);
-
-    fontSize = fontSize.clamp(4.0, 32.0);
+  Widget _buildAnimal(Animal animal, int boardSize, double scaleFactor) {
+    double fontSize = 32 * scaleFactor;
 
     return Container(
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.all(8 * scaleFactor), // 缩放边距
       decoration: BoxDecoration(
         color: _animalColor(animal),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(5 * scaleFactor), // 缩放圆角
       ),
       child: Center(
         child: Text(

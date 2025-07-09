@@ -9,7 +9,7 @@ import 'extension.dart';
 
 abstract class BaseAnimalChessManager {
   int boardLevel = 2;
-  int get boardSize => boardLevel * 2 + 1;
+  int get _boardSize => boardLevel * 2 + 1;
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
@@ -27,13 +27,13 @@ abstract class BaseAnimalChessManager {
         title: '设置棋牌大小',
         sliderData: SliderData(start: 2, end: 6, value: boardLevel.toDouble()),
         onConfirm: (double value) {
-          updateBoardLevel(value.floor());
+          _updateBoardLevel(value.floor());
         },
       );
     };
   }
 
-  void updateBoardLevel(int level) {
+  void _updateBoardLevel(int level) {
     boardLevel = level;
     initGame();
   }
@@ -45,18 +45,18 @@ abstract class BaseAnimalChessManager {
   }
 
   void setupBoard() {
-    displayMap.value = List.generate(boardSize * boardSize, (index) {
+    displayMap.value = List.generate(_boardSize * _boardSize, (index) {
       return GridNotifier(Grid(coordinate: index, type: _getGridType(index)));
     });
   }
 
   GridType _getGridType(int index) {
-    final row = index ~/ boardSize;
-    final col = index % boardSize;
+    final row = index ~/ _boardSize;
+    final col = index % _boardSize;
 
     if (col == boardLevel) {
       if (row == boardLevel) return GridType.bridge;
-      if (row == 0 || row == boardSize - 1) return GridType.tree;
+      if (row == 0 || row == _boardSize - 1) return GridType.tree;
       return GridType.road;
     }
 
@@ -202,18 +202,18 @@ abstract class BaseAnimalChessManager {
   }
 
   void _calculatePossibleMoves(int index) {
-    final row = index ~/ boardSize;
-    final col = index % boardSize;
+    final row = index ~/ _boardSize;
+    final col = index % _boardSize;
 
     for (final (dr, dc) in around) {
       final newRow = row + dr;
       final newCol = col + dc;
-      final newIndex = newRow * boardSize + newCol;
+      final newIndex = newRow * _boardSize + newCol;
 
       if (newRow >= 0 &&
-          newRow < boardSize &&
+          newRow < _boardSize &&
           newCol >= 0 &&
-          newCol < boardSize) {
+          newCol < _boardSize) {
         if (_isValidMove(index, newIndex)) {
           displayMap.value[newIndex].toggleHighlight(true);
           _markedGrid.add(newIndex);
