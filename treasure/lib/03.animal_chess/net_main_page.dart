@@ -88,11 +88,9 @@ class NetAnimalChessPage extends StatelessWidget {
 
         Expanded(
           flex: 1,
-          child: MessageList(
-            networkEngine: _chessManager.netTurnEngine.networkEngine,
-          ),
+          child: MessageList(networkEngine: _chessManager.netTurnEngine),
         ),
-        MessageInput(networkEngine: _chessManager.netTurnEngine.networkEngine),
+        MessageInput(networkEngine: _chessManager.netTurnEngine),
       ],
     );
   }

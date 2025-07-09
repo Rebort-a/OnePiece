@@ -38,12 +38,16 @@ class ElementalDialog {
                             ? health > 0
                                   ? () {
                                       onSelected(index);
-                                      Navigator.of(context).pop();
+                                      if (Navigator.of(context).canPop()) {
+                                        Navigator.of(context).pop();
+                                      }
                                     }
                                   : null
                             : () {
                                 onSelected(index);
-                                Navigator.of(context).pop();
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           foregroundColor: health > 0
@@ -95,7 +99,9 @@ class ElementalDialog {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          }
                           handleSkill(index);
                         },
                         child: Text(skill.name),
@@ -195,7 +201,9 @@ class ElementalDialog {
                   TextButton(
                     child: const Text('取消'),
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
                     },
                   ),
                   TextButton(
@@ -203,7 +211,9 @@ class ElementalDialog {
                       if (chosenElement != -1) {
                         upgrade(chosenElement, chosenAttribute);
                       }
-                      Navigator.of(context).pop();
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
                     },
                     child: const Text('确定'),
                   ),

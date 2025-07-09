@@ -259,7 +259,9 @@ class MapManager {
     player.props[EntityType.scroll]?.handler = (context, elemental, after) {
       after();
       _backToMain();
-      Navigator.of(context).pop();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     };
   }
 

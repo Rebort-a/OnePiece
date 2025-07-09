@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../00.common/game/gamer.dart';
 import '../00.common/game/map.dart';
 import '../00.common/model/notifier.dart';
+import '../00.common/widget/template_dialog.dart';
 import 'base.dart';
 import 'extension.dart';
 
 abstract class BaseAnimalChessManager {
   int boardLevel = 2;
-  int boardSize = 2 * 2 + 1;
+  int get boardSize => boardLevel * 2 + 1;
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
@@ -21,62 +22,26 @@ abstract class BaseAnimalChessManager {
 
   void showBoardSizeSelector() {
     pageNavigator.value = (context) {
-      int currentLevel = boardLevel;
-      showDialog(
+      TemplateDialog.sliderDialog(
         context: context,
-        builder: (context) => StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            title: const Text('设置棋盘大小'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '当前等级: $currentLevel (${currentLevel * 2 + 1}×${currentLevel * 2 + 1})',
-                ),
-                const SizedBox(height: 20),
-                Slider(
-                  value: currentLevel.toDouble(),
-                  min: 2,
-                  max: 8,
-                  divisions: 6,
-                  label: '等级 $currentLevel',
-                  onChanged: (value) {
-                    setState(() {
-                      currentLevel = value.round();
-                    });
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                child: const Text('取消'),
-                onPressed: () => Navigator.pop(context),
-              ),
-              TextButton(
-                child: const Text('确定'),
-                onPressed: () {
-                  updateBoardLevel(currentLevel);
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        ),
+        title: '设置棋牌大小',
+        sliderData: SliderData(start: 2, end: 6, value: boardLevel.toDouble()),
+        onConfirm: (double value) {
+          updateBoardLevel(value.floor());
+        },
       );
     };
   }
 
   void updateBoardLevel(int level) {
     boardLevel = level;
-    boardSize = level * 2 + 1;
-    initializeGame();
+    initGame();
   }
 
-  void initializeGame() {
+  void initGame() {
     setupBoard();
-    _placePieces();
-    _resetGameState();
+    _placeAllAnimalRandom();
+    resetGameState();
   }
 
   void setupBoard() {
@@ -98,14 +63,14 @@ abstract class BaseAnimalChessManager {
     return row == boardLevel ? GridType.river : GridType.land;
   }
 
-  void _placePieces() {
+  void _placeAllAnimalRandom() {
     final landPositions = _getLandPositions()..shuffle();
     const pieces = AnimalType.values;
 
     void placePlayerPieces(GamerType player) {
       for (int i = 0; i < pieces.length; i++) {
         final index = landPositions.removeLast();
-        placeAnimal(index, Animal(type: pieces[i], owner: player));
+        placeAnimalByIndex(index, Animal(type: pieces[i], owner: player));
       }
     }
 
@@ -113,7 +78,7 @@ abstract class BaseAnimalChessManager {
     placePlayerPieces(GamerType.rear);
   }
 
-  void placeAnimal(int index, Animal animal) {
+  void placeAnimalByIndex(int index, Animal animal) {
     displayMap.value[index].placeAnimal(animal);
   }
 
@@ -126,7 +91,7 @@ abstract class BaseAnimalChessManager {
         .toList();
   }
 
-  void _resetGameState() {
+  void resetGameState() {
     _markedGrid.clear();
     currentGamer.value = GamerType.front;
     // 重置动物数量
@@ -308,28 +273,34 @@ abstract class BaseAnimalChessManager {
       TextButton(
         child: const Text('退出'),
         onPressed: () {
-          Navigator.of(context).pop();
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
           _navigateToBack();
         },
       ),
       TextButton(
         child: const Text('重开'),
         onPressed: () {
-          Navigator.of(context).pop();
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
           _restart();
         },
       ),
       TextButton(
         child: const Text('取消'),
         onPressed: () {
-          Navigator.of(context).pop();
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
         },
       ),
     ];
   }
 
   void _restart() {
-    initializeGame();
+    initGame();
   }
 
   void leavePage() {
@@ -338,7 +309,9 @@ abstract class BaseAnimalChessManager {
 
   void _navigateToBack() {
     pageNavigator.value = (context) {
-      Navigator.of(context).pop();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     };
   }
 }

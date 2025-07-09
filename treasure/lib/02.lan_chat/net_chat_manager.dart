@@ -13,7 +13,6 @@ class NetChatManager {
       userName: userName,
       roomInfo: roomInfo,
       navigatorHandler: pageNavigator,
-      messageHandler: (message) {},
     );
   }
 }

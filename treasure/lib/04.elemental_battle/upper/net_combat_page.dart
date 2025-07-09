@@ -70,11 +70,9 @@ class NetCombatPage extends StatelessWidget {
             : _buildPrepare(step)),
 
         Expanded(
-          child: MessageList(
-            networkEngine: _combatManager.netTurnEngine.networkEngine,
-          ),
+          child: MessageList(networkEngine: _combatManager.netTurnEngine),
         ),
-        MessageInput(networkEngine: _combatManager.netTurnEngine.networkEngine),
+        MessageInput(networkEngine: _combatManager.netTurnEngine),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:treasure/00.common/widget/template_dialog.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/engine/net_turn_engine.dart';
@@ -21,7 +22,7 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
     netTurnEngine = NetTurnGameEngine(
       userName: userName,
       roomInfo: roomInfo,
-      pageNavigator: pageNavigator,
+      navigatorHandler: pageNavigator,
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
@@ -30,8 +31,8 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
   }
 
   void _searchHandler() {
-    initializeGame();
-    netTurnEngine.networkEngine.sendNetworkMessage(
+    initGame();
+    netTurnEngine.sendNetworkMessage(
       MessageType.resource,
       _mapToString(),
     ); // 然后通过网络发送
@@ -40,10 +41,8 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
   void _resourceHandler(TurnGameStep step, NetworkMessage message) {
     if (step == TurnGameStep.connected || step == TurnGameStep.rearWait) {
       _stringToMap(message.content);
-      netTurnEngine.networkEngine.sendNetworkMessage(
-        MessageType.resource,
-        "ok",
-      );
+      resetGameState();
+      netTurnEngine.sendNetworkMessage(MessageType.resource, "ok");
     }
   }
 
@@ -58,13 +57,14 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
           // 敌人行为直接生效，然后回合会切换为自己回合
           selectGrid(index);
         }
+      } else {
+        // 视为对方投降
+        showChessResult(netTurnEngine.playerType == GamerType.front);
       }
     }
   }
 
-  void _endHandler() {
-    showChessResult(netTurnEngine.playerType == GamerType.front);
-  }
+  void _endHandler() {}
 
   String _mapToString() {
     // 只序列化动物分布信息
@@ -83,13 +83,17 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
         })
         .toList();
 
-    return jsonEncode({'boardSize': boardSize, 'animals': animalDistribution});
+    return jsonEncode({
+      'boardLevel': boardLevel,
+      'animals': animalDistribution,
+    });
   }
 
   void _stringToMap(String content) {
     final jsonData = jsonDecode(content);
-    boardSize = jsonData['boardSize'];
+    boardLevel = jsonData['boardLevel'];
 
+    // 初始化棋牌
     setupBoard();
 
     // 放置动物
@@ -101,14 +105,18 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
       final type = AnimalType.values[data[2] as int];
       final isHidden = data[3] == 1;
 
-      placeAnimal(index, Animal(type: type, owner: owner, isHidden: isHidden));
+      placeAnimalByIndex(
+        index,
+        Animal(type: type, owner: owner, isHidden: isHidden),
+      );
     }
   }
 
   void sendActionMessage(int index) {
-    if (netTurnEngine.gameStep.value == TurnGameStep.action &&
-        currentGamer.value == netTurnEngine.playerType) {
-      netTurnEngine.networkEngine.sendNetworkMessage(
+    if ((netTurnEngine.gameStep.value == TurnGameStep.action &&
+            currentGamer.value == netTurnEngine.playerType) ||
+        index == -1) {
+      netTurnEngine.sendNetworkMessage(
         MessageType.action,
         jsonEncode({'index': index}),
       );
@@ -119,45 +127,36 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
   void showChessResult(bool isRedWin) {
     netTurnEngine.gameStep.value = TurnGameStep.gamerOver;
     pageNavigator.value = (context) {
-      showDialog(
+      TemplateDialog.confirmDialog(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("游戏结束"),
-            content: Text("${isRedWin ? "红" : "蓝"}方获胜！"),
-            actions: [
-              TextButton(
-                child: const Text('退出'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
+        title: '游戏结束',
+        content: "${isRedWin ? "红" : "蓝"}方获胜！",
+        before: () => true,
+        onTap: () {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
         },
-      ).then((_) {
-        // 处理对话框关闭后的逻辑
-        netTurnEngine.networkEngine.leavePage();
-      });
+        after: () {
+          netTurnEngine.leavePage();
+        },
+      );
     };
   }
 
   @override
   void leavePage() {
-    netTurnEngine.networkEngine.leavePage();
+    netTurnEngine.leavePage();
   }
 
   void surrender() {
-    netTurnEngine.networkEngine.sendNetworkMessage(
-      MessageType.end,
-      'give up',
-    ); // 发送投降消息
+    sendActionMessage(-1); // 发送投降消息
     showChessResult(
       netTurnEngine.playerType == GamerType.rear,
     ); //直接显示游戏结果，不必等到服务器响应，防止网络异常时无法退出
   }
 
   void exitRoom() {
-    netTurnEngine.networkEngine.leavePage();
+    netTurnEngine.leavePage();
   }
 }

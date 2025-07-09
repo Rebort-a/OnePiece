@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../../00.common/game/gamer.dart';
+import '../../00.common/widget/notifier_navigator.dart';
 import '../middleware/base_combat_page.dart';
 import '../middleware/elemental.dart';
 import 'local_combat_manager.dart';
@@ -34,6 +35,7 @@ class LocalCombatPage extends StatelessWidget {
         ),
         body: Column(
           children: [
+            NotifierNavigator(navigatorHandler: _combatManager.pageNavigator),
             ...BaseCombatPage(combatManager: _combatManager).buildPage(),
             _buildBlankRegion(),
           ],

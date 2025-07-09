@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
 
+class SliderData {
+  double start;
+  double end;
+  double value;
+
+  SliderData({required this.start, required this.end, required this.value}) {
+    value = value.clamp(start, end);
+  }
+
+  int get divisions => (end - start).toInt();
+}
+
 class TemplateDialog {
   static void confirmDialog({
     required BuildContext context,
@@ -20,7 +32,9 @@ class TemplateDialog {
               TextButton(
                 child: const Text('关闭'),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
                   onTap();
                 },
               ),
@@ -57,7 +71,9 @@ class TemplateDialog {
               child: Text(confirmButtonText),
               onPressed: () {
                 if (input.isNotEmpty) {
-                  Navigator.of(context).pop();
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
                   onConfirm(input);
                 }
               },
@@ -65,7 +81,9 @@ class TemplateDialog {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ],
@@ -124,7 +142,9 @@ class TemplateDialog {
               child: Text(confirmButtonText),
               onPressed: () {
                 if (input.isNotEmpty) {
-                  Navigator.of(context).pop();
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
                   onConfirm(input, selectedOption);
                 }
               },
@@ -132,12 +152,63 @@ class TemplateDialog {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ],
         );
       },
+    );
+  }
+
+  static void sliderDialog({
+    required BuildContext context,
+    required String title,
+    required SliderData sliderData,
+    required Function(double value) onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('当前值: ${sliderData.value}', style: TextStyle(fontSize: 16)),
+              const SizedBox(height: 20),
+              Slider(
+                value: sliderData.value,
+                min: sliderData.start,
+                max: sliderData.end,
+                divisions: sliderData.divisions,
+                label: '${sliderData.value}',
+                onChanged: (value) {
+                  setState(() {
+                    sliderData.value = value;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text("确定"),
+              onPressed: () {
+                onConfirm(sliderData.value);
+                Navigator.pop(context);
+              },
+            ),
+
+            TextButton(
+              child: Text("取消"),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

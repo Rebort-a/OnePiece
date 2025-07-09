@@ -72,8 +72,6 @@ abstract class BaseCombatManager {
     final attacker = isSelf ? player : enemy;
     final defender = isSelf ? enemy : player;
 
-    addCombatInfo('${attacker.getAppointName(attacker.current)} 选择了 攻击');
-
     final result = attacker.combatRequest(defender, defender.current, infoList);
     handleActionResult(isSelf, result);
   }
@@ -160,9 +158,7 @@ abstract class BaseCombatManager {
   }
 
   void handleEscape(bool isSelf) {
-    if (!isSelf) {
-      updateGameStepAfterAction(false, 2);
-    }
+    updateGameStepAfterAction(isSelf, 2);
   }
 
   void handleParry(bool isSelf, GameAction action) {
@@ -236,7 +232,9 @@ abstract class BaseCombatManager {
 
   void _navigateToBack() {
     pageNavigator.value = (context) {
-      Navigator.of(context).pop();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     };
   }
 }

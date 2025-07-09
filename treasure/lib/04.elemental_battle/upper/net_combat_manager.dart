@@ -26,7 +26,7 @@ class NetCombatManager extends BaseCombatManager {
     netTurnEngine = NetTurnGameEngine(
       userName: userName,
       roomInfo: roomInfo,
-      pageNavigator: pageNavigator,
+      navigatorHandler: pageNavigator,
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
@@ -108,11 +108,11 @@ class NetCombatManager extends BaseCombatManager {
   }
 
   void _sendRoleConfig(Map<EnergyType, EnergyConfig> configs) {
-    netTurnEngine.networkEngine.sendNetworkMessage(
+    netTurnEngine.sendNetworkMessage(
       MessageType.resource,
       jsonEncode(
         Elemental.configsToJson(
-          netTurnEngine.networkEngine.userName,
+          netTurnEngine.userName,
           configs,
           Random().nextInt(EnergyType.values.length),
         ),
@@ -176,7 +176,7 @@ class NetCombatManager extends BaseCombatManager {
   void _sendActionMessage(int actionIndex, int targetIndex) {
     if ((netTurnEngine.playerType == currentGamer.value) ||
         (actionIndex == ConationType.escape.index)) {
-      netTurnEngine.networkEngine.sendNetworkMessage(
+      netTurnEngine.sendNetworkMessage(
         MessageType.action,
         jsonEncode(
           GameAction(actionIndex: actionIndex, targetIndex: targetIndex),
@@ -195,7 +195,7 @@ class NetCombatManager extends BaseCombatManager {
 
   @override
   void leavePage() {
-    netTurnEngine.networkEngine.leavePage();
+    netTurnEngine.leavePage();
   }
 
   void surrender() {
@@ -204,6 +204,6 @@ class NetCombatManager extends BaseCombatManager {
   }
 
   void exitRoom() {
-    netTurnEngine.networkEngine.leavePage();
+    netTurnEngine.leavePage();
   }
 }

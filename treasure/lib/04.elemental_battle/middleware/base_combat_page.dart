@@ -4,6 +4,7 @@ import '../foundation/energy.dart';
 import 'base_combat_manager.dart';
 
 import '../middleware/elemental.dart';
+import 'common.dart';
 
 class BaseCombatPage {
   final BaseCombatManager combatManager;
@@ -204,10 +205,22 @@ class BattleButtonRegion extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildButton("进攻", combatManager.conductAttack),
-        _buildButton("格挡", combatManager.conductParry),
-        _buildButton("技能", combatManager.conductSkill),
-        _buildButton("逃跑", combatManager.conductEscape),
+        _buildButton(
+          "${BaseCombatManager.conationNames[ConationType.attack]}",
+          combatManager.conductAttack,
+        ),
+        _buildButton(
+          "${BaseCombatManager.conationNames[ConationType.parry]}",
+          combatManager.conductParry,
+        ),
+        _buildButton(
+          "${BaseCombatManager.conationNames[ConationType.skill]}",
+          combatManager.conductSkill,
+        ),
+        _buildButton(
+          "${BaseCombatManager.conationNames[ConationType.escape]}",
+          combatManager.conductEscape,
+        ),
       ],
     );
   }

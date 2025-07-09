@@ -118,12 +118,18 @@ class _SkillsPageState extends State<SkillsPage> {
               } else {
                 TemplateDialog.snackBarDialog(context, '经验不足！');
               }
-              Navigator.of(context).pop();
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
             },
           ),
         TextButton(
           child: Text(_showSkills[index].learned ? '关闭' : '取消'),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
         ),
       ],
     );

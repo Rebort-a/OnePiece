@@ -3,7 +3,7 @@ import 'foundation_manager.dart';
 
 class LoaclAnimalChessManager extends BaseAnimalChessManager {
   LoaclAnimalChessManager() {
-    initializeGame();
+    initGame();
   }
 
   @override
