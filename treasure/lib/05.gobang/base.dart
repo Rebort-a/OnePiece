@@ -58,9 +58,8 @@ class Board {
     int row = index ~/ size;
     int col = index % size;
 
-    int count = 1; // 当前位置已经有1个棋子
-
     for (final (dr, dc) in planeConnection) {
+      int count = 1; // 当前位置已经有1个棋子
       for (int dir = -1; dir <= 1; dir += 2) {
         for (int i = 1; i < 5; i++) {
           final newRow = row + dr * i * dir;
@@ -75,10 +74,10 @@ class Board {
           }
         }
       }
-    }
-
-    if (count >= 5) {
-      gameOver = true;
+      if (count >= 5) {
+        gameOver = true;
+        break;
+      }
     }
 
     changeGamer(currentGamer.value.opponent);
