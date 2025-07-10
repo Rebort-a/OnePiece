@@ -147,7 +147,7 @@ class NetCombatManager extends BaseCombatManager {
           showSkillSelection();
           break;
         case ConationType.escape:
-          surrender();
+          leavePage();
           break;
       }
     }
@@ -195,15 +195,6 @@ class NetCombatManager extends BaseCombatManager {
 
   @override
   void leavePage() {
-    netTurnEngine.leavePage();
-  }
-
-  void surrender() {
-    _sendActionMessage(ConationType.escape.index, player.current);
-    updateGameStepAfterAction(true, 2); // 直接处理，不需要服务器返回，防止服务器断开时无法退出
-  }
-
-  void exitRoom() {
     netTurnEngine.leavePage();
   }
 }

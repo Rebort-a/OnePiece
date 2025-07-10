@@ -89,6 +89,9 @@ class NetTurnGameEngine extends NetworkEngine {
   }
 
   void _handleResourceMessage(NetworkMessage message) {
+    // 匹配到对手后进入，交换资源阶段，不是所有游戏都需要先后手都生成资源并交互
+    // 正常顺序为，先手在frontConfig->frontWait->action
+    //   后手在(connected/rearWait)->rearConfig->action
     bool isSelf = message.id == identify && message.source == userName;
     bool isEnemy = message.id == enemyIdentify;
 

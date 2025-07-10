@@ -647,7 +647,7 @@ class MapManager {
   void _clearAroundFog(int y, int x) {
     displayMap.value[y * mapSize + x].setFog(false);
 
-    for (final (dy, dx) in around) {
+    for (final (dy, dx) in planeAround) {
       int newY = y + dy;
       int newX = x + dx;
       if (_checkInMap(newY, newX)) {

@@ -52,7 +52,7 @@ class NetCombatPage extends StatelessWidget {
       return AppBar(
         leading: IconButton(
           icon: Icon(Icons.exit_to_app),
-          onPressed: _combatManager.exitRoom,
+          onPressed: _combatManager.leavePage,
         ),
         title: Text("结算"),
         centerTitle: true,
@@ -79,6 +79,7 @@ class NetCombatPage extends StatelessWidget {
 
   List<Widget> _buildPrepare(TurnGameStep step) {
     return [
+      const SizedBox(height: 20),
       if (step == TurnGameStep.disconnect || step == TurnGameStep.connected)
         const CircularProgressIndicator(),
       const SizedBox(height: 20),

@@ -57,9 +57,6 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
           // 敌人行为直接生效，然后回合会切换为自己回合
           selectGrid(index);
         }
-      } else {
-        // 视为对方投降
-        showChessResult(netTurnEngine.playerType == GamerType.front);
       }
     }
   }
@@ -146,17 +143,6 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
 
   @override
   void leavePage() {
-    netTurnEngine.leavePage();
-  }
-
-  void surrender() {
-    sendActionMessage(-1); // 发送投降消息
-    showChessResult(
-      netTurnEngine.playerType == GamerType.rear,
-    ); //直接显示游戏结果，不必等到服务器响应，防止网络异常时无法退出
-  }
-
-  void exitRoom() {
     netTurnEngine.leavePage();
   }
 }

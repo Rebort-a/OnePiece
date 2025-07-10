@@ -43,27 +43,20 @@ class NetAnimalChessPage extends StatelessWidget {
   }
 
   AppBar _buildAppBar(TurnGameStep step) {
-    // 根据游戏步骤确定图标和点击事件
+    // 根据游戏步骤确定图标
     IconData icon;
-    VoidCallback? onPressed;
 
     if (step.index < TurnGameStep.action.index) {
-      // 游戏准备阶段 - 返回按钮
       icon = Icons.arrow_back;
-      onPressed = _chessManager.leavePage;
     } else if (step.index == TurnGameStep.action.index) {
-      // 游戏进行阶段 - 投降按钮
-      icon = Icons.flag; // 使用旗帜图标表示投降
-      onPressed = _chessManager.surrender; // 假设存在surrender方法
+      icon = Icons.flag;
     } else {
-      // 游戏结束阶段 - 退出房间
       icon = Icons.exit_to_app;
-      onPressed = _chessManager.exitRoom; // 假设存在exitRoom方法
     }
 
     return AppBar(
-      leading: IconButton(icon: Icon(icon), onPressed: onPressed),
-      title: const Text('斗兽棋'),
+      leading: IconButton(icon: Icon(icon), onPressed: _chessManager.leavePage),
+      title: const Text('网络斗兽棋'),
       centerTitle: true,
     );
   }
@@ -73,9 +66,8 @@ class NetAnimalChessPage extends StatelessWidget {
       children: [
         // 弹出页面
         NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
-        ...(step.index < TurnGameStep.action.index
-            ? _buildPrepare(step)
-            : [
+        ...(step == TurnGameStep.action
+            ? [
                 _buildTurnIndicator(),
                 Expanded(
                   flex: 3,
@@ -84,7 +76,8 @@ class NetAnimalChessPage extends StatelessWidget {
                     onGridSelected: _chessManager.sendActionMessage,
                   ),
                 ),
-              ]),
+              ]
+            : _buildPrepare(step)),
 
         Expanded(
           flex: 1,
@@ -112,6 +105,7 @@ class NetAnimalChessPage extends StatelessWidget {
 
   List<Widget> _buildPrepare(TurnGameStep step) {
     return [
+      const SizedBox(height: 20),
       const CircularProgressIndicator(),
       const SizedBox(height: 20),
       Text(step.getExplaination()),

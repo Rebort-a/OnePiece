@@ -1,6 +1,3 @@
-const List<(int, int)> around = [
-  (-1, 0), // up
-  (1, 0), // down
-  (0, -1), // left
-  (0, 1), // right
-];
+const List<(int, int)> planeAround = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+
+const List<(int, int)> planeConnection = [(1, 0), (0, 1), (1, 1), (-1, 1)];

@@ -1,46 +1,116 @@
+import 'package:flutter/material.dart';
+
 import '../00.common/game/gamer.dart';
+import '../00.common/game/map.dart';
+import '../00.common/model/notifier.dart';
 
-class Piece {
-  final GamerType player;
-  final int row;
-  final int col;
+class Grid {
+  final int coordinate;
+  int state = GamerType.values.length;
 
-  Piece({required this.player, required this.row, required this.col});
+  Grid({required this.coordinate});
+
+  bool hasPiece() {
+    return (state >= 0 && state < GamerType.values.length);
+  }
+}
+
+class GridNotifier extends ValueNotifier<Grid> {
+  GridNotifier(super.value);
+
+  void placePiece(GamerType player) {
+    value.state = player.index;
+    notifyListeners();
+  }
+
+  void clear() {
+    if (value.hasPiece()) {
+      value.state = GamerType.values.length;
+      notifyListeners();
+    }
+  }
 }
 
 class Board {
   final int size;
-  late List<List<GamerType?>> grid;
+  final ListNotifier<GridNotifier> grids = ListNotifier([]);
+  List<Grid> moveHistory = [];
+  AlwaysNotifier<GamerType> currentGamer = AlwaysNotifier(GamerType.front);
+  bool gameOver = false;
 
   Board({required this.size}) {
-    grid = List.generate(size, (_) => List.filled(size, null));
+    grids.value = List.generate(size * size, (index) {
+      return GridNotifier(Grid(coordinate: index));
+    });
   }
 
-  bool placePiece(int row, int col, GamerType player) {
-    if (grid[row][col] != null) return false;
-    grid[row][col] = player;
-    return true;
+  void placePiece(int index) {
+    GridNotifier grid = grids.value[index];
+
+    if (!gameOver && !grid.value.hasPiece()) {
+      grid.placePiece(currentGamer.value);
+      moveHistory.add(grid.value);
+      _checkWin(index);
+    }
   }
 
-  GamerType? getPiece(int row, int col) => grid[row][col];
+  void _checkWin(int index) {
+    int row = index ~/ size;
+    int col = index % size;
 
-  void clear() {
-    grid = List.generate(size, (_) => List.filled(size, null));
+    int count = 1; // 当前位置已经有1个棋子
+
+    for (final (dr, dc) in planeConnection) {
+      for (int dir = -1; dir <= 1; dir += 2) {
+        for (int i = 1; i < 5; i++) {
+          final newRow = row + dr * i * dir;
+          final newCol = col + dc * i * dir;
+
+          if (checkInMap(newRow, newCol) &&
+              (grids.value[newRow * size + newCol].value.state ==
+                  currentGamer.value.index)) {
+            count++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    if (count >= 5) {
+      gameOver = true;
+    }
+
+    changeGamer(currentGamer.value.opponent);
   }
-}
 
-class GameState {
-  final Board board;
-  GamerType currentPlayer;
-  GamerType? winner;
-  List<Piece> moveHistory = [];
-
-  GameState({required this.board, this.currentPlayer = GamerType.front});
-
-  void reset() {
-    board.clear();
-    currentPlayer = GamerType.front;
-    winner = null;
+  void restart() {
+    _clear();
     moveHistory.clear();
+    changeGamer(GamerType.front);
+    gameOver = false;
+  }
+
+  void _clear() {
+    for (int i = 0; i < size * size; i++) {
+      grids.value[i].clear();
+    }
+  }
+
+  void undoMove() {
+    if (moveHistory.isEmpty) return;
+
+    final lastMove = moveHistory.removeLast();
+    grids.value[lastMove.coordinate].clear();
+    gameOver = false;
+    changeGamer(currentGamer.value.opponent);
+  }
+
+  void changeGamer(GamerType gamer) {
+    currentGamer.value = gamer;
+  }
+
+  bool checkInMap(x, y) {
+    return (x >= 0) && (x < size) && (y >= 0) && (y < size);
   }
 }

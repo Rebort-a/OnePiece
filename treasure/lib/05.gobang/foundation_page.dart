@@ -20,10 +20,9 @@ class GomokuBoard extends StatelessWidget {
           border: Border.all(color: const Color(0xFFDCB35C), width: 8),
         ),
         child: ValueListenableBuilder(
-          valueListenable: manager.gameState,
-          builder: (context, state, child) {
-            Board board = state.board;
-            if (board.size == 0) {
+          valueListenable: manager.board.grids,
+          builder: (context, grids, child) {
+            if (grids.isEmpty) {
               return const Center(child: Text('地图数据为空'));
             }
 
@@ -31,9 +30,9 @@ class GomokuBoard extends StatelessWidget {
               builder: (context, constraints) {
                 final double boardSize = _calculateBoardSize(
                   constraints,
-                  board.size,
+                  manager.board.size,
                 );
-                final double cellSize = boardSize / board.size;
+                final double cellSize = boardSize / manager.board.size;
 
                 return SizedBox(
                   width: boardSize,
@@ -41,44 +40,20 @@ class GomokuBoard extends StatelessWidget {
                   child: GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: board.size,
+                      crossAxisCount: manager.board.size,
                       childAspectRatio: 1,
                       mainAxisSpacing: 0,
                       crossAxisSpacing: 0,
                     ),
-                    itemCount: board.size * board.size,
+                    itemCount: grids.length,
                     itemBuilder: (context, index) {
-                      final int row = index ~/ board.size;
-                      final int col = index % board.size;
-                      final piece = board.getPiece(row, col);
-
                       return Container(
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.black, width: 0.5),
                         ),
-                        child: Center(
-                          child: piece != null
-                              ? Container(
-                                  width: cellSize * 0.8,
-                                  height: cellSize * 0.8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: piece == GamerType.front
-                                        ? Colors.black
-                                        : Colors.white,
-                                    border: piece == GamerType.rear
-                                        ? Border.all(
-                                            color: Colors.black,
-                                            width: 1.5,
-                                          )
-                                        : null,
-                                  ),
-                                )
-                              : GestureDetector(
-                                  onTap: () => manager.placePiece(row, col),
-                                  child: Container(color: Colors.transparent),
-                                ),
-                        ),
+                        width: cellSize,
+                        height: cellSize,
+                        child: _buildPiece(grids[index], index, cellSize),
                       );
                     },
                   ),
@@ -94,5 +69,34 @@ class GomokuBoard extends StatelessWidget {
   double _calculateBoardSize(BoxConstraints constraints, int cellCount) {
     final double maxSize = constraints.maxWidth;
     return (maxSize ~/ cellCount) * cellCount.toDouble();
+  }
+
+  Widget _buildPiece(GridNotifier notifier, int index, double cellSize) {
+    return ValueListenableBuilder(
+      valueListenable: notifier,
+      builder: (_, grid, __) {
+        if (grid.hasPiece()) {
+          final GamerType piece = GamerType.values[grid.state];
+          return Center(
+            child: Container(
+              width: cellSize * 0.8,
+              height: cellSize * 0.8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: piece == GamerType.front ? Colors.black : Colors.white,
+                border: piece == GamerType.rear
+                    ? Border.all(color: Colors.black, width: 1.5)
+                    : null,
+              ),
+            ),
+          );
+        } else {
+          return GestureDetector(
+            onTap: () => manager.placePiece(index),
+            child: Container(color: Colors.transparent),
+          );
+        }
+      },
+    );
   }
 }

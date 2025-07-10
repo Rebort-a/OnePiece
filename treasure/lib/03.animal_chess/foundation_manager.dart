@@ -205,7 +205,7 @@ abstract class BaseAnimalChessManager {
     final row = index ~/ _boardSize;
     final col = index % _boardSize;
 
-    for (final (dr, dc) in around) {
+    for (final (dr, dc) in planeAround) {
       final newRow = row + dr;
       final newCol = col + dc;
       final newIndex = newRow * _boardSize + newCol;
