@@ -190,19 +190,6 @@ class NetworkEngine {
     }
   }
 
-  void handleOpponentExit() {
-    navigatorHandler.value = (context) {
-      TemplateDialog.confirmDialog(
-        context: context,
-        title: "Competitors withdraw",
-        content: "The opponent has withdrawn",
-        before: () => true,
-        onTap: () {},
-        after: () {},
-      );
-    };
-  }
-
   void _handleSocketDone() {
     if (_isDisposed) return;
 
@@ -264,10 +251,10 @@ class NetworkEngine {
     );
 
     _sendBuffer.add(message);
-    _processMessageQueue();
+    _pushMessage();
   }
 
-  Future<void> _processMessageQueue() async {
+  Future<void> _pushMessage() async {
     if (_isSending || _sendBuffer.isEmpty) return;
 
     _isSending = true;
@@ -331,5 +318,18 @@ class NetworkEngine {
     // scrollController.dispose();
     // textController.dispose();
     // messageList.dispose();
+  }
+
+  void handleOpponentExit() {
+    navigatorHandler.value = (context) {
+      TemplateDialog.confirmDialog(
+        context: context,
+        title: "Competitors withdraw",
+        content: "The opponent has withdrawn",
+        before: () => true,
+        onTap: () {},
+        after: () {},
+      );
+    };
   }
 }

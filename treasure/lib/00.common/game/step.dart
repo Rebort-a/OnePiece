@@ -10,7 +10,6 @@ enum TurnGameStep {
   gamerOver,
 }
 
-// 为TurnGameStep添加扩展，实现getStatusMessage方法
 extension TurnGameStepExtension on TurnGameStep {
   String getExplaination() {
     switch (this) {

@@ -353,7 +353,7 @@ class MapManager {
       ).then((value) {
         // 当页面弹出（即返回）时，这个回调会被执行
         _startActive(); // 重新启动定时器
-        if (value is ResultType) {
+        if (value != null && value is ResultType) {
           if (value == ResultType.victory) {
             player.experience += 10 + 2 * enemy.grade;
             _mapData.entities.remove(enemy);

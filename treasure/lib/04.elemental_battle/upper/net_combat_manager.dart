@@ -99,9 +99,9 @@ class NetCombatManager extends BaseCombatManager {
               builder: (_) => const CastPage(totalPoints: 30),
             ),
           )
-          .then((configs) {
-            if (configs != null) {
-              _sendRoleConfig(configs);
+          .then((value) {
+            if (value != null && value is Map<EnergyType, EnergyConfig>) {
+              _sendRoleConfig(value);
             }
           });
     };
