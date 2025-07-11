@@ -10,7 +10,7 @@ enum MessageType {
   match,
   resource,
   action,
-  end,
+  exit,
 
   // 聊天信息
   notify,

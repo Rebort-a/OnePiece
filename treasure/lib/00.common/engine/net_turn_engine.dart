@@ -11,7 +11,7 @@ class NetTurnGameEngine extends NetworkEngine {
   );
 
   late final GamerType playerType;
-  late final int enemyIdentify;
+  int enemyIdentify = 0;
 
   final void Function() searchHandler;
   final void Function(TurnGameStep, NetworkMessage) resourceHandler;
@@ -48,8 +48,8 @@ class NetTurnGameEngine extends NetworkEngine {
       case MessageType.action:
         _handleActionMessage(message);
         break;
-      case MessageType.end:
-        _handleEndMessage(message);
+      case MessageType.exit:
+        _handleExitMessage(message);
         break;
       default:
         break;
@@ -68,12 +68,12 @@ class NetTurnGameEngine extends NetworkEngine {
   void _handleSearchMessage(NetworkMessage message) {
     // 只有先手才能获得非自身发出的SearchMessage
     // 如果在连接状态下，收到他人查找对手的消息，那么直接匹配到对手，确定自身为先手，更新游戏状态到先手配置阶段，同时向对手发送匹配成功的信息
-    // 然后有两种选择，要么界面上根据游戏阶段，出现配置按钮，点击后生成游戏资源，要么直接生成游戏资源，取决于searchHandler
     if (gameStep.value == TurnGameStep.connected && message.id != identify) {
       enemyIdentify = message.id;
       sendNetworkMessage(MessageType.match, 'Match to opponent');
       playerType = GamerType.front;
       gameStep.value = TurnGameStep.frontConfig;
+      // 然后有两种选择，要么界面上根据游戏阶段，出现配置按钮，点击后生成游戏资源，要么直接生成游戏资源，并通过网络发送
       searchHandler();
     }
   }
@@ -124,23 +124,27 @@ class NetTurnGameEngine extends NetworkEngine {
   }
 
   void _handleActionMessage(NetworkMessage message) {
-    bool isSelf = message.id == identify && message.source == userName;
+    if (gameStep.value == TurnGameStep.action) {
+      bool isSelf = message.id == identify && message.source == userName;
 
-    bool isEnemy = message.id == enemyIdentify;
+      bool isEnemy = message.id == enemyIdentify;
 
-    if (isSelf || isEnemy) {
-      // 处理敌人和自己的行动信息
-      actionHandler(isSelf, message);
+      if (isSelf || isEnemy) {
+        // 处理敌人和自己的行动信息
+        actionHandler(isSelf, message);
+      }
     }
   }
 
-  void _handleEndMessage(NetworkMessage message) {
-    bool isEnemy = message.id == enemyIdentify;
+  void _handleExitMessage(NetworkMessage message) {
+    if (identify != 0 && enemyIdentify != 0) {
+      bool isEnemy = message.id == enemyIdentify;
 
-    if (isEnemy) {
-      // 只处理敌人的结束信息，因为自己结束会直接退出
-      endHandler();
-      handleOpponentExit();
+      if (isEnemy) {
+        // 只处理敌人的结束信息，因为自己结束会直接退出
+        endHandler();
+        handleOpponentExit();
+      }
     }
   }
 }

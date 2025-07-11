@@ -82,7 +82,7 @@ class NetworkEngine {
     }
   }
 
-  void _extractMessages() {
+  Future<void> _extractMessages() async {
     // 网络消息都是JSON格式，{}成对出现
     int startIndex = 0;
 
@@ -287,7 +287,6 @@ class NetworkEngine {
   }
 
   void _handleError(String note, Object error) {
-    if (_isDisposed) return;
     debugPrint("$note: $error");
   }
 
@@ -297,7 +296,7 @@ class NetworkEngine {
     // 发送离开房间消息
     if (_isSocketConnected) {
       try {
-        sendNetworkMessage(MessageType.end, '');
+        sendNetworkMessage(MessageType.exit, 'give up');
         sendNetworkMessage(MessageType.notify, 'leave room');
         // 给消息发送留出时间
         Future.delayed(const Duration(milliseconds: 200), _dispose);
