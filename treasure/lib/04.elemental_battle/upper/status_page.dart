@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../foundation/effect.dart';
 import '../middleware/elemental.dart';
+import '../middleware/player.dart';
 
 class StatusPage extends StatefulWidget {
   final Elemental elemental;
@@ -23,16 +24,8 @@ class _StatusPageState extends State<StatusPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('状态'),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          _buildStatusInfo(),
-          _buildNavigationButtons(),
-        ],
-      ),
+      appBar: AppBar(title: const Text('状态'), centerTitle: true),
+      body: Column(children: [_buildStatusInfo(), _buildNavigationButtons()]),
     );
   }
 
@@ -56,8 +49,15 @@ class _StatusPageState extends State<StatusPage> {
   Widget _buildNameInfo() {
     return Column(
       children: [
-        Text(widget.elemental.name,
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          widget.elemental.name,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        if (widget.elemental is NormalPlayer)
+          Text(
+            '经验: ${(widget.elemental as NormalPlayer).experience}',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
       ],
     );
   }
@@ -68,9 +68,11 @@ class _StatusPageState extends State<StatusPage> {
         _buildTextItem('等级: ${widget.elemental.getAppointLevel(_index)}'),
         _buildTextItem('生命值上限: ${widget.elemental.getAppointCapacity(_index)}'),
         _buildTextItem(
-            '初始攻击力: ${widget.elemental.getAppointAttackBase(_index)}'),
+          '初始攻击力: ${widget.elemental.getAppointAttackBase(_index)}',
+        ),
         _buildTextItem(
-            '初始防御力: ${widget.elemental.getAppointDefenceBase(_index)}'),
+          '初始防御力: ${widget.elemental.getAppointDefenceBase(_index)}',
+        ),
         const Divider(),
         _buildTextItem('当前生命值: ${widget.elemental.getAppointHealth(_index)}'),
         _buildTextItem('当前攻击力: ${widget.elemental.getAppointAttack(_index)}'),
@@ -98,17 +100,21 @@ class _StatusPageState extends State<StatusPage> {
       subtitle: Column(
         children: widget.elemental
             .getAppointEffects(_index)
-            .where((effect) =>
-                (effect.type == EffectType.infinite || effect.times > 0))
-            .map((effect) => _buildTextItem(
-                  '${effect.id} ${effect.type} ${effect.value} ${effect.times}',
-                ))
+            .where(
+              (effect) =>
+                  (effect.type == EffectType.infinite || effect.times > 0),
+            )
+            .map(
+              (effect) => _buildTextItem(
+                '${effect.id} ${effect.type} ${effect.value} ${effect.times}',
+              ),
+            )
             .toList(),
       ),
     );
   }
 
-// 自定义文本组件，用于统一文本展示的样式
+  // 自定义文本组件，用于统一文本展示的样式
   Widget _buildTextItem(String text) {
     return Text(text, style: const TextStyle(fontSize: 16)); // 可以根据需要调整样式
   }
@@ -133,10 +139,7 @@ class _StatusPageState extends State<StatusPage> {
   }
 
   Widget _buildNavigationButton(IconData icon, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: Icon(icon),
-    );
+    return ElevatedButton(onPressed: onPressed, child: Icon(icon));
   }
 
   Widget _buildElementName() {
