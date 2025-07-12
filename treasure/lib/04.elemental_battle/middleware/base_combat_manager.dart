@@ -76,7 +76,7 @@ abstract class BaseCombatManager {
     final attacker = isSelf ? player : enemy;
     final defender = isSelf ? enemy : player;
 
-    addCombatInfo('${attacker.preview.name.value} 选择了 攻击');
+    addCombatInfo('${attacker.getAppointName(attacker.current)} 选择了 攻击');
 
     final result = attacker.combatRequest(defender, defender.current, infoList);
     handleActionResult(isSelf, result);
@@ -191,8 +191,7 @@ abstract class BaseCombatManager {
   }
 
   bool _switchNext(Elemental elemental) {
-    elemental.switchAliveByOrder();
-    if (elemental.getAppointHealth(elemental.current) <= 0) return false;
+    if (!elemental.switchAliveByOrder()) return false;
 
     addCombatInfo(
       '${elemental.baseName} 切换为 ${elemental.getAppointName(elemental.current)}',

@@ -52,10 +52,10 @@ class NetCombatManager extends BaseCombatManager {
       // 后手收到敌人的信息，匹配到敌人，初始化enemy
       netTurnEngine.enemyIdentify = message.id;
       enemy = Elemental.fromJson(jsonData);
-    } else if (step == TurnGameStep.rearConfig) {
+    } else if (step == TurnGameStep.rearWait) {
       // 后手收到敌人的信息，初始化enemy
       enemy = Elemental.fromJson(jsonData);
-    } else if (step == TurnGameStep.rearWait) {
+    } else if (step == TurnGameStep.rearConfig) {
       // 后手收到自己的信息，初始化player，并开始战斗
       player = Elemental.fromJson(jsonData);
       initCombat(netTurnEngine.playerType);
