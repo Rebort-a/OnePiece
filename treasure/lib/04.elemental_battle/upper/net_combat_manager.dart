@@ -71,10 +71,6 @@ class NetCombatManager extends BaseCombatManager {
       return addCombatInfo('\n服务器：不是你的回合\n');
     }
 
-    addCombatInfo(
-      '${message.source} 选择了 ${BaseCombatManager.conationNames[actionType]}',
-    );
-
     final actionHandlers = {
       ConationType.attack: () => handleAttack(isSelf),
       ConationType.escape: () => handleEscape(isSelf),
@@ -100,22 +96,20 @@ class NetCombatManager extends BaseCombatManager {
             ),
           )
           .then((value) {
-            if (value != null && value is Map<EnergyType, EnergyConfig>) {
+            if (value != null && value is EnergyConfigs) {
               _sendRoleConfig(value);
             }
           });
     };
   }
 
-  void _sendRoleConfig(Map<EnergyType, EnergyConfig> configs) {
+  void _sendRoleConfig(EnergyConfigs configs) {
     netTurnEngine.sendNetworkMessage(
       MessageType.resource,
-      jsonEncode(
-        Elemental.configsToJson(
-          netTurnEngine.userName,
-          configs,
-          Random().nextInt(EnergyType.values.length),
-        ),
+      Elemental.configToJsonString(
+        netTurnEngine.userName,
+        configs,
+        Random().nextInt(EnergyType.values.length),
       ),
     );
   }
@@ -138,7 +132,7 @@ class NetCombatManager extends BaseCombatManager {
     } else {
       switch (action) {
         case ConationType.attack:
-          _sendActionMessage(ConationType.attack.index, enemy.current);
+          _sendActionMessage(ConationType.attack.index, enemy.current.index);
           break;
         case ConationType.parry:
           handlePlayerSkillTarget(-1);
@@ -167,9 +161,12 @@ class NetCombatManager extends BaseCombatManager {
     final elemental = isSelf ? player : enemy;
 
     if (isFront) {
-      _sendActionMessage(actionIndex, elemental.current);
+      _sendActionMessage(actionIndex, elemental.current.index);
     } else {
-      showEnergySelection(elemental, (i) => _sendActionMessage(actionIndex, i));
+      showEnergySelection(
+        elemental,
+        (i) => _sendActionMessage(actionIndex, i.index),
+      );
     }
   }
 

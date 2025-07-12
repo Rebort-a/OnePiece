@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:treasure/04.elemental_battle/foundation/energy.dart';
 
 import '../foundation/effect.dart';
 import '../middleware/elemental.dart';
@@ -13,7 +14,7 @@ class StatusPage extends StatefulWidget {
 }
 
 class _StatusPageState extends State<StatusPage> {
-  late int _index;
+  late EnergyType _index;
 
   @override
   void initState() {
@@ -50,7 +51,7 @@ class _StatusPageState extends State<StatusPage> {
     return Column(
       children: [
         Text(
-          widget.elemental.name,
+          widget.elemental.baseName,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         if (widget.elemental is NormalPlayer)
@@ -125,13 +126,13 @@ class _StatusPageState extends State<StatusPage> {
       children: [
         _buildNavigationButton(Icons.arrow_left, () {
           setState(() {
-            _index = widget.elemental.findAvailableIndex(_index, -1);
+            _index = widget.elemental.findPreviousAvailable(_index);
           });
         }),
         _buildElementName(),
         _buildNavigationButton(Icons.arrow_right, () {
           setState(() {
-            _index = widget.elemental.findAvailableIndex(_index, 1);
+            _index = widget.elemental.findNextAvailable(_index);
           });
         }),
       ],

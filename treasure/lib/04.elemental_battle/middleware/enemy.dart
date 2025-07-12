@@ -25,7 +25,7 @@ class RandomEnemy extends ElementalEntity {
     required int x,
     required int grade,
   }) {
-    final typeIndex = Random().nextInt(enemyNames.length);
+    int typeIndex = id.index - EntityType.weak.index;
     final baseName = enemyNames[typeIndex];
     final configs = _generateRandomConfig(grade + typeIndex);
 
@@ -41,10 +41,8 @@ class RandomEnemy extends ElementalEntity {
     );
   }
 
-  static Map<EnergyType, EnergyConfig> _generateRandomConfig(
-    int upgradePoints,
-  ) {
-    final configs = Elemental.getDefaultConfig(skillPoints: 2);
+  static EnergyConfigs _generateRandomConfig(int upgradePoints) {
+    final configs = EnergyConfigs.defaultConfigs(skillPoints: 2);
     final random = Random();
     final types = List.of(EnergyType.values);
 
@@ -52,7 +50,7 @@ class RandomEnemy extends ElementalEntity {
     types.shuffle();
     final disableCount = random.nextInt(5);
     types.take(disableCount).forEach((t) {
-      configs[t]!.aptitude = false;
+      configs[t].aptitude = false;
       upgradePoints += 3;
     });
 
@@ -66,7 +64,7 @@ class RandomEnemy extends ElementalEntity {
 
     // 分配属性点
     for (int i = 0; i < enabledTypes.length; i++) {
-      final config = configs[enabledTypes[i]]!;
+      final config = configs[enabledTypes[i]];
       final points = pointsPerType[i];
       _allocateAttributes(config, points, random);
     }

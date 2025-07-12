@@ -1,6 +1,6 @@
+import '../../00.common/game/map.dart';
 import '../../00.common/image/entity.dart';
 
-import '../foundation/map.dart';
 import 'elemental.dart';
 import 'prop.dart';
 
@@ -15,7 +15,7 @@ class NormalPlayer extends ElementalEntity {
   NormalPlayer({required super.id, required super.y, required super.x})
     : super(
         baseName: "旅行者",
-        configs: Elemental.getDefaultConfig(),
+        configs: EnergyConfigs.defaultConfigs(),
         current: 2,
       ) {
     money = 20;

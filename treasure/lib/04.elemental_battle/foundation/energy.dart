@@ -8,6 +8,32 @@ import 'skill.dart';
 // 五灵根枚举类型
 enum EnergyType { metal, wood, water, fire, earth }
 
+extension EnergyTypeExtension on EnergyType {
+  EnergyType getPreviousType() {
+    return EnergyType.values[(index + EnergyType.values.length - 1) %
+        EnergyType.values.length];
+  }
+
+  EnergyType getNextType() {
+    return EnergyType.values[(index + 1) % EnergyType.values.length];
+  }
+
+  EnergyType getGenerativeType() {
+    switch (this) {
+      case EnergyType.metal:
+        return EnergyType.water;
+      case EnergyType.water:
+        return EnergyType.wood;
+      case EnergyType.wood:
+        return EnergyType.fire;
+      case EnergyType.fire:
+        return EnergyType.earth;
+      case EnergyType.earth:
+        return EnergyType.metal;
+    }
+  }
+}
+
 // 五灵根名称
 const List<String> energyNames = ["🔩", "🪵", "🌊", "🔥", "🪨"];
 
@@ -83,7 +109,7 @@ class Energy {
 
   // 属性访问器
   String get name => _name;
-  int get typeIndex => _type.index;
+  EnergyType get type => _type;
   int get health => _health;
   int get capacityBase => _capacityBase;
   int get capacityExtra => _capacityExtra;

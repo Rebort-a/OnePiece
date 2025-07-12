@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:treasure/04.elemental_battle/foundation/energy.dart';
 
 import '../../00.common/game/gamer.dart';
 import '../../00.common/widget/template_dialog.dart';
@@ -46,7 +47,10 @@ abstract class BaseCombatManager {
 
   void initCombat(GamerType playerType) {
     final info = playerType == GamerType.front ? "你的回合，请行动" : "敌人的回合，请等待";
-    addCombatInfo("\n$info\n");
+    addCombatInfo(
+      "${' '.padRight(100)}\n"
+      "$info\n",
+    );
     _applyPassiveEffects();
     _updatePrediction();
   }
@@ -71,6 +75,8 @@ abstract class BaseCombatManager {
   void handleAttack(bool isSelf) {
     final attacker = isSelf ? player : enemy;
     final defender = isSelf ? enemy : player;
+
+    addCombatInfo('${attacker.preview.name.value} 选择了 攻击');
 
     final result = attacker.combatRequest(defender, defender.current, infoList);
     handleActionResult(isSelf, result);
@@ -98,7 +104,10 @@ abstract class BaseCombatManager {
         skill.targetType == SkillTarget.enemyFront;
   }
 
-  void showEnergySelection(Elemental elemental, void Function(int) onSelected) {
+  void showEnergySelection(
+    Elemental elemental,
+    void Function(EnergyType) onSelected,
+  ) {
     pageNavigator.value = (BuildContext context) {
       ElementalDialog.showSelectEnergyDialog(
         context: context,
@@ -119,10 +128,12 @@ abstract class BaseCombatManager {
     bool targetIsSelf = getSkillCategory(skill);
     bool isFront = getSkillRange(skill);
     Elemental target = targetIsSelf ? source : (isSelf ? enemy : player);
-    int targetIndex = isFront ? target.current : action.targetIndex;
+    EnergyType targetIndex = isFront
+        ? target.current
+        : EnergyType.values[action.targetIndex];
 
     addCombatInfo(
-      "\n${source.getAppointName(source.current)} 施放了技能 《${skill.name}》，"
+      "${source.getAppointName(source.current)} 施放了技能 ${skill.name} "
       "${target.getAppointName(targetIndex)} 获得效果 ${skill.description}",
     );
 
@@ -151,9 +162,9 @@ abstract class BaseCombatManager {
     handleActionResult(isSelf, result);
   }
 
-  void _switchAppoint(Elemental elemental, int targetIndex) {
+  void _switchAppoint(Elemental elemental, EnergyType targetIndex) {
     elemental.switchAppoint(targetIndex);
-    addCombatInfo('\n${elemental.getAppointName(elemental.current)} 上场');
+    addCombatInfo('${elemental.getAppointName(elemental.current)} 上场');
     _updatePrediction();
   }
 
@@ -184,7 +195,7 @@ abstract class BaseCombatManager {
     if (elemental.getAppointHealth(elemental.current) <= 0) return false;
 
     addCombatInfo(
-      '\n${elemental.name} 切换为 ${elemental.getAppointName(elemental.current)}',
+      '${elemental.baseName} 切换为 ${elemental.getAppointName(elemental.current)}',
     );
     _updatePrediction();
     return true;

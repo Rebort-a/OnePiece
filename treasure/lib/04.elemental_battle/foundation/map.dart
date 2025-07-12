@@ -2,8 +2,6 @@ import '../../00.common/image/entity.dart';
 
 const int mapLevel = 6; // 地图级数
 
-enum Direction { down, left, up, right }
-
 // 地图单元信息
 class CellData {
   EntityType id;

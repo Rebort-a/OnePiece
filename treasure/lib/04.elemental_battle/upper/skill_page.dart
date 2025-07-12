@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:treasure/04.elemental_battle/foundation/energy.dart';
 
 import '../../00.common/widget/template_dialog.dart';
 import '../middleware/player.dart';
@@ -14,7 +15,7 @@ class SkillsPage extends StatefulWidget {
 
 class _SkillsPageState extends State<SkillsPage> {
   late List<CombatSkill> _showSkills;
-  late int _index;
+  late EnergyType _index;
 
   @override
   void initState() {
@@ -143,14 +144,14 @@ class _SkillsPageState extends State<SkillsPage> {
       children: [
         _buildNavigationButton(Icons.arrow_left, () {
           setState(() {
-            _index = widget.player.findAvailableIndex(_index, -1);
+            _index = widget.player.findPreviousAvailable(_index);
             _updateSkills();
           });
         }),
         _buildElementName(),
         _buildNavigationButton(Icons.arrow_right, () {
           setState(() {
-            _index = widget.player.findAvailableIndex(_index, 1);
+            _index = widget.player.findNextAvailable(_index);
             _updateSkills();
           });
         }),

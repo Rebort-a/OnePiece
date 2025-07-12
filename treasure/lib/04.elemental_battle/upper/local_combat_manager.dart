@@ -64,14 +64,17 @@ class LocalCombatManager extends BaseCombatManager {
     if (isFront) {
       handleSkill(
         true,
-        GameAction(actionIndex: actionIndex, targetIndex: elemental.current),
+        GameAction(
+          actionIndex: actionIndex,
+          targetIndex: elemental.current.index,
+        ),
       );
     } else {
       showEnergySelection(
         elemental,
         (i) => handleSkill(
           true,
-          GameAction(actionIndex: actionIndex, targetIndex: i),
+          GameAction(actionIndex: actionIndex, targetIndex: i.index),
         ),
       );
     }
@@ -89,9 +92,6 @@ class LocalCombatManager extends BaseCombatManager {
   void handleEnemyAction() {
     if (currentGamer.value != playerType) {
       ConationType action = _getEnemyAction();
-      addCombatInfo(
-        '${enemy.getAppointName(enemy.current)} 选择了 ${BaseCombatManager.conationNames[action]}',
-      );
 
       switch (action) {
         case ConationType.attack:
@@ -102,7 +102,7 @@ class LocalCombatManager extends BaseCombatManager {
             false,
             GameAction(
               actionIndex: ConationType.parry.index,
-              targetIndex: enemy.current,
+              targetIndex: enemy.current.index,
             ),
           );
           break;
@@ -111,7 +111,7 @@ class LocalCombatManager extends BaseCombatManager {
             false,
             GameAction(
               actionIndex: ConationType.skill.index + 1,
-              targetIndex: enemy.current,
+              targetIndex: enemy.current.index,
             ),
           );
           break;

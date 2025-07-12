@@ -8,7 +8,7 @@ class ElementalDialog {
   static void showSelectEnergyDialog({
     required BuildContext context,
     required Elemental elemental,
-    required void Function(int) onSelected,
+    required void Function(EnergyType) onSelected,
     required bool available,
   }) {
     showDialog(
@@ -23,28 +23,30 @@ class ElementalDialog {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(EnergyType.values.length, (index) {
+                  EnergyType type = EnergyType.values[index];
+
                   // 仅处理enable为true的Energy
-                  if (!elemental.getAppointAptitude(index)) {
+                  if (!elemental.getAppointAptitude(type)) {
                     return const SizedBox();
                   }
 
-                  String name = elemental.getAppointName(index);
-                  int health = elemental.getAppointHealth(index);
-                  int capacity = elemental.getAppointCapacity(index);
+                  String name = elemental.getAppointName(type);
+                  int health = elemental.getAppointHealth(type);
+                  int capacity = elemental.getAppointCapacity(type);
                   return Column(
                     children: [
                       ElevatedButton(
                         onPressed: available
                             ? health > 0
                                   ? () {
-                                      onSelected(index);
+                                      onSelected(EnergyType.values[index]);
                                       if (Navigator.of(context).canPop()) {
                                         Navigator.of(context).pop();
                                       }
                                     }
                                   : null
                             : () {
-                                onSelected(index);
+                                onSelected(EnergyType.values[index]);
                                 if (Navigator.of(context).canPop()) {
                                   Navigator.of(context).pop();
                                 }

@@ -604,7 +604,7 @@ class MapManager {
   void _upgradePlayer(int index, AttributeType attribute) {
     if (player.experience >= 30) {
       player.experience -= 30;
-      player.upgradeAppointAttribute(index, attribute);
+      player.upgradeAppointAttribute(EnergyType.values[index], attribute);
       pageNavigator.value = (BuildContext context) {
         TemplateDialog.snackBarDialog(context, '升级成功！');
       };

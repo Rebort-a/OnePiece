@@ -14,7 +14,7 @@ class CastPage extends StatefulWidget {
 }
 
 class _CastPageState extends State<CastPage> {
-  final Map<EnergyType, EnergyConfig> _configs = Elemental.getDefaultConfig();
+  final EnergyConfigs _configs = EnergyConfigs.defaultConfigs();
   late int _remainingPoints;
   EnergyType _currentEnergy = EnergyType.water;
   final PageController _pageController = PageController(
@@ -36,7 +36,7 @@ class _CastPageState extends State<CastPage> {
 
   @override
   Widget build(BuildContext context) {
-    final config = _configs[_currentEnergy]!;
+    final config = _configs[_currentEnergy];
     final isEnabled = config.aptitude;
 
     return Scaffold(
@@ -122,7 +122,7 @@ class _CastPageState extends State<CastPage> {
         transform: matrix,
         child: _buildEnergyCard(
           EnergyType.values[index],
-          _configs[EnergyType.values[index]]!.aptitude,
+          _configs[EnergyType.values[index]].aptitude,
         ),
       ),
     );
@@ -324,9 +324,18 @@ class _CastPageState extends State<CastPage> {
 
   void _toggleEnergy(EnergyType type) {
     setState(() {
-      final config = _configs[type]!;
+      final config = _configs[type];
       final wasEnabled = config.aptitude;
       config.aptitude = !wasEnabled;
+
+      // 计算当前启用的Energy数量
+      int enabledCount = _configs.values
+          .where((config) => config.aptitude)
+          .length;
+
+      if (wasEnabled && enabledCount <= 1) {
+        return;
+      }
 
       if (wasEnabled) {
         // 返还点数
@@ -352,7 +361,7 @@ class _CastPageState extends State<CastPage> {
 
   void _updateAttribute(AttributeType type, int delta) {
     setState(() {
-      final config = _configs[_currentEnergy]!;
+      final config = _configs[_currentEnergy];
       final current = switch (type) {
         AttributeType.hp => config.healthPoints,
         AttributeType.atk => config.attackPoints,
@@ -395,7 +404,7 @@ class _CastPageState extends State<CastPage> {
     bool canLearn,
     bool canForget,
   ) {
-    final config = _configs[_currentEnergy]!;
+    final config = _configs[_currentEnergy];
 
     showDialog(
       context: context,

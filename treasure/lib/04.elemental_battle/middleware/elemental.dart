@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../foundation/effect.dart';
 import '../../00.common/image/entity.dart';
+import '../foundation/effect.dart';
 import '../foundation/energy.dart';
 import '../foundation/map.dart';
 import '../foundation/skill.dart';
@@ -30,6 +32,139 @@ class EnergyConfig with EnergyConfigMixin {
     this.defencePoints = defencePoints ?? 0;
     this.skillPoints = skillPoints ?? 1;
   }
+
+  String toStringFormat() {
+    return '[${aptitude ? '1' : '0'},$healthPoints,$attackPoints,$defencePoints,$skillPoints]';
+  }
+
+  static EnergyConfig fromStringFormat(String str) {
+    // 移除方括号并分割字符串
+    final parts = str.substring(1, str.length - 1).split(',');
+    if (parts.length != 5) {
+      throw FormatException('Invalid config string format: $str');
+    }
+
+    return EnergyConfig(
+      aptitude: parts[0] == '1',
+      healthPoints: int.parse(parts[1]),
+      attackPoints: int.parse(parts[2]),
+      defencePoints: int.parse(parts[3]),
+      skillPoints: int.parse(parts[4]),
+    );
+  }
+}
+
+class EnergyConfigs {
+  late final List<EnergyConfig> _configs;
+
+  EnergyConfigs({
+    required EnergyConfig metal,
+    required EnergyConfig wood,
+    required EnergyConfig water,
+    required EnergyConfig fire,
+    required EnergyConfig earth,
+  }) {
+    _configs = [metal, wood, water, fire, earth];
+  }
+
+  EnergyConfig operator [](EnergyType sign) => _configs[sign.index];
+
+  Iterable<EnergyConfig> get values => List.unmodifiable(_configs);
+
+  factory EnergyConfigs.defaultConfigs({
+    bool? aptitude,
+    int? healthPoints,
+    int? attackPoints,
+    int? defencePoints,
+    int? skillPoints,
+  }) {
+    EnergyConfig config = EnergyConfig(
+      aptitude: aptitude,
+      healthPoints: healthPoints,
+      attackPoints: attackPoints,
+      defencePoints: defencePoints,
+      skillPoints: skillPoints,
+    );
+
+    return EnergyConfigs(
+      metal: config,
+      wood: config,
+      water: config,
+      fire: config,
+      earth: config,
+    );
+  }
+
+  factory EnergyConfigs.fromManagers(EnergyManagers managers) {
+    final configs = EnergyType.values.map((sign) {
+      final manager = managers[sign];
+      return EnergyConfig(
+        aptitude: manager.aptitude,
+        healthPoints: manager.healthPoints,
+        attackPoints: manager.attackPoints,
+        defencePoints: manager.defencePoints,
+        skillPoints: manager.skillPoints,
+      );
+    }).toList();
+
+    return EnergyConfigs(
+      metal: configs[0],
+      wood: configs[1],
+      water: configs[2],
+      fire: configs[3],
+      earth: configs[4],
+    );
+  }
+
+  String configToString() {
+    final metal = _configs[EnergyType.metal.index].toStringFormat();
+    final wood = _configs[EnergyType.wood.index].toStringFormat();
+    final water = _configs[EnergyType.water.index].toStringFormat();
+    final fire = _configs[EnergyType.fire.index].toStringFormat();
+    final earth = _configs[EnergyType.earth.index].toStringFormat();
+
+    return '{$metal,$wood,$water,$fire,$earth}';
+  }
+
+  factory EnergyConfigs.fromString(String str) {
+    // 移除大括号并分割配置字符串
+    final configStr = str.substring(1, str.length - 1);
+    final configs = _parseConfigList(configStr);
+
+    if (configs.length != 5) {
+      throw FormatException('Invalid configs string format: $str');
+    }
+
+    return EnergyConfigs(
+      metal: configs[0],
+      wood: configs[1],
+      water: configs[2],
+      fire: configs[3],
+      earth: configs[4],
+    );
+  }
+
+  // 辅助方法：解析配置列表字符串
+  static List<EnergyConfig> _parseConfigList(String str) {
+    final configs = <EnergyConfig>[];
+    int startIndex = 0;
+    int bracketCount = 0;
+
+    for (int i = 0; i < str.length; i++) {
+      if (str[i] == '[') {
+        bracketCount++;
+      } else if (str[i] == ']') {
+        bracketCount--;
+        if (bracketCount == 0) {
+          final configStr = str.substring(startIndex, i + 1);
+          configs.add(EnergyConfig.fromStringFormat(configStr));
+          startIndex = i + 2; // 跳过逗号和空格
+        }
+      }
+    }
+
+    return configs;
+  }
 }
 
 class EnergyManager extends Energy with EnergyConfigMixin {
@@ -55,21 +190,59 @@ class EnergyManager extends Energy with EnergyConfigMixin {
     super.skillPoints = value;
   }
 
-  void _updateAttribute(AttributeType type, int value) {
-    final diff = value - _getCurrentValue(type);
+  void _updateAttribute(AttributeType sign, int value) {
+    final diff = value - _getCurrentValue(sign);
     if (diff > 0) {
       for (int i = 0; i < diff; i++) {
-        upgradeAttributes(type);
+        upgradeAttributes(sign);
       }
     }
   }
 
-  int _getCurrentValue(AttributeType type) {
-    return switch (type) {
+  int _getCurrentValue(AttributeType sign) {
+    return switch (sign) {
       AttributeType.hp => healthPoints,
       AttributeType.atk => attackPoints,
       AttributeType.def => defencePoints,
     };
+  }
+}
+
+class EnergyManagers {
+  late final List<EnergyManager> _managers;
+
+  EnergyManagers({
+    required EnergyManager metal,
+    required EnergyManager wood,
+    required EnergyManager water,
+    required EnergyManager fire,
+    required EnergyManager earth,
+  }) {
+    _managers = [metal, wood, water, fire, earth];
+  }
+
+  EnergyManager operator [](EnergyType sign) => _managers[sign.index];
+
+  Iterable<EnergyManager> get values => List.unmodifiable(_managers);
+
+  static EnergyManagers fromConfigs(String baseName, EnergyConfigs configs) {
+    final managers = EnergyType.values.map((sign) {
+      final config = configs[sign];
+      return EnergyManager(type: sign, baseName: baseName)
+        ..aptitude = config.aptitude
+        ..healthPoints = config.healthPoints
+        ..attackPoints = config.attackPoints
+        ..defencePoints = config.defencePoints
+        ..skillPoints = config.skillPoints;
+    }).toList();
+
+    return EnergyManagers(
+      metal: managers[0],
+      wood: managers[1],
+      water: managers[2],
+      fire: managers[3],
+      earth: managers[4],
+    );
   }
 }
 
@@ -82,8 +255,10 @@ class EnergyResume {
 
 class ElementalPreview {
   final ValueNotifier<String> name = ValueNotifier("");
-  final ValueNotifier<int> type = ValueNotifier(0);
-  final ValueNotifier<String> typeString = ValueNotifier("");
+  final ValueNotifier<EnergyType> type = ValueNotifier(EnergyType.metal);
+  final ValueNotifier<String> typeString = ValueNotifier(
+    energyNames[EnergyType.metal.index],
+  );
   final ValueNotifier<int> level = ValueNotifier(0);
   final ValueNotifier<int> health = ValueNotifier(0);
   final ValueNotifier<int> capacity = ValueNotifier(0);
@@ -92,15 +267,23 @@ class ElementalPreview {
   final ValueNotifier<List<EnergyResume>> resumes = ValueNotifier([]);
   final ValueNotifier<double> emoji = ValueNotifier(0);
 
-  void updateInfo(Map<EnergyType, EnergyManager> strategy, EnergyType current) {
-    _updateCurrentInfo(strategy[current]!);
+  ElementalPreview({
+    required EnergyManagers strategy,
+    required EnergyType current,
+  }) {
+    updatePreview(strategy, current);
+  }
+
+  EnergyType updatePreview(EnergyManagers strategy, EnergyType current) {
     _updateResumesInfo(strategy, current);
+    _updateCurrentInfo(strategy[resumes.value.first.type]);
+    return resumes.value.first.type;
   }
 
   void _updateCurrentInfo(Energy energy) {
     name.value = energy.name;
-    type.value = energy.typeIndex;
-    typeString.value = energyNames[energy.typeIndex];
+    type.value = energy.type;
+    typeString.value = energyNames[energy.type.index];
     level.value = energy.level;
     health.value = energy.health;
     capacity.value = energy.capacityTotal;
@@ -108,55 +291,31 @@ class ElementalPreview {
     defence.value = energy.defenceTotal;
   }
 
-  void _updateResumesInfo(
-    Map<EnergyType, EnergyManager> strategy,
-    EnergyType current,
-  ) {
-    final enabledTypes = strategy.entries
-        .where((e) => e.value.aptitude)
-        .map((e) => e.key)
-        .toList();
+  void _updateResumesInfo(EnergyManagers strategy, EnergyType current) {
+    _updateResumes(strategy, current);
+    _updateEmoji();
+  }
 
-    // 按照五行相生顺序排列启用的灵根
-    final orderedTypes = _arrangeByGenerationOrder(enabledTypes, current);
+  void _updateResumes(EnergyManagers strategy, EnergyType current) {
+    List<EnergyResume> temp = [];
+    for (int i = 0; i < EnergyType.values.length; i++) {
+      EnergyManager manager = strategy[current];
 
-    resumes.value = List.generate(orderedTypes.length, (i) {
-      final type = orderedTypes[i];
-      return EnergyResume(type: type, health: strategy[type]!.health);
-    });
+      if (manager.aptitude) {
+        temp.add(EnergyResume(type: current, health: strategy[current].health));
+      }
+      current = current.getGenerativeType();
+    }
+    resumes.value = temp;
+  }
 
+  void _updateEmoji() {
     final survivalCount = resumes.value.where((r) => r.health > 0).length;
     final healthValue = health.value;
     final capacityValue = capacity.value;
-
-    emoji.value = (capacityValue > 0 && enabledTypes.isNotEmpty)
-        ? (survivalCount / enabledTypes.length) * (healthValue / capacityValue)
+    emoji.value = (capacityValue > 0 && resumes.value.isNotEmpty)
+        ? (survivalCount / resumes.value.length) * (healthValue / capacityValue)
         : 0;
-  }
-
-  // 按照五行相生顺序排列灵根
-  List<EnergyType> _arrangeByGenerationOrder(
-    List<EnergyType> enabledTypes,
-    EnergyType startType,
-  ) {
-    final orderedTypes = <EnergyType>[];
-    EnergyType currentType = startType;
-    int count = 0;
-
-    // 最多遍历五行灵根数量次
-    while (orderedTypes.length < enabledTypes.length &&
-        count < EnergyType.values.length) {
-      // 如果当前灵根是启用的，添加到有序列表
-      if (enabledTypes.contains(currentType)) {
-        orderedTypes.add(currentType);
-      }
-
-      // 按五行相生顺序获取下一个灵根
-      currentType = Elemental.generationOrder[currentType]!;
-      count++;
-    }
-
-    return orderedTypes;
   }
 
   void updatePredictedInfo(int attackValue, int defenceValue) {
@@ -166,201 +325,151 @@ class ElementalPreview {
 }
 
 class Elemental {
-  final ElementalPreview preview = ElementalPreview();
-  late final Map<EnergyType, EnergyManager> _strategy;
+  late final ElementalPreview preview;
+  late final EnergyManagers _core;
 
   late String _baseName;
-  late int _current;
+  late EnergyType _current;
 
   Elemental({
     required String baseName,
-    required Map<EnergyType, EnergyConfig> configs,
+    required EnergyConfigs configs,
     required int current,
   }) {
     _initElemental(baseName, configs, current);
   }
 
-  void _initElemental(
-    String baseName,
-    Map<EnergyType, EnergyConfig> configs,
-    int current,
-  ) {
+  void _initElemental(String baseName, EnergyConfigs configs, int current) {
     _baseName = baseName;
-    _strategy = createStrategyFromConfigs(baseName, configs);
-    _current = current;
-    switchPrevious();
+    _core = EnergyManagers.fromConfigs(baseName, configs);
+    _current = _updatePreview();
   }
 
-  // 从配置创建策略
-  static Map<EnergyType, EnergyManager> createStrategyFromConfigs(
-    String baseName,
-    Map<EnergyType, EnergyConfig> configs,
-  ) {
-    return Map.fromEntries(
-      configs.entries.map((e) {
-        final manager = EnergyManager(type: e.key, baseName: baseName)
-          ..aptitude = e.value.aptitude
-          ..healthPoints = e.value.healthPoints
-          ..attackPoints = e.value.attackPoints
-          ..defencePoints = e.value.defencePoints
-          ..skillPoints = e.value.skillPoints;
-        return MapEntry(e.key, manager);
-      }),
-    );
-  }
+  void switchPrevious() => switchAppoint(findPreviousAvailable(_current));
+  void switchNext() => switchAppoint(findNextAvailable(_current));
 
-  // 从策略创建配置
-  static Map<EnergyType, EnergyConfig> createConfigsFromStrategy(
-    Map<EnergyType, EnergyManager> strategy,
-  ) {
-    return Map.fromEntries(
-      strategy.entries.map((e) {
-        return MapEntry(
-          e.key,
-          EnergyConfig(
-            aptitude: e.value.aptitude,
-            healthPoints: e.value.healthPoints,
-            attackPoints: e.value.attackPoints,
-            defencePoints: e.value.defencePoints,
-            skillPoints: e.value.skillPoints,
-          ),
-        );
-      }),
-    );
-  }
-
-  EnergyManager _energyAt(int index) => _strategy[EnergyType.values[index]]!;
-
-  int get current => _current;
-
-  void switchPrevious() => switchAppoint(findAvailableIndex(_current, -1));
-  void switchNext() => switchAppoint(findAvailableIndex(_current, 1));
-
-  void switchAppoint(int index) {
-    if (index != _current) {
-      _current = index;
+  void switchAppoint(EnergyType sign) {
+    if (sign != _current) {
+      _current = sign;
       _updatePreview();
     }
   }
 
-  int findAvailableIndex(int start, int step) {
-    final count = EnergyType.values.length;
-    for (int i = 1; i <= count; i++) {
-      final index = (start + step * i) % count;
-      final energy = _energyAt(index);
-      if (energy.aptitude) return index;
+  EnergyType findPreviousAvailable(EnergyType start) {
+    int count = EnergyType.values.length;
+    for (int i = 1; i < count; i++) {
+      int index = (start.index + count - i) % count;
+      EnergyManager energy = _core[EnergyType.values[index]];
+      if (energy.aptitude) return energy.type;
     }
-    return _current;
+    return start;
+  }
+
+  EnergyType findNextAvailable(EnergyType start) {
+    int count = EnergyType.values.length;
+    for (int i = 1; i < count; i++) {
+      int index = (start.index + i) % count;
+      EnergyManager energy = _core[EnergyType.values[index]];
+      if (energy.aptitude) return energy.type;
+    }
+    return start;
   }
 
   // 根据五行相生顺序切换到下一个有效灵根
-  void switchAliveByOrder() {
-    EnergyType currentType = EnergyType.values[_current];
-
-    for (int i = 1; i < EnergyType.values.length; i++) {
-      currentType = generationOrder[currentType]!;
-
-      // 检查下一个灵根是否有效
-      if (_strategy[currentType]!.aptitude &&
-          _strategy[currentType]!.health > 0) {
-        switchAppoint(currentType.index);
-        break;
+  bool switchAliveByOrder() {
+    if (preview.resumes.value.length > 1) {
+      EnergyResume resume = preview.resumes.value[1];
+      if (resume.health > 0) {
+        switchAppoint(resume.type);
+        return true;
       }
     }
+    return false;
   }
 
-  // 五行相生的映射表，key为当前元素，value为相生顺序的下一个元素
-  static Map<EnergyType, EnergyType> generationOrder = {
-    EnergyType.metal: EnergyType.water, // 金生水
-    EnergyType.water: EnergyType.wood, // 水生木
-    EnergyType.wood: EnergyType.fire, // 木生火
-    EnergyType.fire: EnergyType.earth, // 火生土
-    EnergyType.earth: EnergyType.metal, // 土生金
-  };
+  String get baseName => _baseName;
+  EnergyType get current => _current;
+  String getAppointName(EnergyType sign) => _core[sign].name;
+  bool getAppointAptitude(EnergyType sign) => _core[sign].aptitude;
+  int getAppointLevel(EnergyType sign) => _core[sign].level;
+  int getAppointCapacity(EnergyType sign) => _core[sign].capacityBase;
+  int getAppointAttackBase(EnergyType sign) => _core[sign].attackBase;
+  int getAppointDefenceBase(EnergyType sign) => _core[sign].defenceBase;
+  int getAppointHealth(EnergyType sign) => _core[sign].health;
+  int getAppointAttack(EnergyType sign) => _core[sign].attackTotal;
+  int getAppointDefence(EnergyType sign) => _core[sign].defenceTotal;
+  String getAppointTypeString(EnergyType sign) => energyNames[sign.index];
 
-  String get name => _baseName;
-
-  String getAppointName(int index) => _energyAt(index).name;
-  bool getAppointAptitude(int index) => _energyAt(index).aptitude;
-  int getAppointLevel(int index) => _energyAt(index).level;
-  int getAppointCapacity(int index) => _energyAt(index).capacityBase;
-  int getAppointAttackBase(int index) => _energyAt(index).attackBase;
-  int getAppointDefenceBase(int index) => _energyAt(index).defenceBase;
-  int getAppointHealth(int index) => _energyAt(index).health;
-  int getAppointAttack(int index) => _energyAt(index).attackTotal;
-  int getAppointDefence(int index) => _energyAt(index).defenceTotal;
-  String getAppointTypeString(int index) => energyNames[index];
-
-  List<CombatSkill> getAppointSkills(int index) => _energyAt(index).skills;
-  List<CombatEffect> getAppointEffects(int index) => _energyAt(index).effects;
+  List<CombatSkill> getAppointSkills(EnergyType sign) => _core[sign].skills;
+  List<CombatEffect> getAppointEffects(EnergyType sign) => _core[sign].effects;
 
   void updateAllNames(String newName) {
     _baseName = newName;
-    for (EnergyType type in EnergyType.values) {
-      _energyAt(type.index).changeName('$_baseName.${energyNames[type.index]}');
+    for (EnergyType sign in EnergyType.values) {
+      _core[sign].changeName('$_baseName.${energyNames[sign.index]}');
     }
     _updatePreview();
   }
 
   void restoreAllAttributesAndEffects() {
-    for (Energy e in _strategy.values) {
+    for (Energy e in _core.values) {
       e.restoreAttributes();
       e.restoreEffects();
     }
     _updatePreview();
   }
 
-  void upgradeAppointAttribute(int index, AttributeType attribute) {
+  void upgradeAppointAttribute(EnergyType sign, AttributeType attribute) {
     switch (attribute) {
       case AttributeType.hp:
-        _energyAt(index).healthPoints++;
+        _core[sign].healthPoints++;
       case AttributeType.atk:
-        _energyAt(index).attackPoints++;
+        _core[sign].attackPoints++;
       case AttributeType.def:
-        _energyAt(index).defencePoints++;
+        _core[sign].defencePoints++;
     }
     _updatePreview();
   }
 
-  void upgradeAppointSkill(int index) => _energyAt(index).skillPoints++;
+  void upgradeAppointSkill(EnergyType sign) => _core[sign].skillPoints++;
 
-  void recoverAppoint(int index, int value) {
-    _energyAt(index).recoverHealth(value);
+  void recoverAppoint(EnergyType sign, int value) {
+    _core[sign].recoverHealth(value);
     _updatePreview();
   }
 
   void applyAllPassiveEffect() {
-    for (Energy e in _strategy.values) {
+    for (Energy e in _core.values) {
       e.applyPassiveEffect();
     }
     _updatePreview();
   }
 
-  void appointSufferSkill(int index, CombatSkill skill) {
-    _energyAt(index).sufferSkill(skill);
+  void appointSufferSkill(EnergyType sign, CombatSkill skill) {
+    _core[sign].sufferSkill(skill);
     _updatePreview();
   }
 
   int confrontReply(int Function(EnergyManager) handler) =>
-      handler(_energyAt(_current));
+      handler(_core[_current]);
 
   void confrontRequest(Elemental elemental) {
     final attackValue = elemental.confrontReply(
-      (e) => EnergyCombat.handleAttackEffect(_energyAt(_current), e, false),
+      (e) => EnergyCombat.handleAttackEffect(_core[_current], e, false),
     );
 
     final defenceValue = elemental.confrontReply(
-      (e) => EnergyCombat.handleDefenceEffect(e, _energyAt(_current), false),
+      (e) => EnergyCombat.handleDefenceEffect(e, _core[_current], false),
     );
 
     preview.updatePredictedInfo(attackValue, defenceValue);
   }
 
   EnergyCombat comabtReply(
-    int index,
+    EnergyType sign,
     EnergyCombat Function(EnergyManager) handler,
   ) {
-    final combat = handler(_energyAt(index));
+    final combat = handler(_core[sign]);
     combat.execute();
     _updatePreview();
     return combat;
@@ -368,12 +477,12 @@ class Elemental {
 
   int combatRequest(
     Elemental elemental,
-    int index,
+    EnergyType sign,
     ValueNotifier<String> message,
   ) {
     final combat = elemental.comabtReply(
-      index,
-      (e) => EnergyCombat(source: _energyAt(_current), target: e),
+      sign,
+      (e) => EnergyCombat(source: _core[_current], target: e),
     );
 
     _updatePreview();
@@ -381,87 +490,32 @@ class Elemental {
     return combat.record;
   }
 
-  void _updatePreview() =>
-      preview.updateInfo(_strategy, EnergyType.values[_current]);
+  EnergyType _updatePreview() => preview.updatePreview(_core, _current);
 
-  // 将配置转化为JSON
-  static Map<String, dynamic> configsToJson(
-    String baseName,
-    Map<EnergyType, EnergyConfig> configs,
+  static String configToJsonString(
+    String name,
+    EnergyConfigs configs,
     int current,
   ) {
-    return {
-      'baseName': baseName,
-      'configs': configs.map(
-        (key, value) => MapEntry(key.toString().split('.').last, {
-          'aptitude': value.aptitude,
-          'healthPoints': value.healthPoints,
-          'attackPoints': value.attackPoints,
-          'defencePoints': value.defencePoints,
-          'skillPoints': value.skillPoints,
-        }),
-      ),
+    final data = {
+      'name': name,
+      'configs': configs.configToString(),
       'current': current,
     };
+
+    return json.encode(data);
   }
 
-  static String baseNameFromJson(Map<String, dynamic> json) => json['baseName'];
-
-  static Map<EnergyType, EnergyConfig> configsFromJson(
-    Map<String, dynamic> json,
-  ) {
-    return Map<EnergyType, EnergyConfig>.from(
-      (json['configs'] as Map<String, dynamic>).map((key, value) {
-        return MapEntry(
-          EnergyType.values.firstWhere(
-            (e) => e.toString().split('.').last == key,
-            orElse: () => throw Exception('Invalid energy type: $key'),
-          ),
-          EnergyConfig(
-            aptitude: value['aptitude'] as bool,
-            healthPoints: value['healthPoints'] as int,
-            attackPoints: value['attackPoints'] as int,
-            defencePoints: value['defencePoints'] as int,
-            skillPoints: value['skillPoints'] as int,
-          ),
-        );
-      }),
-    );
-  }
-
+  static String nameFromJson(Map<String, dynamic> json) => json['name'];
+  static EnergyConfigs configsFromJson(Map<String, dynamic> json) =>
+      EnergyConfigs.fromString(json['configs']);
   static int currentFromJson(Map<String, dynamic> json) => json['current'];
 
   factory Elemental.fromJson(Map<String, dynamic> json) {
-    final String baseName = Elemental.baseNameFromJson(json);
-    final Map<EnergyType, EnergyConfig> configs = Elemental.configsFromJson(
-      json,
-    );
+    final String name = Elemental.nameFromJson(json);
+    final EnergyConfigs configs = EnergyConfigs.fromString(json['configs']);
     final int current = Elemental.currentFromJson(json);
-    return Elemental(baseName: baseName, configs: configs, current: current);
-  }
-
-  // 默认配置
-  static Map<EnergyType, EnergyConfig> getDefaultConfig({
-    bool? aptitude,
-    int? healthPoints,
-    int? attackPoints,
-    int? defencePoints,
-    int? skillPoints,
-  }) {
-    return Map.fromEntries(
-      EnergyType.values.map(
-        (t) => MapEntry(
-          t,
-          EnergyConfig(
-            aptitude: aptitude,
-            healthPoints: healthPoints,
-            attackPoints: attackPoints,
-            defencePoints: defencePoints,
-            skillPoints: skillPoints,
-          ),
-        ),
-      ),
-    );
+    return Elemental(baseName: name, configs: configs, current: current);
   }
 }
 
