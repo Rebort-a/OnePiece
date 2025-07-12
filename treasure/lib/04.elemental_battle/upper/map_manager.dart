@@ -620,7 +620,7 @@ class MapManager {
   }
 
   void _setCellToPlayer(int newY, int newX, EntityType id) {
-    debugPrint('set player to $newY, $newX, $id');
+    // debugPrint('set player to $newY, $newX, $id');
     _clearPlayerCurrentCell();
     player.updatePosition(newY, newX); // 更新位置
     displayMap.value[newY * mapSize + newX].value = CellData(

@@ -42,21 +42,22 @@ class RandomEnemy extends ElementalEntity {
   }
 
   static EnergyConfigs _generateRandomConfig(int upgradePoints) {
-    final configs = EnergyConfigs.defaultConfigs(skillPoints: 2);
-    final random = Random();
-    final types = List.of(EnergyType.values);
+    EnergyConfigs configs = EnergyConfigs.defaultConfigs(skillPoints: 2);
+
+    Random random = Random();
+    List<EnergyType> types = List.of(EnergyType.values);
 
     // 随机禁用部分灵根
     types.shuffle();
-    final disableCount = random.nextInt(5);
+    int disableCount = random.nextInt(EnergyType.values.length);
     types.take(disableCount).forEach((t) {
       configs[t].aptitude = false;
       upgradePoints += 3;
     });
 
     // 分配点数到启用的灵根
-    final enabledTypes = types.skip(disableCount).toList();
-    final pointsPerType = _distributePoints(
+    List<EnergyType> enabledTypes = types.skip(disableCount).toList();
+    List<int> pointsPerType = _distributePoints(
       enabledTypes.length,
       upgradePoints,
       random,

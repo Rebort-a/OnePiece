@@ -14,7 +14,7 @@ class CastPage extends StatefulWidget {
 }
 
 class _CastPageState extends State<CastPage> {
-  final EnergyConfigs _configs = EnergyConfigs.defaultConfigs();
+  final EnergyConfigs _configs = EnergyConfigs.defaultConfigs(skillPoints: 1);
   late int _remainingPoints;
   EnergyType _currentEnergy = EnergyType.water;
   final PageController _pageController = PageController(
@@ -326,9 +326,7 @@ class _CastPageState extends State<CastPage> {
     setState(() {
       final config = _configs[type];
       final wasEnabled = config.aptitude;
-      config.aptitude = !wasEnabled;
 
-      // 计算当前启用的Energy数量
       int enabledCount = _configs.values
           .where((config) => config.aptitude)
           .length;
@@ -338,6 +336,7 @@ class _CastPageState extends State<CastPage> {
       }
 
       if (wasEnabled) {
+        config.aptitude = false;
         // 返还点数
         _remainingPoints +=
             config.healthPoints +
@@ -353,8 +352,7 @@ class _CastPageState extends State<CastPage> {
         config.skillPoints = 1;
       } else if (_remainingPoints >= 3) {
         _remainingPoints -= 3;
-      } else {
-        config.aptitude = false; // 点数不足，恢复状态
+        config.aptitude = true;
       }
     });
   }

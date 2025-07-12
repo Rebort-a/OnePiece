@@ -265,10 +265,6 @@ class SnakeGamePainter extends CustomPainter {
       visibleSize.height / mapSize.height,
     );
 
-    // 计算可见区域的像素大小
-    final visibleWidth = mapSize.width * scale;
-    final visibleHeight = mapSize.height * scale;
-
     // 绘制外部区域（黑色背景）
     final outsidePaint = Paint()..color = Colors.black;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), outsidePaint);

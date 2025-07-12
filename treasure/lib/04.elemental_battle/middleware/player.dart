@@ -15,7 +15,7 @@ class NormalPlayer extends ElementalEntity {
   NormalPlayer({required super.id, required super.y, required super.x})
     : super(
         baseName: "旅行者",
-        configs: EnergyConfigs.defaultConfigs(),
+        configs: EnergyConfigs.defaultConfigs(skillPoints: 1),
         current: 2,
       ) {
     money = 20;

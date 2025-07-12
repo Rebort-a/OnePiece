@@ -72,13 +72,13 @@ class EnergyConfigs {
   Iterable<EnergyConfig> get values => List.unmodifiable(_configs);
 
   factory EnergyConfigs.defaultConfigs({
-    bool? aptitude,
-    int? healthPoints,
-    int? attackPoints,
-    int? defencePoints,
-    int? skillPoints,
+    bool? aptitude = true,
+    int? healthPoints = 0,
+    int? attackPoints = 0,
+    int? defencePoints = 0,
+    int? skillPoints = 0,
   }) {
-    EnergyConfig config = EnergyConfig(
+    EnergyConfig createConfig() => EnergyConfig(
       aptitude: aptitude,
       healthPoints: healthPoints,
       attackPoints: attackPoints,
@@ -87,11 +87,11 @@ class EnergyConfigs {
     );
 
     return EnergyConfigs(
-      metal: config,
-      wood: config,
-      water: config,
-      fire: config,
-      earth: config,
+      metal: createConfig(),
+      wood: createConfig(),
+      water: createConfig(),
+      fire: createConfig(),
+      earth: createConfig(),
     );
   }
 
@@ -267,28 +267,10 @@ class ElementalPreview {
   final ValueNotifier<List<EnergyResume>> resumes = ValueNotifier([]);
   final ValueNotifier<double> emoji = ValueNotifier(0);
 
-  ElementalPreview({
-    required EnergyManagers strategy,
-    required EnergyType current,
-  }) {
-    updatePreview(strategy, current);
-  }
-
   EnergyType updatePreview(EnergyManagers strategy, EnergyType current) {
     _updateResumesInfo(strategy, current);
     _updateCurrentInfo(strategy[resumes.value.first.type]);
     return resumes.value.first.type;
-  }
-
-  void _updateCurrentInfo(Energy energy) {
-    name.value = energy.name;
-    type.value = energy.type;
-    typeString.value = energyNames[energy.type.index];
-    level.value = energy.level;
-    health.value = energy.health;
-    capacity.value = energy.capacityTotal;
-    attack.value = energy.attackTotal;
-    defence.value = energy.defenceTotal;
   }
 
   void _updateResumesInfo(EnergyManagers strategy, EnergyType current) {
@@ -298,13 +280,14 @@ class ElementalPreview {
 
   void _updateResumes(EnergyManagers strategy, EnergyType current) {
     List<EnergyResume> temp = [];
+    EnergyType start = current;
     for (int i = 0; i < EnergyType.values.length; i++) {
-      EnergyManager manager = strategy[current];
+      EnergyManager manager = strategy[start];
 
       if (manager.aptitude) {
-        temp.add(EnergyResume(type: current, health: strategy[current].health));
+        temp.add(EnergyResume(type: start, health: strategy[start].health));
       }
-      current = current.getGenerativeType();
+      start = start.getGenerativeType();
     }
     resumes.value = temp;
   }
@@ -318,6 +301,17 @@ class ElementalPreview {
         : 0;
   }
 
+  void _updateCurrentInfo(Energy energy) {
+    name.value = energy.name;
+    type.value = energy.type;
+    typeString.value = energyNames[energy.type.index];
+    level.value = energy.level;
+    health.value = energy.health;
+    capacity.value = energy.capacityTotal;
+    attack.value = energy.attackTotal;
+    defence.value = energy.defenceTotal;
+  }
+
   void updatePredictedInfo(int attackValue, int defenceValue) {
     attack.value = attackValue;
     defence.value = defenceValue;
@@ -325,7 +319,7 @@ class ElementalPreview {
 }
 
 class Elemental {
-  late final ElementalPreview preview;
+  final ElementalPreview preview = ElementalPreview();
   late final EnergyManagers _core;
 
   late String _baseName;
@@ -342,7 +336,7 @@ class Elemental {
   void _initElemental(String baseName, EnergyConfigs configs, int current) {
     _baseName = baseName;
     _core = EnergyManagers.fromConfigs(baseName, configs);
-    _current = _updatePreview();
+    _current = preview.updatePreview(_core, EnergyType.values[current]);
   }
 
   void switchPrevious() => switchAppoint(findPreviousAvailable(_current));
