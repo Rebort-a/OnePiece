@@ -188,6 +188,8 @@ abstract class BaseAnimalChessManager {
         _blueAnimalsCount--;
       }
     }
+
+    _checkGameEnd();
   }
 
   bool _canSelect(Grid grid) {
@@ -238,7 +240,6 @@ abstract class BaseAnimalChessManager {
   void _endTurn() {
     _clearSelectionAndHighlight();
     currentGamer.value = currentGamer.value.opponent;
-    _checkGameEnd();
   }
 
   void _checkGameEnd() {
