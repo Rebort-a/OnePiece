@@ -24,8 +24,8 @@ class _SpeedButtonState extends State<SpeedButton> {
         height: _buttonRadius * 2,
         decoration: BoxDecoration(
           color: _isPressed
-              ? Colors.black.withValues(alpha: 0.7)
-              : Colors.grey.withValues(alpha: 0.5),
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(_buttonRadius),
         ),
         child: const Center(

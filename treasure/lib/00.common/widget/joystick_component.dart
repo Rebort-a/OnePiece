@@ -13,8 +13,8 @@ class Joystick extends StatefulWidget {
 
 class _JoystickState extends State<Joystick> {
   Offset _stickPosition = Offset.zero;
-  static const double _baseRadius = 80;
-  static const double _stickRadius = 40;
+  static const double _baseRadius = 60;
+  static const double _stickRadius = 30;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class _JoystickState extends State<Joystick> {
         width: _baseRadius * 2,
         height: _baseRadius * 2,
         decoration: BoxDecoration(
-          color: Colors.black54,
+          color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(_baseRadius),
         ),
         child: Stack(
@@ -36,7 +36,7 @@ class _JoystickState extends State<Joystick> {
                 width: _stickRadius * 2,
                 height: _stickRadius * 2,
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: Colors.grey,
                   borderRadius: BorderRadius.circular(_stickRadius),
                 ),
                 transform: Matrix4.translationValues(
@@ -63,7 +63,6 @@ class _JoystickState extends State<Joystick> {
   void _onDragEnd(DragEndDetails details) {
     setState(() {
       _stickPosition = Offset.zero;
-      widget.onDirectionChanged(0);
     });
   }
 
