@@ -20,7 +20,7 @@ class FoodPainter extends CustomPainter {
       final foodPosition = food.position - viewOffset;
 
       // 绘制单个食物
-      canvas.drawCircle(foodPosition, foodSize, foodPaint);
+      canvas.drawCircle(foodPosition, Food.foodSize, foodPaint);
     }
   }
 

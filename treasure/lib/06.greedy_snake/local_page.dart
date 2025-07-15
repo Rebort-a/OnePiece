@@ -7,23 +7,43 @@ import 'draw/draw.dart';
 import 'local_manager.dart';
 
 class LocalGreedySnakePage extends StatelessWidget {
-  final BaseManager manager = BaseManager();
+  final LocalManager _manager = LocalManager();
   LocalGreedySnakePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Greedy Snake')),
+      appBar: AppBar(
+        title: Text('Greedy Snake'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: _manager.paused
+                ? const Icon(Icons.play_arrow)
+                : const Icon(Icons.pause),
+            onPressed: () {
+              _manager.paused = !_manager.paused;
+              if (_manager.paused) {
+                _manager.pause();
+              } else {
+                _manager.resume();
+              }
+            },
+          ),
+        ],
+      ),
+
       body: AnimatedBuilder(
-        animation: manager,
+        animation: _manager,
         builder: (context, child) {
           return Stack(
             children: [
-              NotifierNavigator(navigatorHandler: manager.pageNavigator),
+              NotifierNavigator(navigatorHandler: _manager.pageNavigator),
               DrawRegion(
+                identity: _manager.identity,
                 backgroundColor: Colors.black87,
-                snakes: manager.snakes,
-                foods: manager.foods,
+                snakes: _manager.snakes,
+                foods: _manager.foods,
               ),
               // 游戏控制面板
               Positioned(
@@ -31,7 +51,7 @@ class LocalGreedySnakePage extends StatelessWidget {
                 bottom: 20,
                 child: Joystick(
                   onDirectionChanged: (angle) =>
-                      manager.updatePlayerAngle(angle),
+                      _manager.updatePlayerAngle(angle),
                 ),
               ),
               Positioned(
@@ -39,7 +59,7 @@ class LocalGreedySnakePage extends StatelessWidget {
                 bottom: 20,
                 child: SpeedButton(
                   onSpeedChanged: (isSpeeding) =>
-                      manager.updatePlayerSpeed(isSpeeding),
+                      _manager.updatePlayerSpeed(isSpeeding),
                 ),
               ),
             ],

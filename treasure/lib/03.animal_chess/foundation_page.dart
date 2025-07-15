@@ -147,7 +147,7 @@ class BaseAnimalChessPage extends StatelessWidget {
   Color _animalColor(Animal animal) {
     return animal.isHidden
         ? Colors.blueGrey
-        : (animal.owner == GamerType.front ? Colors.red : Colors.blue);
+        : (animal.owner == TurnGamerType.front ? Colors.red : Colors.blue);
   }
 
   String _animalContent(Animal animal) {

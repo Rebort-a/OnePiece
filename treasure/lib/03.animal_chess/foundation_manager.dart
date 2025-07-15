@@ -13,7 +13,9 @@ abstract class BaseAnimalChessManager {
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
-  final ValueNotifier<GamerType> currentGamer = ValueNotifier(GamerType.front);
+  final ValueNotifier<TurnGamerType> currentGamer = ValueNotifier(
+    TurnGamerType.front,
+  );
   final ListNotifier<GridNotifier> displayMap = ListNotifier([]);
   final List<int> _markedGrid = [];
 
@@ -67,15 +69,15 @@ abstract class BaseAnimalChessManager {
     final landPositions = _getLandPositions()..shuffle();
     const pieces = AnimalType.values;
 
-    void placePlayerPieces(GamerType player) {
+    void placePlayerPieces(TurnGamerType player) {
       for (int i = 0; i < pieces.length; i++) {
         final index = landPositions.removeLast();
         placeAnimalByIndex(index, Animal(type: pieces[i], owner: player));
       }
     }
 
-    placePlayerPieces(GamerType.front);
-    placePlayerPieces(GamerType.rear);
+    placePlayerPieces(TurnGamerType.front);
+    placePlayerPieces(TurnGamerType.rear);
   }
 
   void placeAnimalByIndex(int index, Animal animal) {
@@ -93,7 +95,7 @@ abstract class BaseAnimalChessManager {
 
   void resetGameState() {
     _markedGrid.clear();
-    currentGamer.value = GamerType.front;
+    currentGamer.value = TurnGamerType.front;
     // 重置动物数量
     _redAnimalsCount = AnimalType.values.length;
     _blueAnimalsCount = AnimalType.values.length;
@@ -176,13 +178,13 @@ abstract class BaseAnimalChessManager {
       displayMap.value[targetPos].placeAnimal(attacker);
       _markedGrid.first = targetPos;
 
-      if (defender.owner == GamerType.front) {
+      if (defender.owner == TurnGamerType.front) {
         _redAnimalsCount--;
       } else {
         _blueAnimalsCount--;
       }
     } else if (defenderWins) {
-      if (attacker.owner == GamerType.front) {
+      if (attacker.owner == TurnGamerType.front) {
         _redAnimalsCount--;
       } else {
         _blueAnimalsCount--;

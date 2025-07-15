@@ -19,7 +19,7 @@ class NetworkEngine {
   final List<NetworkMessage> _sendBuffer = [];
   bool _isSending = false;
 
-  int identify = 0;
+  int identity = 0;
 
   bool _isDisposed = false;
   bool _isSocketConnected = false;
@@ -147,8 +147,8 @@ class NetworkEngine {
       '${message.source} ${message.id} ${message.type} ${message.content}',
     );
 
-    if ((message.type == MessageType.accept) && (identify == 0)) {
-      identify = message.id;
+    if ((message.type == MessageType.accept) && (identity == 0)) {
+      identity = message.id;
       sendNetworkMessage(MessageType.notify, "join in room");
     }
 
@@ -241,10 +241,10 @@ class NetworkEngine {
   }
 
   void sendNetworkMessage(MessageType type, String content) {
-    if (_isDisposed || identify == 0 || !_isSocketConnected) return;
+    if (_isDisposed || identity == 0 || !_isSocketConnected) return;
 
     final message = NetworkMessage(
-      id: identify,
+      id: identity,
       type: type,
       source: userName,
       content: content,

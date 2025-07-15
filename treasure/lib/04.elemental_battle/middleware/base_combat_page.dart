@@ -132,10 +132,10 @@ class BattleInfoRegion extends StatelessWidget {
       valueListenable: notifier,
       builder: (context, value, child) {
         return TweenAnimationBuilder(
-          tween: Tween<double>(begin: value.toDouble(), end: value.toDouble()),
+          tween: IntTween(begin: value, end: value),
           duration: const Duration(milliseconds: 500),
-          builder: (context, double value, child) {
-            return Text('${value.toInt()}', key: ValueKey<int>(value.toInt()));
+          builder: (context, int value, child) {
+            return Text('$value', key: ValueKey<int>(value));
           },
         );
       },

@@ -327,7 +327,7 @@ class MapManager {
         builder: (context) => LocalCombatPage(
           player: player,
           enemy: enemy,
-          playerType: GamerType.front,
+          playerType: TurnGamerType.front,
         ),
       ),
     ).then((_) {
@@ -338,7 +338,7 @@ class MapManager {
   void navigateToCombatPage(
     BuildContext context,
     RandomEnemy enemy,
-    GamerType playerType,
+    TurnGamerType playerType,
   ) {
     if (_stopActive()) {
       Navigator.push(
@@ -408,7 +408,7 @@ class MapManager {
               break;
             case EntityType.player:
               pageNavigator.value = (BuildContext context) {
-                navigateToCombatPage(context, entity, GamerType.rear);
+                navigateToCombatPage(context, entity, TurnGamerType.rear);
               };
               break;
             default:
@@ -520,7 +520,7 @@ class MapManager {
             if ((entity.y == newY) && (entity.x == newX)) {
               if (entity is RandomEnemy) {
                 pageNavigator.value = (BuildContext context) {
-                  navigateToCombatPage(context, entity, GamerType.front);
+                  navigateToCombatPage(context, entity, TurnGamerType.front);
                 };
               }
             }

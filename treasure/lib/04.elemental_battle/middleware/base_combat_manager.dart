@@ -43,10 +43,12 @@ abstract class BaseCombatManager {
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
   final ValueNotifier<String> infoList = ValueNotifier("");
-  final ValueNotifier<GamerType> currentGamer = ValueNotifier(GamerType.front);
+  final ValueNotifier<TurnGamerType> currentGamer = ValueNotifier(
+    TurnGamerType.front,
+  );
 
-  void initCombat(GamerType playerType) {
-    final info = playerType == GamerType.front ? "你的回合，请行动" : "敌人的回合，请等待";
+  void initCombat(TurnGamerType playerType) {
+    final info = playerType == TurnGamerType.front ? "你的回合，请行动" : "敌人的回合，请等待";
     addCombatInfo(
       "${' '.padRight(100)}\n"
       "$info\n",

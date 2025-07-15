@@ -410,12 +410,12 @@ class SkillCollection {
   static final CombatSkill woodFinal_0 = CombatSkill(
     id: SkillID.woodFinal_0,
     name: "桎梏",
-    description: "回复生命时，溢出治疗量会提升生命值上限，生效一次。",
-    type: SkillType.active,
+    description: "回复生命时，溢出的治疗量会提升生命值上限。",
+    type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
+      effects[EffectID.increaseCapacity.index].type = EffectType.infinite;
       effects[EffectID.increaseCapacity.index].value = 1;
-      effects[EffectID.increaseCapacity.index].times += 1;
     },
   );
 

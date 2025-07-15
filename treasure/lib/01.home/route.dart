@@ -9,10 +9,11 @@ import '../04.elemental_battle/upper/net_combat_page.dart';
 import '../05.gobang/local_main_page.dart';
 import '../05.gobang/net_main_page.dart';
 import '../06.greedy_snake/local_page.dart';
+import '../06.greedy_snake/net_page.dart';
 
 enum LocalItemType { animalChess, elementalBattle, gobang, greedySnake }
 
-enum NetItemType { onlyChat, animalChess, elementalBattle, gobang }
+enum NetItemType { onlyChat, animalChess, elementalBattle, gobang, greedySnake }
 
 class RouteManager {
   static void navigateToLocalPage(
@@ -34,10 +35,12 @@ class RouteManager {
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => LocalGomokuPage()));
+        break;
       case LocalItemType.greedySnake:
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => LocalGreedySnakePage()));
+        break;
     }
   }
 
@@ -77,6 +80,15 @@ class RouteManager {
                 NetGomokuPage(userName: userName, roomInfo: roomInfo),
           ),
         );
+        break;
+      case NetItemType.greedySnake:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                NetGreedySnakePage(userName: userName, roomInfo: roomInfo),
+          ),
+        );
+        break;
     }
   }
 }

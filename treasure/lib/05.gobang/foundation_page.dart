@@ -76,15 +76,17 @@ class GomokuBoard extends StatelessWidget {
       valueListenable: notifier,
       builder: (_, grid, __) {
         if (grid.hasPiece()) {
-          final GamerType piece = GamerType.values[grid.state];
+          final TurnGamerType piece = TurnGamerType.values[grid.state];
           return Center(
             child: Container(
               width: cellSize * 0.8,
               height: cellSize * 0.8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: piece == GamerType.front ? Colors.black : Colors.white,
-                border: piece == GamerType.rear
+                color: piece == TurnGamerType.front
+                    ? Colors.black
+                    : Colors.white,
+                border: piece == TurnGamerType.rear
                     ? Border.all(color: Colors.black, width: 1.5)
                     : null,
               ),

@@ -1,44 +1,61 @@
+import 'dart:convert';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../00.common/engine/net_real_engine.dart';
+import '../00.common/game/step.dart';
 import '../00.common/model/notifier.dart';
+import '../00.common/network/network_message.dart';
+import '../00.common/network/network_room.dart';
 import 'base.dart';
 
-class LocalManager extends ChangeNotifier {
-  final Random _random = Random();
+class NetManager extends ChangeNotifier {
   static const int generateCount = 5;
-
+  final Random _random = Random();
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
-  final Map<int, Snake> snakes = {}; // 保存所有蛇，第一个是玩家
-  final List<Food> foods = []; // 保存所有食物
 
-  int identity = 0; // 玩家标识
+  Map<int, Snake> snakes = {}; // 保存所有蛇，第一个是玩家
+  List<Food> foods = []; // 保存所有食物
 
   // 游戏计时器
   late final Ticker _ticker;
-  bool paused = false;
-  double _foodCheckAccumulator = 0;
 
-  LocalManager() {
-    _initGmae();
-    _startGameLoop();
+  late final NetRealGameEngine netRealEngine;
+
+  NetManager({required String userName, required RoomInfo roomInfo}) {
+    netRealEngine = NetRealGameEngine(
+      userName: userName,
+      roomInfo: roomInfo,
+      navigatorHandler: pageNavigator,
+      searchHandler: _searchHandler,
+      resourceHandler: _resourceHandler,
+      actionHandler: _actionHandler,
+      endHandler: _endHandler,
+    );
+    _ticker = Ticker(_gameLoopCallback);
   }
 
-  void _initGmae() {
-    snakes[identity] = _createSnake(); // 初始化玩家
-
-    for (int i = 1; i <= generateCount; i++) {
-      snakes[identity + i] = _createSnake();
-      foods.add(Food(position: _getRandomPosition()));
+  void _searchHandler(int id) {
+    if (snakes.isEmpty) {
+      snakes[netRealEngine.identity] = _createSnake();
     }
+
+    if (foods.isEmpty) {
+      for (int i = 0; i < generateCount; i++) {
+        foods.add(Food(position: _getRandomPosition()));
+      }
+    }
+    snakes[id] = _createSnake();
+    netRealEngine.sendNetworkMessage(MessageType.resource, _toJsonString());
   }
 
   Snake _createSnake() {
     return Snake(
       head: _getRandomPosition(),
-      length: _getRandomLength(),
+      length: 100,
       angle: _getRandomAngle(),
       style: SnakeStyle.random(),
     );
@@ -55,24 +72,18 @@ class LocalManager extends ChangeNotifier {
     return Offset(x, y);
   }
 
-  int _getRandomLength() {
-    if (snakes.isNotEmpty) {
-      return _random.nextInt(snakes[identity]!.length) + 30;
-    }
-    return _random.nextInt(70) + 30;
-  }
-
   double _getRandomAngle() {
     return _random.nextDouble() * 2 * pi;
   }
 
-  // 开始游戏循环
-  void _startGameLoop() {
-    _ticker = Ticker(_gameLoopCallback);
+  void _resourceHandler(NetworkMessage message) {
+    if (_ticker.isActive) {
+      _ticker.stop();
+    }
+    _fromJsonString(message.content);
     _ticker.start();
   }
 
-  // 游戏循环回调
   void _gameLoopCallback(Duration elapsed) {
     double deltaTime = min(elapsed.inMilliseconds / 1000.0, 0.1); // 限制最大时间步
 
@@ -83,45 +94,7 @@ class LocalManager extends ChangeNotifier {
     // 处理碰撞事件
     _handleCollisions();
 
-    _foodCheckAccumulator += deltaTime;
-
-    if (_foodCheckAccumulator > 0.2) {
-      // 敌人每隔200毫秒，会朝最近的食物转向
-      snakes.forEach((id, snake) {
-        if (id == identity) {
-          return;
-        }
-
-        _turnToFood(snake);
-      });
-    }
-
     notifyListeners(); // 更新UI
-  }
-
-  void _turnToFood(Snake snake) {
-    Offset nearestFood = _getNearestFood(snake.head);
-    if (nearestFood != Offset.zero) {
-      double dx = nearestFood.dx - snake.head.dx;
-      double dy = nearestFood.dy - snake.head.dy;
-      double newAngle = atan2(dy, dx);
-      snake.updateAngle(newAngle);
-    }
-  }
-
-  // 获取最近的食物
-  Offset _getNearestFood(Offset position) {
-    if (foods.isEmpty) return Offset.zero;
-    Food nearest = foods.first;
-    double minDistance = (position - nearest.position).distance;
-    for (Food food in foods) {
-      double distance = (position - food.position).distance;
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearest = food;
-      }
-    }
-    return nearest.position;
   }
 
   // 处理碰撞事件
@@ -134,7 +107,7 @@ class LocalManager extends ChangeNotifier {
           snake.head.dx > mapWidth ||
           snake.head.dy < 0 ||
           snake.head.dy > mapHeight) {
-        if (id == identity) {
+        if (id == netRealEngine.identity) {
           _handleGameOver();
         } else {
           toRemove.add(id);
@@ -150,8 +123,7 @@ class LocalManager extends ChangeNotifier {
             Food.foodSize / 2 + snake.style.headSize / 2 + 10) {
           snake.updateLength(Food.snakeGrowthPerFood);
           foods.removeAt(i);
-          foods.add(Food(position: _getRandomPosition())); // 生成新食物
-          break; // 一次只能吃一个食物
+          break;
         }
       }
 
@@ -163,7 +135,7 @@ class LocalManager extends ChangeNotifier {
         for (final bodyPart in otherSnake.body) {
           if ((snake.head - bodyPart).distance <
               snake.style.headSize / 2 + snake.style.headSize / 2) {
-            if (id == identity) {
+            if (id == netRealEngine.identity) {
               _handleGameOver();
             } else if (!toRemove.contains(id)) {
               toRemove.add(id);
@@ -177,19 +149,19 @@ class LocalManager extends ChangeNotifier {
     // 遍历结束后统一删除
     for (final id in toRemove) {
       snakes.remove(id);
-      snakes[id] = _createSnake(); // 重新生成蛇
     }
   }
 
   void _handleGameOver() {
     _ticker.stop();
+    netRealEngine.gameStep.value = GameStep.gameOver;
     pageNavigator.value = (context) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text("游戏结束"),
-            content: Text("最终长度: ${snakes[0]!.length}"),
+            content: Text("最终长度: ${snakes[netRealEngine.identity]!.length}"),
             actions: [
               TextButton(
                 child: const Text('确定'),
@@ -197,13 +169,14 @@ class LocalManager extends ChangeNotifier {
                   if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
                   }
-                  _navigateToBack();
                 },
               ),
             ],
           );
         },
-      );
+      ).then((_) {
+        _navigateToBack();
+      });
     };
   }
 
@@ -215,31 +188,66 @@ class LocalManager extends ChangeNotifier {
     };
   }
 
+  String _toJsonString() {
+    return json.encode(_toJson());
+  }
+
+  void _fromJsonString(String jsonString) {
+    _fromJson(json.decode(jsonString));
+  }
+
+  Map<String, dynamic> _toJson() {
+    return {
+      'snakes': snakes.map(
+        (key, value) => MapEntry(key.toString(), value.toJson()),
+      ),
+      'foods': foods.map((food) => food.toJson()).toList(),
+    };
+  }
+
+  void _fromJson(Map<String, dynamic> json) {
+    snakes = <int, Snake>{};
+    (json['snakes'] as Map<String, dynamic>).forEach((key, value) {
+      snakes[int.parse(key)] = Snake.fromJson(value);
+    });
+
+    foods = (json['foods'] as List<dynamic>)
+        .map((item) => Food.fromJson(item))
+        .toList();
+  }
+
   void updatePlayerAngle(double newAngle) {
-    if (snakes.isNotEmpty) {
-      snakes[identity]!.updateAngle(newAngle);
-    }
+    final content = json.encode({'actionType': 'joystick', 'angle': newAngle});
+    netRealEngine.sendNetworkMessage(MessageType.action, content);
   }
 
   void updatePlayerSpeed(bool isFaster) {
-    if (snakes.isNotEmpty) {
-      snakes[identity]!.updateSpeed(isFaster);
+    final content = json.encode({
+      'actionType': 'speedButton',
+      'isFaster': isFaster,
+    });
+    netRealEngine.sendNetworkMessage(MessageType.action, content);
+  }
+
+  void _actionHandler(NetworkMessage message) {
+    final Map<String, dynamic> content = json.decode(message.content);
+    final actionType = content['actionType'] as String;
+
+    switch (actionType) {
+      case 'joystick':
+        final angle = content['angle'] as double;
+        snakes[message.id]!.updateAngle(angle);
+        break;
+      case 'speedButton':
+        final isFaster = content['isFaster'] as bool;
+        snakes[message.id]!.updateSpeed(isFaster);
+        break;
     }
   }
 
-  void pause() {
-    if (_ticker.isActive) {
-      _ticker.stop();
-    }
-  }
+  void _endHandler() {}
 
-  void resume() {
-    _ticker.start();
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
+  void leavePage() {
+    netRealEngine.leavePage();
   }
 }

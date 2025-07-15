@@ -24,7 +24,7 @@ class NetCombatPage extends StatelessWidget {
   }
 
   Widget _buildPage(BuildContext context) {
-    return ValueListenableBuilder<TurnGameStep>(
+    return ValueListenableBuilder<GameStep>(
       valueListenable: _combatManager.netTurnEngine.gameStep,
       builder: (__, step, _) {
         return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
@@ -32,8 +32,8 @@ class NetCombatPage extends StatelessWidget {
     );
   }
 
-  AppBar _buildAppBar(TurnGameStep step) {
-    if (step.index <= TurnGameStep.connected.index) {
+  AppBar _buildAppBar(GameStep step) {
+    if (step.index <= GameStep.connected.index) {
       return AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -42,7 +42,7 @@ class NetCombatPage extends StatelessWidget {
         title: Text("等待"),
         centerTitle: true,
       );
-    } else if (step.index == TurnGameStep.action.index) {
+    } else if (step.index == GameStep.action.index) {
       return AppBar(
         title: Text("战斗"),
         centerTitle: true,
@@ -60,12 +60,12 @@ class NetCombatPage extends StatelessWidget {
     }
   }
 
-  Widget _buildBody(TurnGameStep step) {
+  Widget _buildBody(GameStep step) {
     return Column(
       children: [
         // 弹出页面
         NotifierNavigator(navigatorHandler: _combatManager.pageNavigator),
-        ...(step.index >= TurnGameStep.action.index
+        ...(step.index >= GameStep.action.index
             ? BaseCombatPage(combatManager: _combatManager).buildPage()
             : _buildPrepare(step)),
 
@@ -77,21 +77,21 @@ class NetCombatPage extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildPrepare(TurnGameStep step) {
+  List<Widget> _buildPrepare(GameStep step) {
     return [
       const SizedBox(height: 20),
-      if (step == TurnGameStep.disconnect || step == TurnGameStep.connected)
+      if (step == GameStep.disconnect || step == GameStep.connected)
         const CircularProgressIndicator(),
       const SizedBox(height: 20),
       Text(step.getExplaination()),
       const SizedBox(height: 20),
-      if (step == TurnGameStep.frontConfig || step == TurnGameStep.rearConfig)
+      if (step == GameStep.frontConfig || step == GameStep.rearConfig)
         ElevatedButton(
           onPressed: () => _combatManager.navigateToCastPage(),
           child: const Text('配置角色'),
         ),
       const SizedBox(height: 20),
-      if (step == TurnGameStep.rearConfig)
+      if (step == GameStep.rearConfig)
         ElevatedButton(
           onPressed: () => _combatManager.navigateToStatePage(),
           child: const Text('查看对手信息'),

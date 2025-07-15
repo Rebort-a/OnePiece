@@ -1,5 +1,5 @@
 // 游戏进展类型
-enum TurnGameStep {
+enum GameStep {
   disconnect,
   connected,
   frontConfig,
@@ -7,27 +7,27 @@ enum TurnGameStep {
   frontWait,
   rearConfig,
   action,
-  gamerOver,
+  gameOver,
 }
 
-extension TurnGameStepExtension on TurnGameStep {
+extension TurnGameStepExtension on GameStep {
   String getExplaination() {
     switch (this) {
-      case TurnGameStep.disconnect:
+      case GameStep.disconnect:
         return "等待连接";
-      case TurnGameStep.connected:
+      case GameStep.connected:
         return "已连接，等待对手加入...";
-      case TurnGameStep.frontConfig:
+      case GameStep.frontConfig:
         return "请配置";
-      case TurnGameStep.rearWait:
+      case GameStep.rearWait:
         return "等待先手配置";
-      case TurnGameStep.frontWait:
+      case GameStep.frontWait:
         return "等待后手配置";
-      case TurnGameStep.rearConfig:
+      case GameStep.rearConfig:
         return "请配置或查看对方配置";
-      case TurnGameStep.action:
+      case GameStep.action:
         return "进行中"; // 补充原代码中缺失的case
-      case TurnGameStep.gamerOver:
+      case GameStep.gameOver:
         return "游戏结束";
     }
   }

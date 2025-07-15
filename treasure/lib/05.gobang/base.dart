@@ -6,26 +6,26 @@ import '../00.common/model/notifier.dart';
 
 class Grid {
   final int coordinate;
-  int state = GamerType.values.length;
+  int state = TurnGamerType.values.length;
 
   Grid({required this.coordinate});
 
   bool hasPiece() {
-    return (state >= 0 && state < GamerType.values.length);
+    return (state >= 0 && state < TurnGamerType.values.length);
   }
 }
 
 class GridNotifier extends ValueNotifier<Grid> {
   GridNotifier(super.value);
 
-  void placePiece(GamerType player) {
+  void placePiece(TurnGamerType player) {
     value.state = player.index;
     notifyListeners();
   }
 
   void clear() {
     if (value.hasPiece()) {
-      value.state = GamerType.values.length;
+      value.state = TurnGamerType.values.length;
       notifyListeners();
     }
   }
@@ -35,7 +35,9 @@ class Board {
   final int size;
   final ListNotifier<GridNotifier> grids = ListNotifier([]);
   List<Grid> moveHistory = [];
-  AlwaysNotifier<GamerType> currentGamer = AlwaysNotifier(GamerType.front);
+  AlwaysNotifier<TurnGamerType> currentGamer = AlwaysNotifier(
+    TurnGamerType.front,
+  );
   bool gameOver = false;
 
   Board({required this.size}) {
@@ -86,7 +88,7 @@ class Board {
   void restart() {
     _clear();
     moveHistory.clear();
-    changeGamer(GamerType.front);
+    changeGamer(TurnGamerType.front);
     gameOver = false;
   }
 
@@ -105,7 +107,7 @@ class Board {
     changeGamer(currentGamer.value.opponent);
   }
 
-  void changeGamer(GamerType gamer) {
+  void changeGamer(TurnGamerType gamer) {
     currentGamer.value = gamer;
   }
 

@@ -17,7 +17,7 @@ const List<String> animalEmojis = [
 
 class Animal {
   final AnimalType type;
-  final GamerType owner;
+  final TurnGamerType owner;
   bool isSelected;
   bool isHidden;
 

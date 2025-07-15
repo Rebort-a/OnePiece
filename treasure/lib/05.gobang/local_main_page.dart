@@ -37,15 +37,15 @@ class _LocalGomokuPageState extends State<LocalGomokuPage> {
       ),
       body: Column(
         children: [
-          ValueListenableBuilder<GamerType>(
+          ValueListenableBuilder<TurnGamerType>(
             valueListenable: manager.board.currentGamer,
             builder: (context, gamer, child) {
               return Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   manager.board.gameOver == false
-                      ? '当前回合: ${gamer == GamerType.front ? "黑方" : "白方"}'
-                      : '${gamer == GamerType.rear ? "黑方" : "白方"}获胜!',
+                      ? '当前回合: ${gamer == TurnGamerType.front ? "黑方" : "白方"}'
+                      : '${gamer == TurnGamerType.rear ? "黑方" : "白方"}获胜!',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

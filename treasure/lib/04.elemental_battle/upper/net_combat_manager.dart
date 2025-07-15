@@ -38,24 +38,20 @@ class NetCombatManager extends BaseCombatManager {
     // 由于NetCombatPage在游戏阶段更新为frontConfig时，会出现配置按钮，点击后会生成配置并发送，所以这里不需要处理
   }
 
-  void _resourceHandler(TurnGameStep step, NetworkMessage message) {
+  void _resourceHandler(GameStep step, NetworkMessage message) {
     final jsonData = jsonDecode(message.content);
 
-    if (step == TurnGameStep.frontConfig) {
+    if (step == GameStep.frontConfig) {
       // 先手收到自己的信息，初始化player
       player = Elemental.fromJson(jsonData);
-    } else if (step == TurnGameStep.frontWait) {
+    } else if (step == GameStep.frontWait) {
       // 先手收到敌人的信息，初始化enemy，并开始战斗
       enemy = Elemental.fromJson(jsonData);
       initCombat(netTurnEngine.playerType);
-    } else if (step == TurnGameStep.connected) {
-      // 后手收到敌人的信息，匹配到敌人，初始化enemy
-      netTurnEngine.enemyIdentify = message.id;
-      enemy = Elemental.fromJson(jsonData);
-    } else if (step == TurnGameStep.rearWait) {
+    } else if (step == GameStep.rearWait) {
       // 后手收到敌人的信息，初始化enemy
       enemy = Elemental.fromJson(jsonData);
-    } else if (step == TurnGameStep.rearConfig) {
+    } else if (step == GameStep.rearConfig) {
       // 后手收到自己的信息，初始化player，并开始战斗
       player = Elemental.fromJson(jsonData);
       initCombat(netTurnEngine.playerType);

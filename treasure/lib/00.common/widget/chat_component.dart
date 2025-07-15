@@ -30,7 +30,7 @@ class MessageList extends StatelessWidget {
 
   Widget _buildMessageCard(NetworkMessage message) {
     bool isCurrentUser =
-        (message.id == networkEngine.identify) &&
+        (message.id == networkEngine.identity) &&
         (message.source == networkEngine.userName);
     bool isNotify = message.type == MessageType.notify;
 

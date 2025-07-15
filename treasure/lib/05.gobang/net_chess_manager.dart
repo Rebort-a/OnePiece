@@ -31,12 +31,12 @@ class NetGomokuManager extends BaseGomokuManager {
     netTurnEngine.sendNetworkMessage(MessageType.resource, 'ok');
   }
 
-  void _resourceHandler(TurnGameStep step, NetworkMessage message) {
-    if (step == TurnGameStep.connected || step == TurnGameStep.rearWait) {
+  void _resourceHandler(GameStep step, NetworkMessage message) {
+    if (step == GameStep.connected || step == GameStep.rearWait) {
       netTurnEngine.sendNetworkMessage(MessageType.resource, 'ok');
-    } else if (step == TurnGameStep.frontWait) {
+    } else if (step == GameStep.frontWait) {
       board.restart();
-    } else if (step == TurnGameStep.rearConfig) {
+    } else if (step == GameStep.rearConfig) {
       board.restart();
     }
   }

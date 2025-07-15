@@ -38,8 +38,8 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
     ); // 然后通过网络发送
   }
 
-  void _resourceHandler(TurnGameStep step, NetworkMessage message) {
-    if (step == TurnGameStep.connected || step == TurnGameStep.rearWait) {
+  void _resourceHandler(GameStep step, NetworkMessage message) {
+    if (step == GameStep.connected || step == GameStep.rearWait) {
       _stringToMap(message.content);
       resetGameState();
       netTurnEngine.sendNetworkMessage(MessageType.resource, "ok");
@@ -47,7 +47,7 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
   }
 
   void _actionHandler(bool isSelf, NetworkMessage message) {
-    if (netTurnEngine.gameStep.value == TurnGameStep.action) {
+    if (netTurnEngine.gameStep.value == GameStep.action) {
       int index = jsonDecode(message.content)['index'];
       if (index >= 0 && index < displayMap.length) {
         if (currentGamer.value == netTurnEngine.playerType && isSelf) {
@@ -98,7 +98,7 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
     for (final animalData in animalDistribution) {
       final data = animalData as List<dynamic>;
       final index = data[0] as int;
-      final owner = GamerType.values[data[1] as int];
+      final owner = TurnGamerType.values[data[1] as int];
       final type = AnimalType.values[data[2] as int];
       final isHidden = data[3] == 1;
 
@@ -110,7 +110,7 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
   }
 
   void sendActionMessage(int index) {
-    if ((netTurnEngine.gameStep.value == TurnGameStep.action &&
+    if ((netTurnEngine.gameStep.value == GameStep.action &&
             currentGamer.value == netTurnEngine.playerType) ||
         index == -1) {
       netTurnEngine.sendNetworkMessage(
@@ -122,7 +122,7 @@ class NetAnimalChessManager extends BaseAnimalChessManager {
 
   @override
   void showChessResult(bool isRedWin) {
-    netTurnEngine.gameStep.value = TurnGameStep.gamerOver;
+    netTurnEngine.gameStep.value = GameStep.gameOver;
     pageNavigator.value = (context) {
       TemplateDialog.confirmDialog(
         context: context,

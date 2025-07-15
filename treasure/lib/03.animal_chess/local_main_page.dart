@@ -52,11 +52,11 @@ class LoaclAnimalChessPage extends StatelessWidget {
     builder: (_, gamer, __) => Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: gamer == GamerType.front ? Colors.red : Colors.blue,
+        color: gamer == TurnGamerType.front ? Colors.red : Colors.blue,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        '${gamer == GamerType.front ? "红" : "蓝"}方回合',
+        '${gamer == TurnGamerType.front ? "红" : "蓝"}方回合',
         style: globalTheme.textTheme.titleMedium?.copyWith(color: Colors.white),
       ),
     ),

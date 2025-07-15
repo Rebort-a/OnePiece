@@ -14,7 +14,7 @@ class LocalCombatPage extends StatelessWidget {
     super.key,
     required Elemental player,
     required Elemental enemy,
-    required GamerType playerType,
+    required TurnGamerType playerType,
   }) {
     _combatManager = LocalCombatManager(
       player: player,

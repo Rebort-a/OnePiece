@@ -34,7 +34,7 @@ class NetAnimalChessPage extends StatelessWidget {
   }
 
   Widget _buildPage(BuildContext context) {
-    return ValueListenableBuilder<TurnGameStep>(
+    return ValueListenableBuilder<GameStep>(
       valueListenable: _chessManager.netTurnEngine.gameStep,
       builder: (__, step, _) {
         return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
@@ -42,13 +42,13 @@ class NetAnimalChessPage extends StatelessWidget {
     );
   }
 
-  AppBar _buildAppBar(TurnGameStep step) {
+  AppBar _buildAppBar(GameStep step) {
     // 根据游戏步骤确定图标
     IconData icon;
 
-    if (step.index < TurnGameStep.action.index) {
+    if (step.index < GameStep.action.index) {
       icon = Icons.arrow_back;
-    } else if (step.index == TurnGameStep.action.index) {
+    } else if (step.index == GameStep.action.index) {
       icon = Icons.flag;
     } else {
       icon = Icons.exit_to_app;
@@ -61,12 +61,12 @@ class NetAnimalChessPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(TurnGameStep step) {
+  Widget _buildBody(GameStep step) {
     return Column(
       children: [
         // 弹出页面
         NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
-        ...(step == TurnGameStep.action
+        ...(step == GameStep.action
             ? [
                 _buildTurnIndicator(),
                 Expanded(
@@ -93,7 +93,7 @@ class NetAnimalChessPage extends StatelessWidget {
     builder: (_, gamer, __) => Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: gamer == GamerType.front ? Colors.red : Colors.blue,
+        color: gamer == TurnGamerType.front ? Colors.red : Colors.blue,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -103,7 +103,7 @@ class NetAnimalChessPage extends StatelessWidget {
     ),
   );
 
-  List<Widget> _buildPrepare(TurnGameStep step) {
+  List<Widget> _buildPrepare(GameStep step) {
     return [
       const SizedBox(height: 20),
       const CircularProgressIndicator(),

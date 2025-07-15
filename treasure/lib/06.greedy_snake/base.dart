@@ -1,15 +1,8 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 const double mapWidth = 2000;
 const double mapHeight = 2000;
-
-const double iniSnakeSpeed = 100;
-const double fastSnakeSpeed = 180;
-
-const double foodSize = 20;
-const double snakeGrowthPerFood = 15;
 
 class SnakeStyle {
   final double headSize;
@@ -23,7 +16,6 @@ class SnakeStyle {
     required this.headSize,
     required this.headColor,
     required this.eyeColor,
-
     required this.bodySize,
     required this.bodyColor,
   });
@@ -33,7 +25,6 @@ class SnakeStyle {
     headSize: 10.0,
     headColor: Colors.green,
     eyeColor: Colors.white,
-
     bodySize: 12.0,
     bodyColor: Colors.green,
   );
@@ -56,7 +47,6 @@ class SnakeStyle {
       headSize: 8 + random.nextDouble() * 4.0,
       headColor: color.shade800,
       eyeColor: Colors.white,
-
       bodySize: 10 + random.nextDouble() * 8.0,
       bodyColor: color,
     );
@@ -67,7 +57,6 @@ class SnakeStyle {
     double? headSize,
     Color? headColor,
     Color? eyeColor,
-
     double? bodySize,
     Color? bodyColor,
   }) {
@@ -75,14 +64,48 @@ class SnakeStyle {
       headSize: headSize ?? this.headSize,
       headColor: headColor ?? this.headColor,
       eyeColor: eyeColor ?? this.eyeColor,
-
       bodySize: bodySize ?? this.bodySize,
       bodyColor: bodyColor ?? this.bodyColor,
     );
   }
+
+  // SnakeStyle转JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'headSize': headSize,
+      'headColor': _colorToJson(headColor),
+      'eyeColor': _colorToJson(eyeColor),
+      'bodySize': bodySize,
+      'bodyColor': _colorToJson(bodyColor),
+    };
+  }
+
+  // 从JSON创建SnakeStyle
+  factory SnakeStyle.fromJson(Map<String, dynamic> json) {
+    return SnakeStyle(
+      headSize: json['headSize'],
+      headColor: _colorFromJson(json['headColor']),
+      eyeColor: _colorFromJson(json['eyeColor']),
+      bodySize: json['bodySize'],
+      bodyColor: _colorFromJson(json['bodyColor']),
+    );
+  }
+
+  // 辅助方法：Color转JSON
+  static Map<String, int> _colorToJson(Color color) {
+    return {'value': color.toARGB32()};
+  }
+
+  // 辅助方法：从JSON创建Color
+  static Color _colorFromJson(Map<String, dynamic> json) {
+    return Color(json['value']);
+  }
 }
 
 class Snake {
+  static const double iniSnakeSpeed = 40;
+  static const double fastSnakeSpeed = 70;
+
   List<Offset> body = [];
   double currentSpeed = iniSnakeSpeed;
   double _currentLength = 0.0;
@@ -142,9 +165,61 @@ class Snake {
   void updateLength(int step) {
     length += step;
   }
+
+  // Snake转JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'head': _offsetToJson(head),
+      'length': length,
+      'angle': angle,
+      'style': style.toJson(),
+      'body': body.map((offset) => _offsetToJson(offset)).toList(),
+      'currentSpeed': currentSpeed,
+      '_currentLength': _currentLength,
+    };
+  }
+
+  // 从JSON创建Snake
+  factory Snake.fromJson(Map<String, dynamic> json) {
+    Snake snake = Snake(
+      head: _offsetFromJson(json['head']),
+      length: json['length'],
+      angle: json['angle'],
+      style: SnakeStyle.fromJson(json['style']),
+    );
+    snake.body = (json['body'] as List<dynamic>)
+        .map((item) => _offsetFromJson(item))
+        .toList();
+    snake.currentSpeed = json['currentSpeed'];
+    snake._currentLength = json['_currentLength'];
+    return snake;
+  }
+
+  // 辅助方法：Offset转JSON
+  static Map<String, double> _offsetToJson(Offset offset) {
+    return {'dx': offset.dx, 'dy': offset.dy};
+  }
+
+  // 辅助方法：从JSON创建Offset
+  static Offset _offsetFromJson(Map<String, dynamic> json) {
+    return Offset(json['dx'], json['dy']);
+  }
 }
 
 class Food {
+  static const double foodSize = 20;
+  static const int snakeGrowthPerFood = 15;
+
   Offset position;
   Food({required this.position});
+
+  // Food转JSON
+  Map<String, dynamic> toJson() {
+    return {'position': Snake._offsetToJson(position)};
+  }
+
+  // 从JSON创建Food
+  factory Food.fromJson(Map<String, dynamic> json) {
+    return Food(position: Snake._offsetFromJson(json['position']));
+  }
 }

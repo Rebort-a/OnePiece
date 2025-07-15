@@ -12,7 +12,7 @@ import '../foundation/skill.dart';
 class LocalCombatManager extends BaseCombatManager {
   final _random = Random();
 
-  late final GamerType playerType;
+  late final TurnGamerType playerType;
 
   LocalCombatManager({
     required Elemental player,

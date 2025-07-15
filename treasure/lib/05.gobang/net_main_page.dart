@@ -41,14 +41,14 @@ class NetGomokuPage extends StatelessWidget {
   }
 
   Widget _buildBody() {
-    return ValueListenableBuilder<TurnGameStep>(
+    return ValueListenableBuilder<GameStep>(
       valueListenable: _manager.netTurnEngine.gameStep,
       builder: (__, step, _) {
         return Center(
           child: Column(
             children: [
               NotifierNavigator(navigatorHandler: _manager.pageNavigator),
-              ...(step == TurnGameStep.action
+              ...(step == GameStep.action
                   ? [
                       _buildTurnIndicator(),
                       Expanded(child: GomokuBoard(manager: _manager)),
@@ -66,10 +66,10 @@ class NetGomokuPage extends StatelessWidget {
     builder: (_, gamer, __) {
       String text = '';
       if (_manager.board.gameOver) {
-        text = '${gamer == GamerType.rear ? "黑方" : "白方"}获胜!';
+        text = '${gamer == TurnGamerType.rear ? "黑方" : "白方"}获胜!';
       } else {
         text =
-            '当前回合: ${gamer == _manager.netTurnEngine.playerType ? "你的" : "对方"} ${gamer == GamerType.front ? "黑方" : "白方"}';
+            '当前回合: ${gamer == _manager.netTurnEngine.playerType ? "你的" : "对方"} ${gamer == TurnGamerType.front ? "黑方" : "白方"}';
       }
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -81,7 +81,7 @@ class NetGomokuPage extends StatelessWidget {
     },
   );
 
-  List<Widget> _buildPrepare(TurnGameStep step) {
+  List<Widget> _buildPrepare(GameStep step) {
     return [
       const SizedBox(height: 20),
       const CircularProgressIndicator(),

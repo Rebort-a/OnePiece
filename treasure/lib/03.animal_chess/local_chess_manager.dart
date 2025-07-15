@@ -8,6 +8,6 @@ class LoaclAnimalChessManager extends BaseAnimalChessManager {
 
   @override
   void leavePage() {
-    showChessResult(currentGamer.value == GamerType.rear);
+    showChessResult(currentGamer.value == TurnGamerType.rear);
   }
 }
