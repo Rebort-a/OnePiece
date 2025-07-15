@@ -26,6 +26,8 @@ class FoodPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant FoodPainter oldDelegate) {
+    if (oldDelegate.viewOffset != viewOffset) return true;
+
     // 检查食物列表是否变化
     if (oldDelegate.foods.length != foods.length) return true;
 
@@ -36,7 +38,6 @@ class FoodPainter extends CustomPainter {
       }
     }
 
-    // 检查视野偏移是否变化
-    return oldDelegate.viewOffset != viewOffset;
+    return false;
   }
 }

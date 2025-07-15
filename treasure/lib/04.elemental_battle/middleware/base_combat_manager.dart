@@ -133,7 +133,7 @@ abstract class BaseCombatManager {
         : EnergyType.values[action.targetIndex];
 
     addCombatInfo(
-      "${source.getAppointName(source.current)} 施放了技能 ${skill.name} "
+      "${source.getAppointName(source.current)} 施放了技能 ${skill.name} \n"
       "${target.getAppointName(targetIndex)} 获得效果 ${skill.description}",
     );
 
@@ -165,7 +165,6 @@ abstract class BaseCombatManager {
   void _switchAppoint(Elemental elemental, EnergyType targetIndex) {
     elemental.switchAppoint(targetIndex);
     addCombatInfo('${elemental.getAppointName(elemental.current)} 上场');
-    _updatePrediction();
   }
 
   void handleEscape(bool isSelf) {
@@ -196,7 +195,6 @@ abstract class BaseCombatManager {
     addCombatInfo(
       '${elemental.baseName} 切换为 ${elemental.getAppointName(elemental.current)}',
     );
-    _updatePrediction();
     return true;
   }
 
@@ -213,7 +211,7 @@ abstract class BaseCombatManager {
   void _switchRound(bool isSelf) {
     addCombatInfo(isSelf ? '\n敌人的回合，请等待\n' : '\n你的回合，请行动\n');
     currentGamer.value = currentGamer.value.opponent;
-
+    _updatePrediction();
     handleEnemyAction();
   }
 

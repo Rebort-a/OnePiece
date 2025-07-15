@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../base.dart';
@@ -53,8 +55,13 @@ class BackgroundPainter extends CustomPainter {
     for (double x = startX; x <= endX; x += gridSize) {
       // 检查是否在边界内
       if (x >= 0 && x <= mapWidth) {
-        final lineStart = Offset(x - viewOffset.dx, 0);
-        final lineEnd = Offset(x - viewOffset.dx, size.height);
+        // 计算线条在边界内的起始和结束点
+        double yStart = max(0, viewOffset.dy);
+        double yEnd = min(mapHeight, viewOffset.dy + size.height);
+
+        final lineStart = Offset(x - viewOffset.dx, yStart - viewOffset.dy);
+        final lineEnd = Offset(x - viewOffset.dx, yEnd - viewOffset.dy);
+
         canvas.drawLine(lineStart, lineEnd, gridPaint);
       }
     }
@@ -63,8 +70,13 @@ class BackgroundPainter extends CustomPainter {
     for (double y = startY; y <= endY; y += gridSize) {
       // 检查是否在边界内
       if (y >= 0 && y <= mapHeight) {
-        final lineStart = Offset(0, y - viewOffset.dy);
-        final lineEnd = Offset(size.width, y - viewOffset.dy);
+        // 计算线条在边界内的起始和结束点
+        double xStart = max(0, viewOffset.dx);
+        double xEnd = min(mapWidth, viewOffset.dx + size.width);
+
+        final lineStart = Offset(xStart - viewOffset.dx, y - viewOffset.dy);
+        final lineEnd = Offset(xEnd - viewOffset.dx, y - viewOffset.dy);
+
         canvas.drawLine(lineStart, lineEnd, gridPaint);
       }
     }

@@ -27,7 +27,7 @@ class SnakePainter extends CustomPainter {
 
   void _drawSnakeBody(Canvas canvas, Snake snake) {
     final bodyPaint = Paint()
-      ..color = Colors.green
+      ..color = snake.style.bodyColor
       ..style = PaintingStyle.fill;
 
     // 绘制蛇身各段
@@ -51,8 +51,13 @@ class SnakePainter extends CustomPainter {
       canvas.transform(matrix.storage);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, -snakeBodySize / 2, distance, snakeBodySize),
-          Radius.circular(snakeBodySize / 2),
+          Rect.fromLTWH(
+            0,
+            -snake.style.bodySize / 2,
+            distance,
+            snake.style.bodySize,
+          ),
+          Radius.circular(snake.style.bodySize / 2),
         ),
         bodyPaint,
       );
@@ -62,22 +67,22 @@ class SnakePainter extends CustomPainter {
 
   void _drawSnakeHead(Canvas canvas, Snake snake) {
     final headPaint = Paint()
-      ..color = Colors.green.shade800
+      ..color = snake.style.headColor
       ..style = PaintingStyle.fill;
 
     final eyePaint = Paint()
-      ..color = Colors.white
+      ..color = snake.style.eyeColor
       ..style = PaintingStyle.fill;
 
     // 蛇头位置（相对于视野）
     final headPosition = snake.head - viewOffset;
 
     // 绘制蛇头圆形
-    canvas.drawCircle(headPosition, snakeHeadSize, headPaint);
+    canvas.drawCircle(headPosition, snake.style.headSize, headPaint);
 
     // 绘制眼睛
-    final eyeDistance = snakeHeadSize * 0.6;
-    final eyeSize = snakeHeadSize * 0.3;
+    final eyeDistance = snake.style.headSize * 0.6;
+    final eyeSize = snake.style.headSize * 0.3;
 
     // 计算眼睛位置（基于蛇头朝向）
     final eye1Angle = snake.angle - pi / 4;
@@ -100,6 +105,8 @@ class SnakePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant SnakePainter oldDelegate) {
+    if (oldDelegate.viewOffset != viewOffset) return true;
+
     if (oldDelegate.snakes.length != snakes.length) return true;
 
     for (int i = 0; i < snakes.length; i++) {
@@ -108,11 +115,12 @@ class SnakePainter extends CustomPainter {
 
       if (oldSnake.body != newSnake.body ||
           oldSnake.head != newSnake.head ||
-          oldSnake.angle != newSnake.angle) {
+          oldSnake.angle != newSnake.angle ||
+          oldSnake.style != newSnake.style) {
         return true;
       }
     }
 
-    return oldDelegate.viewOffset != viewOffset;
+    return false;
   }
 }

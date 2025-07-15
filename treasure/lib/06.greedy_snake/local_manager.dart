@@ -6,15 +6,18 @@ import '../00.common/model/notifier.dart';
 import 'base.dart';
 
 class BaseManager extends ChangeNotifier {
+  final Random _random = Random();
+
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
   final Map<int, Snake> snakes = {}; // 保存所有蛇，第一个是玩家
   final List<Food> foods = []; // 保存所有食物
-  final Random _random = Random();
 
   // 游戏计时器
   late final Ticker _ticker;
-  int _tickCount = 0;
+  double _foodCheckAccumulator = 0;
+
+  int identity = 0; // 玩家标识
 
   BaseManager() {
     _initGmae();
@@ -22,13 +25,44 @@ class BaseManager extends ChangeNotifier {
   }
 
   void _initGmae() {
-    snakes[0] = _createSnake(); // 初始化玩家
+    snakes[identity] = _createSnake(); // 初始化玩家
 
     // 初始化5个随机敌人蛇和食物
     for (int i = 1; i <= 5; i++) {
-      snakes[i] = _createSnake();
-      foods.add(Food(position: _getRandomPosition(_random)));
+      snakes[identity + i] = _createSnake();
+      foods.add(Food(position: _getRandomPosition()));
     }
+  }
+
+  Snake _createSnake() {
+    return Snake(
+      head: _getRandomPosition(),
+      length: _getRandomLength(),
+      angle: _getRandomAngle(),
+      style: SnakeStyle.random(),
+    );
+  }
+
+  Offset _getRandomPosition() {
+    double safeWidth = mapWidth - 200;
+    double safeHeight = mapHeight - 200;
+
+    // 在安全区域内生成随机坐标
+    double x = _random.nextDouble() * safeWidth + 100;
+    double y = _random.nextDouble() * safeHeight + 100;
+
+    return Offset(x, y);
+  }
+
+  int _getRandomLength() {
+    if (snakes.isNotEmpty) {
+      return _random.nextInt(snakes.values.first.length) + 30;
+    }
+    return _random.nextInt(70) + 30;
+  }
+
+  double _getRandomAngle() {
+    return _random.nextDouble() * 2 * pi;
   }
 
   // 开始游戏循环
@@ -39,66 +73,45 @@ class BaseManager extends ChangeNotifier {
 
   // 游戏循环回调
   void _gameLoopCallback(Duration elapsed) {
-    _tickCount++;
+    double deltaTime = min(elapsed.inMilliseconds / 1000.0, 0.1); // 限制最大时间步
 
     snakes.forEach((id, snake) {
-      snake.updatePosition(0.04);
+      snake.updatePosition(deltaTime);
     });
 
     // 处理碰撞事件
     _handleCollisions();
 
-    if (_tickCount % 1000 == 0) {
+    _foodCheckAccumulator += deltaTime;
+
+    if (_foodCheckAccumulator > 0.2) {
+      // 敌人每隔200毫秒，会朝最近的食物转向
       snakes.forEach((id, snake) {
-        if (id == 0) {
+        if (id == identity) {
           return;
         }
 
-        Food? nearestFood = _getNearestFood(snake.head);
-        if (nearestFood != null) {
-          double dx = nearestFood.position.dx - snake.head.dx;
-          double dy = nearestFood.position.dy - snake.head.dy;
-          double newAngle = atan2(dy, dx);
-          snake.updateAngle(newAngle);
-        }
+        _turnToFood(snake);
       });
     }
 
     notifyListeners(); // 更新UI
   }
 
-  static Snake _createSnake() {
-    Random random = Random();
-    return Snake(
-      head: _getRandomPosition(random),
-      length: _getRandomLength(random),
-      angle: _getRandomAngle(random),
-    );
-  }
-
-  static Offset _getRandomPosition(Random random) {
-    double safeWidth = mapWidth - 200;
-    double safeHeight = mapHeight - 200;
-
-    // 在安全区域内生成随机坐标
-    double x = random.nextDouble() * safeWidth + 100;
-    double y = random.nextDouble() * safeHeight + 100;
-
-    return Offset(x, y);
-  }
-
-  static double _getRandomLength(Random random) {
-    return random.nextInt(70) + 30;
-  }
-
-  static double _getRandomAngle(Random random) {
-    return random.nextDouble() * 2 * pi;
+  void _turnToFood(Snake snake) {
+    Offset nearestFood = _getNearestFood(snake.head);
+    if (nearestFood != Offset.zero) {
+      double dx = nearestFood.dx - snake.head.dx;
+      double dy = nearestFood.dy - snake.head.dy;
+      double newAngle = atan2(dy, dx);
+      snake.updateAngle(newAngle);
+    }
   }
 
   // 获取最近的食物
-  Food? _getNearestFood(Offset position) {
-    if (foods.isEmpty) return null;
-    Food nearest = foods[0];
+  Offset _getNearestFood(Offset position) {
+    if (foods.isEmpty) return Offset.zero;
+    Food nearest = foods.first;
     double minDistance = (position - nearest.position).distance;
     for (Food food in foods) {
       double distance = (position - food.position).distance;
@@ -107,7 +120,7 @@ class BaseManager extends ChangeNotifier {
         nearest = food;
       }
     }
-    return nearest;
+    return nearest.position;
   }
 
   // 处理碰撞事件
@@ -120,7 +133,7 @@ class BaseManager extends ChangeNotifier {
           snake.head.dx > mapWidth ||
           snake.head.dy < 0 ||
           snake.head.dy > mapHeight) {
-        if (id == 0) {
+        if (id == identity) {
           _handleGameOver();
         } else {
           toRemove.add(id);
@@ -133,10 +146,10 @@ class BaseManager extends ChangeNotifier {
       for (int i = foods.length - 1; i >= 0; i--) {
         final food = foods[i];
         if ((snake.head - food.position).distance <
-            foodSize / 2 + snakeHeadSize / 2) {
+            foodSize / 2 + snake.style.headSize / 2 + 10) {
           snake.updateLength(snakeGrowthPerFood.toInt());
           foods.removeAt(i);
-          foods.add(Food(position: _getRandomPosition(_random))); // 生成新食物
+          foods.add(Food(position: _getRandomPosition())); // 生成新食物
           break; // 一次只能吃一个食物
         }
       }
@@ -148,8 +161,8 @@ class BaseManager extends ChangeNotifier {
         final otherSnake = snakes[otherId]!;
         for (final bodyPart in otherSnake.body) {
           if ((snake.head - bodyPart).distance <
-              snakeHeadSize / 2 + snakeBodySize / 2) {
-            if (id == 0) {
+              snake.style.headSize / 2 + snake.style.headSize / 2) {
+            if (id == identity) {
               _handleGameOver();
             } else if (!toRemove.contains(id)) {
               toRemove.add(id);
@@ -163,10 +176,11 @@ class BaseManager extends ChangeNotifier {
     // 遍历结束后统一删除
     for (final id in toRemove) {
       snakes.remove(id);
+      snakes[id] = _createSnake(); // 重新生成蛇
     }
   }
 
-  _handleGameOver() {
+  void _handleGameOver() {
     _ticker.stop();
     pageNavigator.value = (context) {
       showDialog(
@@ -210,5 +224,11 @@ class BaseManager extends ChangeNotifier {
     if (snakes.isNotEmpty) {
       snakes.values.first.updateSpeed(isFaster);
     }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
   }
 }
