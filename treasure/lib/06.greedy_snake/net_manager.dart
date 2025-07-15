@@ -1,9 +1,8 @@
+// net_manager.dart
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-
 import '../00.common/engine/net_real_engine.dart';
 import '../00.common/game/step.dart';
 import '../00.common/model/notifier.dart';
@@ -13,241 +12,194 @@ import 'base.dart';
 
 class NetManager extends ChangeNotifier {
   static const int generateCount = 5;
-  final Random _random = Random();
-  final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
-      AlwaysNotifier((_) {});
+  final _random = Random();
+  final pageNavigator = AlwaysNotifier<void Function(BuildContext)>((_) {});
 
-  Map<int, Snake> snakes = {}; // 保存所有蛇，第一个是玩家
-  List<Food> foods = []; // 保存所有食物
+  final snakes = <int, Snake>{};
+  final foods = <Food>[];
 
-  // 游戏计时器
   late final Ticker _ticker;
-
-  late final NetRealGameEngine netRealEngine;
+  late final NetRealGameEngine engine;
 
   NetManager({required String userName, required RoomInfo roomInfo}) {
-    netRealEngine = NetRealGameEngine(
+    engine = NetRealGameEngine(
       userName: userName,
       roomInfo: roomInfo,
       navigatorHandler: pageNavigator,
-      searchHandler: _searchHandler,
-      resourceHandler: _resourceHandler,
-      actionHandler: _actionHandler,
-      endHandler: _endHandler,
+      searchHandler: _handleSearch,
+      resourceHandler: _handleResource,
+      actionHandler: _handleAction,
+      endHandler: _handleEnd,
     );
-    _ticker = Ticker(_gameLoopCallback);
+    _ticker = Ticker(_gameLoop);
   }
 
-  void _searchHandler(int id) {
-    if (snakes.isEmpty) {
-      snakes[netRealEngine.identity] = _createSnake();
-    }
-
+  void _handleSearch(int id) {
+    if (snakes.isEmpty) snakes[engine.identity] = _createSnake();
     if (foods.isEmpty) {
-      for (int i = 0; i < generateCount; i++) {
-        foods.add(Food(position: _getRandomPosition()));
-      }
+      foods.addAll(
+        List.generate(generateCount, (_) => Food(position: _randomPosition)),
+      );
     }
     snakes[id] = _createSnake();
-    netRealEngine.sendNetworkMessage(MessageType.resource, _toJsonString());
+    engine.sendNetworkMessage(MessageType.resource, _toJsonString());
   }
 
-  Snake _createSnake() {
-    return Snake(
-      head: _getRandomPosition(),
-      length: 100,
-      angle: _getRandomAngle(),
-      style: SnakeStyle.random(),
-    );
-  }
+  Snake _createSnake() => Snake(
+    head: _randomPosition,
+    length: 100,
+    angle: _randomAngle,
+    style: SnakeStyle.random(),
+  );
 
-  Offset _getRandomPosition() {
-    double safeWidth = mapWidth - 200;
-    double safeHeight = mapHeight - 200;
+  Offset get _randomPosition => Offset(
+    _random.nextDouble() * (mapWidth - 200) + 100,
+    _random.nextDouble() * (mapHeight - 200) + 100,
+  );
 
-    // 在安全区域内生成随机坐标
-    double x = _random.nextDouble() * safeWidth + 100;
-    double y = _random.nextDouble() * safeHeight + 100;
+  double get _randomAngle => _random.nextDouble() * 2 * pi;
 
-    return Offset(x, y);
-  }
-
-  double _getRandomAngle() {
-    return _random.nextDouble() * 2 * pi;
-  }
-
-  void _resourceHandler(NetworkMessage message) {
-    if (_ticker.isActive) {
-      _ticker.stop();
-    }
+  void _handleResource(NetworkMessage message) {
+    if (_ticker.isActive) _ticker.stop();
     _fromJsonString(message.content);
     _ticker.start();
   }
 
-  void _gameLoopCallback(Duration elapsed) {
-    double deltaTime = min(elapsed.inMilliseconds / 1000.0, 0.1); // 限制最大时间步
-
-    snakes.forEach((id, snake) {
+  void _gameLoop(Duration elapsed) {
+    final deltaTime = min(elapsed.inMilliseconds / 1000.0, 0.1);
+    for (var snake in snakes.values) {
       snake.updatePosition(deltaTime);
-    });
-
-    // 处理碰撞事件
+    }
     _handleCollisions();
-
-    notifyListeners(); // 更新UI
+    notifyListeners();
   }
 
-  // 处理碰撞事件
   void _handleCollisions() {
-    final List<int> toRemove = []; // 存储需要删除的蛇ID
+    final toRemove = <int>{};
 
-    snakes.forEach((id, snake) {
-      // 1. 墙壁碰撞检测
+    for (final entry in snakes.entries) {
+      final id = entry.key;
+      final snake = entry.value;
+
+      // Wall collision
       if (snake.head.dx < 0 ||
           snake.head.dx > mapWidth ||
           snake.head.dy < 0 ||
           snake.head.dy > mapHeight) {
-        if (id == netRealEngine.identity) {
+        if (id == engine.identity) {
           _handleGameOver();
         } else {
           toRemove.add(id);
         }
-
-        return;
+        continue;
       }
 
-      // 2. 食物碰撞检测
+      // Food collision
       for (int i = foods.length - 1; i >= 0; i--) {
         final food = foods[i];
         if ((snake.head - food.position).distance <
-            Food.foodSize / 2 + snake.style.headSize / 2 + 10) {
-          snake.updateLength(Food.snakeGrowthPerFood);
+            Food.size / 2 + snake.style.headSize / 2 + 10) {
+          snake.updateLength(Food.growthPerFood);
           foods.removeAt(i);
           break;
         }
       }
 
-      // 3. 其他蛇碰撞检测
-      for (final otherId in snakes.keys) {
-        if (id == otherId) continue;
+      // Snake collision
+      for (final other in snakes.entries) {
+        if (id == other.key) continue;
 
-        final otherSnake = snakes[otherId]!;
-        for (final bodyPart in otherSnake.body) {
+        for (final bodyPart in other.value.body) {
           if ((snake.head - bodyPart).distance <
               snake.style.headSize / 2 + snake.style.headSize / 2) {
-            if (id == netRealEngine.identity) {
+            if (id == engine.identity) {
               _handleGameOver();
-            } else if (!toRemove.contains(id)) {
+            } else {
               toRemove.add(id);
-              break;
             }
+            break;
           }
         }
       }
-    });
-
-    // 遍历结束后统一删除
-    for (final id in toRemove) {
-      snakes.remove(id);
     }
+
+    toRemove.forEach(snakes.remove);
   }
 
   void _handleGameOver() {
     _ticker.stop();
-    netRealEngine.gameStep.value = GameStep.gameOver;
+    engine.gameStep.value = GameStep.gameOver;
     pageNavigator.value = (context) {
       showDialog(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("游戏结束"),
-            content: Text("最终长度: ${snakes[netRealEngine.identity]!.length}"),
-            actions: [
-              TextButton(
-                child: const Text('确定'),
-                onPressed: () {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-            ],
-          );
-        },
-      ).then((_) {
-        _navigateToBack();
-      });
+        builder: (context) => AlertDialog(
+          title: const Text("游戏结束"),
+          content: Text("最终长度: ${snakes[engine.identity]?.length}"),
+          actions: [
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ).then((_) => _navigateBack());
     };
   }
 
-  void _navigateToBack() {
-    pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    };
-  }
+  void _navigateBack() =>
+      pageNavigator.value = (context) => Navigator.of(context).pop();
 
-  String _toJsonString() {
-    return json.encode(_toJson());
-  }
+  String _toJsonString() => json.encode(_toJson());
+  void _fromJsonString(String jsonString) => _fromJson(json.decode(jsonString));
 
-  void _fromJsonString(String jsonString) {
-    _fromJson(json.decode(jsonString));
-  }
-
-  Map<String, dynamic> _toJson() {
-    return {
-      'snakes': snakes.map(
-        (key, value) => MapEntry(key.toString(), value.toJson()),
-      ),
-      'foods': foods.map((food) => food.toJson()).toList(),
-    };
-  }
+  Map<String, dynamic> _toJson() => {
+    'snakes': snakes.map((k, v) => MapEntry(k.toString(), v.toJson())),
+    'foods': foods.map((f) => f.toJson()).toList(),
+  };
 
   void _fromJson(Map<String, dynamic> json) {
-    snakes = <int, Snake>{};
-    (json['snakes'] as Map<String, dynamic>).forEach((key, value) {
-      snakes[int.parse(key)] = Snake.fromJson(value);
+    snakes.clear();
+    (json['snakes'] as Map<String, dynamic>).forEach((k, v) {
+      snakes[int.parse(k)] = Snake.fromJson(v);
     });
 
-    foods = (json['foods'] as List<dynamic>)
-        .map((item) => Food.fromJson(item))
-        .toList();
+    foods.clear();
+    foods.addAll((json['foods'] as List).map((f) => Food.fromJson(f)));
   }
 
-  void updatePlayerAngle(double newAngle) {
-    final content = json.encode({'actionType': 'joystick', 'angle': newAngle});
-    netRealEngine.sendNetworkMessage(MessageType.action, content);
-  }
+  void updatePlayerAngle(double angle) => engine.sendNetworkMessage(
+    MessageType.action,
+    json.encode({'actionType': 'joystick', 'angle': angle}),
+  );
 
-  void updatePlayerSpeed(bool isFaster) {
-    final content = json.encode({
-      'actionType': 'speedButton',
-      'isFaster': isFaster,
-    });
-    netRealEngine.sendNetworkMessage(MessageType.action, content);
-  }
+  void updatePlayerSpeed(bool isFaster) => engine.sendNetworkMessage(
+    MessageType.action,
+    json.encode({'actionType': 'speedButton', 'isFaster': isFaster}),
+  );
 
-  void _actionHandler(NetworkMessage message) {
-    final Map<String, dynamic> content = json.decode(message.content);
+  void _handleAction(NetworkMessage message) {
+    final content = json.decode(message.content) as Map<String, dynamic>;
     final actionType = content['actionType'] as String;
+    final snake = snakes[message.id];
+
+    if (snake == null) return;
 
     switch (actionType) {
       case 'joystick':
-        final angle = content['angle'] as double;
-        snakes[message.id]!.updateAngle(angle);
+        snake.updateAngle(content['angle'] as double);
         break;
       case 'speedButton':
-        final isFaster = content['isFaster'] as bool;
-        snakes[message.id]!.updateSpeed(isFaster);
+        snake.updateSpeed(content['isFaster'] as bool);
         break;
     }
   }
 
-  void _endHandler() {}
+  void _handleEnd() {}
+  void leavePage() => engine.leavePage();
 
-  void leavePage() {
-    netRealEngine.leavePage();
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
   }
 }

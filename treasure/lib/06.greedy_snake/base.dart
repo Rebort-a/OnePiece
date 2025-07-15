@@ -1,3 +1,4 @@
+// base.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
 
@@ -8,7 +9,6 @@ class SnakeStyle {
   final double headSize;
   final Color headColor;
   final Color eyeColor;
-
   final double bodySize;
   final Color bodyColor;
 
@@ -20,7 +20,6 @@ class SnakeStyle {
     required this.bodyColor,
   });
 
-  // 默认样式
   static const defaultStyle = SnakeStyle(
     headSize: 10.0,
     headColor: Colors.green,
@@ -29,7 +28,6 @@ class SnakeStyle {
     bodyColor: Colors.green,
   );
 
-  // 生成随机样式
   static SnakeStyle random() {
     final random = Random();
     final colors = [
@@ -52,24 +50,6 @@ class SnakeStyle {
     );
   }
 
-  // 复制并修改部分属性
-  SnakeStyle copyWith({
-    double? headSize,
-    Color? headColor,
-    Color? eyeColor,
-    double? bodySize,
-    Color? bodyColor,
-  }) {
-    return SnakeStyle(
-      headSize: headSize ?? this.headSize,
-      headColor: headColor ?? this.headColor,
-      eyeColor: eyeColor ?? this.eyeColor,
-      bodySize: bodySize ?? this.bodySize,
-      bodyColor: bodyColor ?? this.bodyColor,
-    );
-  }
-
-  // SnakeStyle转JSON
   Map<String, dynamic> toJson() {
     return {
       'headSize': headSize,
@@ -80,8 +60,7 @@ class SnakeStyle {
     };
   }
 
-  // 从JSON创建SnakeStyle
-  factory SnakeStyle.fromJson(Map<String, dynamic> json) {
+  static SnakeStyle fromJson(Map<String, dynamic> json) {
     return SnakeStyle(
       headSize: json['headSize'],
       headColor: _colorFromJson(json['headColor']),
@@ -91,23 +70,19 @@ class SnakeStyle {
     );
   }
 
-  // 辅助方法：Color转JSON
-  static Map<String, int> _colorToJson(Color color) {
-    return {'value': color.toARGB32()};
-  }
-
-  // 辅助方法：从JSON创建Color
-  static Color _colorFromJson(Map<String, dynamic> json) {
-    return Color(json['value']);
-  }
+  static Map<String, int> _colorToJson(Color color) => {
+    'value': color.toARGB32(),
+  };
+  static Color _colorFromJson(Map<String, dynamic> json) =>
+      Color(json['value']);
 }
 
 class Snake {
-  static const double iniSnakeSpeed = 40;
-  static const double fastSnakeSpeed = 70;
+  static const double initialSpeed = 40;
+  static const double fastSpeed = 70;
 
   List<Offset> body = [];
-  double currentSpeed = iniSnakeSpeed;
+  double currentSpeed = initialSpeed;
   double _currentLength = 0.0;
 
   Offset head;
@@ -122,104 +97,72 @@ class Snake {
     required this.style,
   });
 
-  // 计算相对视野偏移
   Offset calculateViewOffset(Size viewSize) {
-    double offsetX = head.dx - viewSize.width / 2;
-    double offsetY = head.dy - viewSize.height / 2;
-
-    return Offset(offsetX, offsetY);
+    return Offset(head.dx - viewSize.width / 2, head.dy - viewSize.height / 2);
   }
 
-  // 更新蛇的位置
   void updatePosition(double deltaTime) {
-    // 将之前的蛇头加入蛇身
     body.insert(0, head);
+    final moveDistance = currentSpeed * deltaTime;
 
-    // 计算移动距离
-    double moveDistance = currentSpeed * deltaTime;
+    head = Offset(
+      head.dx + cos(angle) * moveDistance,
+      head.dy + sin(angle) * moveDistance,
+    );
 
-    // 更新蛇头位置
-    double dx = cos(angle) * moveDistance;
-    double dy = sin(angle) * moveDistance;
-    head = Offset(head.dx + dx, head.dy + dy);
-
-    // 蛇身长度增加
     _currentLength += moveDistance;
 
-    // 蛇身长度大于最大长度时，删除最后一节
     while (body.length > 2 && _currentLength > length) {
-      Offset last = body.removeLast();
-      Offset secondLast = body.last;
+      final last = body.removeLast();
+      final secondLast = body.last;
       _currentLength -= (last - secondLast).distance;
     }
   }
 
-  void updateAngle(double newAngle) {
-    angle = newAngle;
-  }
+  void updateAngle(double newAngle) => angle = newAngle;
+  void updateSpeed(bool isFaster) =>
+      currentSpeed = isFaster ? fastSpeed : initialSpeed;
+  void updateLength(int step) => length += step;
 
-  void updateSpeed(bool isFaster) {
-    currentSpeed = isFaster ? fastSnakeSpeed : iniSnakeSpeed;
-  }
-
-  void updateLength(int step) {
-    length += step;
-  }
-
-  // Snake转JSON
   Map<String, dynamic> toJson() {
     return {
       'head': _offsetToJson(head),
       'length': length,
       'angle': angle,
       'style': style.toJson(),
-      'body': body.map((offset) => _offsetToJson(offset)).toList(),
+      'body': body.map(_offsetToJson).toList(),
       'currentSpeed': currentSpeed,
       '_currentLength': _currentLength,
     };
   }
 
-  // 从JSON创建Snake
-  factory Snake.fromJson(Map<String, dynamic> json) {
-    Snake snake = Snake(
+  static Snake fromJson(Map<String, dynamic> json) {
+    return Snake(
       head: _offsetFromJson(json['head']),
       length: json['length'],
       angle: json['angle'],
       style: SnakeStyle.fromJson(json['style']),
     );
-    snake.body = (json['body'] as List<dynamic>)
-        .map((item) => _offsetFromJson(item))
-        .toList();
-    snake.currentSpeed = json['currentSpeed'];
-    snake._currentLength = json['_currentLength'];
-    return snake;
   }
 
-  // 辅助方法：Offset转JSON
-  static Map<String, double> _offsetToJson(Offset offset) {
-    return {'dx': offset.dx, 'dy': offset.dy};
-  }
+  static Map<String, double> _offsetToJson(Offset offset) => {
+    'dx': offset.dx,
+    'dy': offset.dy,
+  };
 
-  // 辅助方法：从JSON创建Offset
-  static Offset _offsetFromJson(Map<String, dynamic> json) {
-    return Offset(json['dx'], json['dy']);
-  }
+  static Offset _offsetFromJson(Map<String, dynamic> json) =>
+      Offset(json['dx'], json['dy']);
 }
 
 class Food {
-  static const double foodSize = 20;
-  static const int snakeGrowthPerFood = 15;
+  static const double size = 20;
+  static const int growthPerFood = 15;
 
   Offset position;
   Food({required this.position});
 
-  // Food转JSON
-  Map<String, dynamic> toJson() {
-    return {'position': Snake._offsetToJson(position)};
-  }
+  Map<String, dynamic> toJson() => {'position': Snake._offsetToJson(position)};
 
-  // 从JSON创建Food
-  factory Food.fromJson(Map<String, dynamic> json) {
-    return Food(position: Snake._offsetFromJson(json['position']));
-  }
+  static Food fromJson(Map<String, dynamic> json) =>
+      Food(position: Snake._offsetFromJson(json['position']));
 }

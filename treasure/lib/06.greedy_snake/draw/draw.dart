@@ -1,15 +1,16 @@
+// draw.dart
 import 'package:flutter/material.dart';
-
-import '../base.dart';
 import 'background.dart';
 import 'food.dart';
-import 'snack.dart';
+import 'snake.dart';
+import '../base.dart';
 
 class DrawRegion extends StatelessWidget {
-  final Color backgroundColor;
   final int identity;
+  final Color backgroundColor;
   final Map<int, Snake> snakes;
   final List<Food> foods;
+
   const DrawRegion({
     super.key,
     required this.identity,
@@ -21,13 +22,10 @@ class DrawRegion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
+      builder: (context, constraints) {
         final viewSize = Size(constraints.maxWidth, constraints.maxHeight);
-        Offset viewOffset = Offset.zero;
-
-        if (snakes.containsKey(identity)) {
-          viewOffset = snakes[identity]!.calculateViewOffset(viewSize);
-        }
+        final viewOffset =
+            snakes[identity]?.calculateViewOffset(viewSize) ?? Offset.zero;
 
         return Stack(
           children: [

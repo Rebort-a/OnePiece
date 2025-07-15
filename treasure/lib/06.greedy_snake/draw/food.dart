@@ -1,5 +1,5 @@
+// food.dart
 import 'package:flutter/material.dart';
-
 import '../base.dart';
 
 class FoodPainter extends CustomPainter {
@@ -14,30 +14,23 @@ class FoodPainter extends CustomPainter {
       ..color = Colors.red
       ..style = PaintingStyle.fill;
 
-    // 绘制所有食物
-    for (var food in foods) {
-      // 食物位置（相对于视野）
-      final foodPosition = food.position - viewOffset;
-
-      // 绘制单个食物
-      canvas.drawCircle(foodPosition, Food.foodSize, foodPaint);
+    for (final food in foods) {
+      final position = food.position - viewOffset;
+      canvas.drawCircle(position, Food.size, foodPaint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant FoodPainter oldDelegate) {
-    if (oldDelegate.viewOffset != viewOffset) return true;
+  bool shouldRepaint(FoodPainter oldDelegate) {
+    return oldDelegate.viewOffset != viewOffset ||
+        !_listsEqual(oldDelegate.foods, foods);
+  }
 
-    // 检查食物列表是否变化
-    if (oldDelegate.foods.length != foods.length) return true;
-
-    // 检查每个食物位置是否变化
-    for (int i = 0; i < foods.length; i++) {
-      if (oldDelegate.foods[i].position != foods[i].position) {
-        return true;
-      }
+  bool _listsEqual(List<Food> a, List<Food> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].position != b[i].position) return true;
     }
-
     return false;
   }
 }
