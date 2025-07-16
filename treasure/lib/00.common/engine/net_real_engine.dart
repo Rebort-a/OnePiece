@@ -71,8 +71,11 @@ class NetRealGameEngine extends NetworkEngine {
 
   void _handleResourceMessage(NetworkMessage message) {
     _handleMatchMessage(message.id);
-    resourceHandler(message);
-    gameStep.value = GameStep.action;
+    if (gameStep.value == GameStep.connected ||
+        gameStep.value == GameStep.action) {
+      resourceHandler(message);
+      gameStep.value = GameStep.action;
+    }
   }
 
   void _handleActionMessage(NetworkMessage message) {

@@ -2,6 +2,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import '../00.common/model/convert.dart';
+
 const double mapWidth = 2000;
 const double mapHeight = 2000;
 
@@ -19,14 +21,6 @@ class SnakeStyle {
     required this.bodySize,
     required this.bodyColor,
   });
-
-  static const defaultStyle = SnakeStyle(
-    headSize: 10.0,
-    headColor: Colors.green,
-    eyeColor: Colors.white,
-    bodySize: 12.0,
-    bodyColor: Colors.green,
-  );
 
   static SnakeStyle random() {
     final random = Random();
@@ -53,28 +47,22 @@ class SnakeStyle {
   Map<String, dynamic> toJson() {
     return {
       'headSize': headSize,
-      'headColor': _colorToJson(headColor),
-      'eyeColor': _colorToJson(eyeColor),
+      'headColor': ConvertUtils.colorToJson(headColor),
+      'eyeColor': ConvertUtils.colorToJson(eyeColor),
       'bodySize': bodySize,
-      'bodyColor': _colorToJson(bodyColor),
+      'bodyColor': ConvertUtils.colorToJson(bodyColor),
     };
   }
 
   static SnakeStyle fromJson(Map<String, dynamic> json) {
     return SnakeStyle(
       headSize: json['headSize'],
-      headColor: _colorFromJson(json['headColor']),
-      eyeColor: _colorFromJson(json['eyeColor']),
+      headColor: ConvertUtils.colorFromJson(json['headColor']),
+      eyeColor: ConvertUtils.colorFromJson(json['eyeColor']),
       bodySize: json['bodySize'],
-      bodyColor: _colorFromJson(json['bodyColor']),
+      bodyColor: ConvertUtils.colorFromJson(json['bodyColor']),
     );
   }
-
-  static Map<String, int> _colorToJson(Color color) => {
-    'value': color.toARGB32(),
-  };
-  static Color _colorFromJson(Map<String, dynamic> json) =>
-      Color(json['value']);
 }
 
 class Snake {
@@ -82,7 +70,7 @@ class Snake {
   static const double fastSpeed = 64;
 
   List<Offset> body = [];
-  double currentSpeed = initialSpeed;
+  double _currentSpeed = initialSpeed;
   double _currentLength = 0.0;
 
   Offset head;
@@ -103,7 +91,7 @@ class Snake {
 
   void updatePosition(double deltaTime) {
     body.insert(0, head);
-    final moveDistance = currentSpeed * deltaTime;
+    final moveDistance = _currentSpeed * deltaTime;
 
     head = Offset(
       head.dx + cos(angle) * moveDistance,
@@ -121,46 +109,40 @@ class Snake {
 
   void updateAngle(double newAngle) => angle = newAngle;
   void updateSpeed(bool isFaster) =>
-      currentSpeed = isFaster ? fastSpeed : initialSpeed;
+      _currentSpeed = isFaster ? fastSpeed : initialSpeed;
   void updateLength(int step) => length += step;
 
   Map<String, dynamic> toJson() {
     return {
-      'head': _offsetToJson(head),
+      'head': ConvertUtils.offsetToJson(head),
       'length': length,
       'angle': angle,
       'style': style.toJson(),
-      'isFaster': currentSpeed == fastSpeed,
+      'isFaster': _currentSpeed == fastSpeed,
     };
   }
 
   static Snake fromJson(Map<String, dynamic> json) {
     return Snake(
-      head: _offsetFromJson(json['head']),
+      head: ConvertUtils.offsetFromJson(json['head']),
       length: json['length'],
       angle: json['angle'],
       style: SnakeStyle.fromJson(json['style']),
-    )..currentSpeed = json['isFaster'] as bool ? fastSpeed : initialSpeed;
+    ).._currentSpeed = json['isFaster'] as bool ? fastSpeed : initialSpeed;
   }
-
-  static Map<String, double> _offsetToJson(Offset offset) => {
-    'dx': offset.dx,
-    'dy': offset.dy,
-  };
-
-  static Offset _offsetFromJson(Map<String, dynamic> json) =>
-      Offset(json['dx'], json['dy']);
 }
 
 class Food {
   static const double size = 20;
-  static const int growthPerFood = 15;
+  static const int growthPerFood = 20;
 
   Offset position;
   Food({required this.position});
 
-  Map<String, dynamic> toJson() => {'position': Snake._offsetToJson(position)};
+  Map<String, dynamic> toJson() => {
+    'position': ConvertUtils.offsetToJson(position),
+  };
 
   static Food fromJson(Map<String, dynamic> json) =>
-      Food(position: Snake._offsetFromJson(json['position']));
+      Food(position: ConvertUtils.offsetFromJson(json['position']));
 }

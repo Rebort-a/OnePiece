@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widget/template_dialog.dart';
 import 'network_engine.dart';
 import '../network/network_message.dart';
 import '../game/gamer.dart';
@@ -141,8 +142,21 @@ class NetTurnGameEngine extends NetworkEngine {
       if (isEnemy) {
         // 只处理敌人的结束信息，因为自己结束会直接退出
         endHandler();
-        handleOpponentExit();
+        _handleOpponentExit();
       }
     }
+  }
+
+  void _handleOpponentExit() {
+    navigatorHandler.value = (context) {
+      TemplateDialog.confirmDialog(
+        context: context,
+        title: "Competitors withdraw",
+        content: "The opponent has withdrawn",
+        before: () => true,
+        onTap: () {},
+        after: () {},
+      );
+    };
   }
 }

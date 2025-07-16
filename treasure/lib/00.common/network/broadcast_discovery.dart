@@ -3,7 +3,7 @@ import 'dart:io';
 
 const String multicastAddress = '224.0.0.251';
 const int multicastPort = 4545;
-const String broadcastNetmask = '255.255.0.0';
+const String broadcastNetmask = '255.255.255.0';
 
 // 负责发送广播和组播消息
 class Broadcast {

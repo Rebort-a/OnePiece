@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'broadcast_discovery.dart';
 import 'network_message.dart';
 import 'network_room.dart';
@@ -57,7 +59,8 @@ class SocketServer {
   }
 
   void _sendAcceptMessage(Socket client, int id) {
-    client.add(
+    _sendMessageToClient(
+      client,
       NetworkMessage(
         id: id,
         type: MessageType.accept,
@@ -69,7 +72,18 @@ class SocketServer {
 
   void _broadcastMessage(List<int> data) {
     for (final client in _clients) {
-      client.add(data);
+      _sendMessageToClient(client, data);
+    }
+  }
+
+  Future<void> _sendMessageToClient(Socket client, List<int> data) async {
+    if (_clients.contains(client)) {
+      try {
+        client.add(data);
+        await client.flush();
+      } catch (e) {
+        debugPrint("Socket error: $e");
+      }
     }
   }
 

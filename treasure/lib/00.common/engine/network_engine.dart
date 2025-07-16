@@ -23,6 +23,7 @@ class NetworkEngine {
 
   bool _isDisposed = false;
   bool _isSocketConnected = false;
+  bool _isWaitDisposed = false;
 
   final String userName;
   final RoomInfo roomInfo;
@@ -260,7 +261,7 @@ class NetworkEngine {
     _isSending = true;
 
     try {
-      while (_sendBuffer.isNotEmpty && !_isDisposed) {
+      while (_sendBuffer.isNotEmpty) {
         final message = _sendBuffer.first;
         _socket.add(message.toSocketData());
         await _socket.flush(); // 确保数据发送
@@ -270,6 +271,9 @@ class NetworkEngine {
       _handleError("Send network message failed", e);
     } finally {
       _isSending = false;
+      if (_isWaitDisposed) {
+        _dispose();
+      }
     }
   }
 
@@ -282,17 +286,12 @@ class NetworkEngine {
 
     // 发送离开房间消息
     if (_isSocketConnected) {
-      try {
-        sendNetworkMessage(MessageType.exit, 'give up');
-        sendNetworkMessage(MessageType.notify, 'leave room');
-        // 给消息发送留出时间
-        Future.delayed(const Duration(milliseconds: 200), _dispose);
-      } catch (e) {
-        _dispose();
-      }
-    } else {
-      _dispose();
+      sendNetworkMessage(MessageType.exit, 'give up');
+      sendNetworkMessage(MessageType.notify, 'leave room');
     }
+
+    _isWaitDisposed = true;
+    _pushMessage();
 
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {
@@ -302,15 +301,18 @@ class NetworkEngine {
     };
   }
 
-  void _dispose() {
+  Future<void> _dispose() async {
     if (_isDisposed) return;
 
     _isDisposed = true;
     _isSocketConnected = false;
 
-    try {
-      _socket.destroy();
-    } catch (_) {}
+    if (_isSocketConnected) {
+      try {
+        await Future.delayed(const Duration(milliseconds: 200));
+        _socket.close();
+      } catch (_) {}
+    }
 
     _stopKeyboard();
 
@@ -318,18 +320,5 @@ class NetworkEngine {
     // scrollController.dispose();
     // textController.dispose();
     // messageList.dispose();
-  }
-
-  void handleOpponentExit() {
-    navigatorHandler.value = (context) {
-      TemplateDialog.confirmDialog(
-        context: context,
-        title: "Competitors withdraw",
-        content: "The opponent has withdrawn",
-        before: () => true,
-        onTap: () {},
-        after: () {},
-      );
-    };
   }
 }
