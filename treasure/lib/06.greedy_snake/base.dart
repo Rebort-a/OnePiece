@@ -78,8 +78,8 @@ class SnakeStyle {
 }
 
 class Snake {
-  static const double initialSpeed = 40;
-  static const double fastSpeed = 70;
+  static const double initialSpeed = 32;
+  static const double fastSpeed = 64;
 
   List<Offset> body = [];
   double currentSpeed = initialSpeed;
@@ -130,9 +130,7 @@ class Snake {
       'length': length,
       'angle': angle,
       'style': style.toJson(),
-      'body': body.map(_offsetToJson).toList(),
-      'currentSpeed': currentSpeed,
-      '_currentLength': _currentLength,
+      'isFaster': currentSpeed == fastSpeed,
     };
   }
 
@@ -142,7 +140,7 @@ class Snake {
       length: json['length'],
       angle: json['angle'],
       style: SnakeStyle.fromJson(json['style']),
-    );
+    )..currentSpeed = json['isFaster'] as bool ? fastSpeed : initialSpeed;
   }
 
   static Map<String, double> _offsetToJson(Offset offset) => {

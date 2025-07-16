@@ -48,7 +48,7 @@ class NetCombatManager extends BaseCombatManager {
       // 先手收到敌人的信息，初始化enemy，并开始战斗
       enemy = Elemental.fromJson(jsonData);
       initCombat(netTurnEngine.playerType);
-    } else if (step == GameStep.rearWait) {
+    } else if (step == GameStep.connected || step == GameStep.rearWait) {
       // 后手收到敌人的信息，初始化enemy
       enemy = Elemental.fromJson(jsonData);
     } else if (step == GameStep.rearConfig) {

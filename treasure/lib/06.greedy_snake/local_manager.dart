@@ -155,7 +155,7 @@ class LocalManager extends ChangeNotifier {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("游戏结束"),
-          content: Text("最终长度: ${snakes[0]?.length}"),
+          content: Text("最终长度: ${snakes[identity]?.length}"),
           actions: [
             TextButton(
               child: const Text('确定'),

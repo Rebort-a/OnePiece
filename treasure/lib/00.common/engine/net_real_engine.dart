@@ -84,15 +84,13 @@ class NetRealGameEngine extends NetworkEngine {
 
   void _handleExitMessage(NetworkMessage message) {
     if (message.id == _publisherId) {
-      _publisherId = 0;
+      _publisherId = identity; // 发布者退出，假定自己就是发布者，然后竞选
       sendNetworkMessage(MessageType.match, 'Election publisher');
     }
   }
 
   void _handleMatchMessage(int messageId) {
-    if (_publisherId == 0) {
-      _publisherId = messageId;
-    } else if (messageId < _publisherId) {
+    if (messageId < _publisherId) {
       _publisherId = messageId;
     }
   }

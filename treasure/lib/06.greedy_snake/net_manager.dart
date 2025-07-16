@@ -11,7 +11,7 @@ import '../00.common/network/network_room.dart';
 import 'base.dart';
 
 class NetManager extends ChangeNotifier {
-  static const int generateCount = 5;
+  static const int generateCount = 10;
   final _random = Random();
   final pageNavigator = AlwaysNotifier<void Function(BuildContext)>((_) {});
 
@@ -36,12 +36,17 @@ class NetManager extends ChangeNotifier {
 
   void _handleSearch(int id) {
     if (snakes.isEmpty) snakes[engine.identity] = _createSnake();
+
     if (foods.isEmpty) {
       foods.addAll(
         List.generate(generateCount, (_) => Food(position: _randomPosition)),
       );
     }
-    snakes[id] = _createSnake();
+
+    if (!snakes.containsKey(id)) {
+      snakes[id] = _createSnake();
+    }
+
     engine.sendNetworkMessage(MessageType.resource, _toJsonString());
   }
 
