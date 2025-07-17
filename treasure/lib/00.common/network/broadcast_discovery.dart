@@ -3,7 +3,8 @@ import 'dart:io';
 
 const String multicastAddress = '224.0.0.251';
 const int multicastPort = 4545;
-const String broadcastNetmask = '255.255.255.0';
+const String netmask24 = '255.255.255.0';
+const String netmask16 = '255.255.0.0';
 
 // 负责发送广播和组播消息
 class Broadcast {
@@ -36,18 +37,26 @@ class Broadcast {
     for (final interface in interfaces) {
       // 遍历ip
       for (final address in interface.addresses) {
-        // 如果是IPv4地址
-        if (isIPv4(address.address)) {
-          final broadcast = _getBroadcastAddress(
-            address.address,
-            broadcastNetmask,
-          );
-          sendSocket.send(data, InternetAddress(broadcast), multicastPort);
-        }
+        sendBroadcast(sendSocket, address, netmask24, multicastPort, data);
+        sendBroadcast(sendSocket, address, netmask16, multicastPort, data);
       }
     }
 
     sendSocket.close();
+  }
+
+  static Future<void> sendBroadcast(
+    RawDatagramSocket socket,
+    InternetAddress address,
+    String netmask,
+    int port,
+    List<int> data,
+  ) async {
+    // 只处理 IPv4 地址
+    if (address.type == InternetAddressType.IPv4) {
+      final broadcastAddress = _getBroadcastAddress(address.address, netmask);
+      socket.send(data, InternetAddress(broadcastAddress), port);
+    }
   }
 
   // --- 静态工具方法 ---
