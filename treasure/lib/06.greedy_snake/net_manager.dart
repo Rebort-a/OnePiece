@@ -10,6 +10,8 @@ class NetManager extends BaseManager {
   static const int generateCount = 10;
   static const int initialSnakeLength = 100;
 
+  int gamerCount = 0;
+
   late final NetRealGameEngine engine;
 
   NetManager({required String userName, required RoomInfo roomInfo}) {
@@ -19,6 +21,7 @@ class NetManager extends BaseManager {
       navigatorHandler: pageNavigator,
       searchHandler: _handleSearch,
       resourceHandler: _handleResource,
+      syncHandler: _handleSync,
       actionHandler: _handleAction,
       endHandler: _handleEnd,
     );
@@ -47,7 +50,9 @@ class NetManager extends BaseManager {
   void _handleResource(NetworkMessage message) {
     suspendGame();
     _fromJsonString(message.content);
-    resumeGame();
+    gamerCount = snakes.length;
+
+    engine.sendNetworkMessage(MessageType.sync, 'sync');
   }
 
   String _toJsonString() => json.encode(_toJson());
@@ -66,6 +71,15 @@ class NetManager extends BaseManager {
 
     foods.clear();
     foods.addAll((json['foods'] as List).map((f) => Food.fromJson(f)));
+  }
+
+  void _handleSync(int id) {
+    if (snakes.containsKey(id)) {
+      gamerCount--;
+      if (gamerCount <= 0) {
+        resumeGame();
+      }
+    }
   }
 
   void _handleAction(NetworkMessage message) {

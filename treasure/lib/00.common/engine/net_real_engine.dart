@@ -11,6 +11,7 @@ class NetRealGameEngine extends NetworkEngine {
 
   final void Function(int) searchHandler;
   final void Function(NetworkMessage) resourceHandler;
+  final void Function(int) syncHandler;
   final void Function(NetworkMessage) actionHandler;
   final void Function() endHandler;
 
@@ -20,6 +21,7 @@ class NetRealGameEngine extends NetworkEngine {
     required super.navigatorHandler,
     required this.searchHandler,
     required this.resourceHandler,
+    required this.syncHandler,
     required this.actionHandler,
     required this.endHandler,
   }) {
@@ -36,6 +38,9 @@ class NetRealGameEngine extends NetworkEngine {
         break;
       case MessageType.resource:
         _handleResourceMessage(message);
+        break;
+      case MessageType.sync:
+        _handleSyncMessage(message);
         break;
       case MessageType.action:
         _handleActionMessage(message);
@@ -76,6 +81,10 @@ class NetRealGameEngine extends NetworkEngine {
       resourceHandler(message);
       gameStep.value = GameStep.action;
     }
+  }
+
+  void _handleSyncMessage(NetworkMessage message) {
+    syncHandler(message.id);
   }
 
   void _handleActionMessage(NetworkMessage message) {

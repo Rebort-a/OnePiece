@@ -21,10 +21,6 @@ class NetworkEngine {
 
   int identity = 0;
 
-  bool _isDisposed = false;
-  bool _isSocketConnected = false;
-  bool _isWaitDisposed = false;
-
   final String userName;
   final RoomInfo roomInfo;
   final AlwaysNotifier<void Function(BuildContext)> navigatorHandler;
@@ -41,8 +37,6 @@ class NetworkEngine {
   }
 
   void _scrollToBottom() {
-    if (_isDisposed) return;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
         scrollController.animateTo(
@@ -55,32 +49,18 @@ class NetworkEngine {
   }
 
   Future<void> _connectToServer() async {
-    if (_isDisposed) return;
+    _socket = await Socket.connect(roomInfo.address, roomInfo.port);
 
-    try {
-      _socket = await Socket.connect(roomInfo.address, roomInfo.port);
-      _isSocketConnected = true;
-
-      _socket.listen(
-        _handleSocketData,
-        onError: (error) => _handleConnectionError(error, isInitial: true),
-        onDone: _handleSocketDone,
-      );
-    } catch (e) {
-      _handleConnectionError(e, isInitial: true);
-    }
+    _socket.listen(
+      _handleSocketData,
+      onError: (error) => _handleConnectionError(error),
+      onDone: _handleSocketDone,
+    );
   }
 
   void _handleSocketData(List<int> data) {
-    if (_isDisposed) return;
-
-    try {
-      _recvBuffer += utf8.decode(data);
-
-      _extractMessages();
-    } catch (e) {
-      _handleError("Failed to process socket data", e);
-    }
+    _recvBuffer += utf8.decode(data);
+    _extractMessages();
   }
 
   Future<void> _extractMessages() async {
@@ -102,12 +82,7 @@ class NetworkEngine {
         closeBraceIndex + 1,
       );
 
-      try {
-        final message = NetworkMessage.fromString(jsonStr);
-        _processNetworkMessage(message);
-      } catch (e) {
-        _handleError("Failed to parse network message", e);
-      }
+      _processNetworkMessage(NetworkMessage.fromString(jsonStr));
 
       // 更新起始位置
       startIndex = closeBraceIndex + 1;
@@ -160,60 +135,33 @@ class NetworkEngine {
     }
   }
 
-  void _handleConnectionError(Object error, {bool isInitial = false}) {
-    _isSocketConnected = false;
-    _handleError("Connection error", error);
-
-    if (isInitial) {
-      // 初始连接失败处理
-      navigatorHandler.value = (context) {
-        TemplateDialog.confirmDialog(
-          context: context,
-          title: "Connection failed",
-          content: "Could not connect to the server: ${error.toString()}",
-          before: () => true,
-          onTap: () {},
-          after: () => leavePage(),
-        );
-      };
-    } else {
-      // 连接中断处理
-      navigatorHandler.value = (context) {
-        TemplateDialog.confirmDialog(
-          context: context,
-          title: "Connection lost",
-          content: "The connection to the server has been lost",
-          before: () => true,
-          onTap: () {},
-          after: () => leavePage(),
-        );
-      };
-    }
+  void _handleConnectionError(Object error) {
+    navigatorHandler.value = (context) {
+      TemplateDialog.confirmDialog(
+        context: context,
+        title: "Connection failed",
+        content: "Could not connect to the server: ${error.toString()}",
+        before: () => true,
+        onTap: () {},
+        after: () => leavePage(),
+      );
+    };
   }
 
   void _handleSocketDone() {
-    if (_isDisposed) return;
-
-    _isSocketConnected = false;
-    _handleError("Socket connection closed", "Server disconnected");
-
-    // 只有当不是主动调用leavePage导致的断开时才显示对话框
-    if (!_isDisposed) {
-      navigatorHandler.value = (context) {
-        TemplateDialog.confirmDialog(
-          context: context,
-          title: "Disconnected",
-          content: "You have been disconnected from the server",
-          before: () => true,
-          onTap: () {},
-          after: () => leavePage(),
-        );
-      };
-    }
+    // navigatorHandler.value = (context) {
+    //   TemplateDialog.confirmDialog(
+    //     context: context,
+    //     title: "Disconnected",
+    //     content: "You have been disconnected from the server",
+    //     before: () => true,
+    //     onTap: () {},
+    //     after: () => leavePage(),
+    //   );
+    // };
   }
 
   void _startKeyboard() {
-    if (_isDisposed) return;
     HardwareKeyboard.instance.addHandler(_handleChatKeyboardEvent);
   }
 
@@ -222,8 +170,6 @@ class NetworkEngine {
   }
 
   bool _handleChatKeyboardEvent(KeyEvent event) {
-    if (_isDisposed) return false;
-
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
       sendInputText();
       return true;
@@ -232,8 +178,6 @@ class NetworkEngine {
   }
 
   void sendInputText() {
-    if (_isDisposed) return;
-
     final text = textController.text.trim();
     if (text.isEmpty) return;
 
@@ -242,7 +186,7 @@ class NetworkEngine {
   }
 
   void sendNetworkMessage(MessageType type, String content) {
-    if (_isDisposed || identity == 0 || !_isSocketConnected) return;
+    if (identity == 0) return;
 
     final message = NetworkMessage(
       id: identity,
@@ -260,38 +204,33 @@ class NetworkEngine {
 
     _isSending = true;
 
-    try {
-      while (_sendBuffer.isNotEmpty) {
-        final message = _sendBuffer.first;
-        _socket.add(message.toSocketData());
-        await _socket.flush(); // 确保数据发送
-        _sendBuffer.removeAt(0);
-      }
-    } catch (e) {
-      _handleError("Send network message failed", e);
-    } finally {
-      _isSending = false;
-      if (_isWaitDisposed) {
-        _dispose();
-      }
+    while (_sendBuffer.isNotEmpty) {
+      final message = _sendBuffer.first;
+      _socket.add(message.toSocketData());
+      await _socket.flush(); // 确保数据发送
+      _sendBuffer.removeAt(0);
     }
-  }
 
-  void _handleError(String note, Object error) {
-    debugPrint("$note: $error");
+    _isSending = false;
   }
 
   void leavePage() {
-    if (_isDisposed) return;
-
     // 发送离开房间消息
-    if (_isSocketConnected) {
-      sendNetworkMessage(MessageType.exit, 'give up');
-      sendNetworkMessage(MessageType.notify, 'leave room');
-    }
 
-    _isWaitDisposed = true;
-    _pushMessage();
+    sendNetworkMessage(MessageType.exit, 'give up');
+    sendNetworkMessage(MessageType.notify, 'leave room');
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      _dispose();
+    });
+  }
+
+  Future<void> _dispose() async {
+    _stopKeyboard();
+
+    await _pushMessage(); // 确保所有消息发送完毕
+
+    _socket.close();
 
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {
@@ -299,26 +238,10 @@ class NetworkEngine {
         Navigator.of(context).pop();
       }
     };
-  }
 
-  Future<void> _dispose() async {
-    if (_isDisposed) return;
-
-    _isDisposed = true;
-    _isSocketConnected = false;
-
-    if (_isSocketConnected) {
-      try {
-        await Future.delayed(const Duration(milliseconds: 200));
-        _socket.close();
-      } catch (_) {}
-    }
-
-    _stopKeyboard();
-
-    // // 释放资源
-    // scrollController.dispose();
-    // textController.dispose();
-    // messageList.dispose();
+    // 释放资源
+    scrollController.dispose();
+    textController.dispose();
+    messageList.dispose();
   }
 }

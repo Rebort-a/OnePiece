@@ -66,8 +66,8 @@ class SnakeStyle {
 }
 
 class Snake {
-  static const double initialSpeed = 32;
-  static const double fastSpeed = 64;
+  static const double initialSpeed = 200;
+  static const double fastSpeed = 400;
 
   List<Offset> body = [];
   double _currentSpeed = initialSpeed;

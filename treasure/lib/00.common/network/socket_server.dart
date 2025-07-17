@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-
 import 'broadcast_discovery.dart';
 import 'network_message.dart';
 import 'network_room.dart';
@@ -76,20 +74,24 @@ class SocketServer {
     }
   }
 
-  Future<void> _sendMessageToClient(Socket client, List<int> data) async {
+  void _sendMessageToClient(Socket client, List<int> data) {
     if (_clients.contains(client)) {
-      try {
-        client.add(data);
-        await client.flush();
-      } catch (e) {
-        debugPrint("Socket error: $e");
-      }
+      client.add(data);
     }
   }
 
+  // Future<void> _sendMessageToClient(Socket client, List<int> data) async {
+  //   if (_clients.contains(client)) {
+  //     client.add(data);
+  //     await client.flush();
+  //   }
+  // }
+
   void _removeClient(Socket client) {
-    _clients.remove(client);
-    client.close();
+    if (_clients.contains(client)) {
+      _clients.remove(client);
+      client.close();
+    }
   }
 
   void stop() {
@@ -114,7 +116,7 @@ class SocketServer {
   void _closeResources() {
     if (_clients.isNotEmpty) {
       for (var client in _clients) {
-        client.close();
+        _removeClient(client);
       }
       _clients.clear();
     }

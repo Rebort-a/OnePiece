@@ -26,7 +26,7 @@ extension TurnGameStepExtension on GameStep {
       case GameStep.rearConfig:
         return "请配置或查看对方配置";
       case GameStep.action:
-        return "进行中"; // 补充原代码中缺失的case
+        return "进行中";
       case GameStep.gameOver:
         return "游戏结束";
     }

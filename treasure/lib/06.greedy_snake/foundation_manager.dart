@@ -13,6 +13,7 @@ abstract class BaseManager extends ChangeNotifier {
   final List<Food> foods = [];
 
   late final Ticker _ticker;
+  double _lastElapsed = 0;
 
   final pageNavigator = AlwaysNotifier<void Function(BuildContext)>((_) {});
   final gameState = ValueNotifier<bool>(false);
@@ -60,8 +61,14 @@ abstract class BaseManager extends ChangeNotifier {
   void _gameLoop(Duration elapsed) {
     if (!gameState.value) return;
 
-    final deltaTime = min(elapsed.inMilliseconds / 1000.0, 0.1);
-    _updateSnakes(deltaTime);
+    // 计算当前帧与上一帧的时间间隔（单位：秒）
+    final currentElapsed = elapsed.inMilliseconds / 1000.0;
+    final deltaTime = currentElapsed - _lastElapsed;
+    _lastElapsed = currentElapsed; // 更新上一帧时间
+
+    final clampedDeltaTime = deltaTime.clamp(0.004, 0.02); // 限制到240hz到50hz之间
+
+    _updateSnakes(clampedDeltaTime);
     _checkDangerousCollisions();
     _checkFoodCollisions();
     handleTickerCallback(deltaTime);

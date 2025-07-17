@@ -9,6 +9,7 @@ enum MessageType {
   search,
   match,
   resource,
+  sync,
   action,
   exit,
 
