@@ -1,15 +1,14 @@
-// local_combat_manager.dart
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:treasure/00.common/game/gamer.dart';
 
-import '../middleware/base_combat_manager.dart';
+import '../middleware/foundation_combat_manager.dart';
 import '../middleware/common.dart';
 import '../middleware/elemental.dart';
 import '../foundation/skill.dart';
 
-class LocalCombatManager extends BaseCombatManager {
+class LocalCombatManager extends FoundationalCombatManager {
   final _random = Random();
 
   late final TurnGamerType playerType;

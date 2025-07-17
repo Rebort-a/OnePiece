@@ -11,13 +11,10 @@ import '../00.common/network/network_room.dart';
 import 'base.dart';
 import 'foundation_manager.dart';
 
-class NetAnimalChessManager extends BaseAnimalChessManager {
+class NetManager extends FoundationalManager {
   late final NetTurnGameEngine netTurnEngine;
 
-  NetAnimalChessManager({
-    required String userName,
-    required RoomInfo roomInfo,
-  }) {
+  NetManager({required String userName, required RoomInfo roomInfo}) {
     // 构建网络回合制游戏对战引擎
     netTurnEngine = NetTurnGameEngine(
       userName: userName,

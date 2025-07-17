@@ -4,10 +4,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../00.common/game/map.dart';
 import '../../00.common/image/entity.dart';
 import '../foundation/effect.dart';
 import '../foundation/energy.dart';
-import '../foundation/map.dart';
 import '../foundation/skill.dart';
 
 mixin EnergyConfigMixin {

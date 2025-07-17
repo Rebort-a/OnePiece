@@ -9,7 +9,7 @@ import '../foundation/skill.dart';
 import 'common.dart';
 import 'dialog.dart';
 
-abstract class BaseCombatManager {
+abstract class FoundationalCombatManager {
   static const conationNames = {
     ConationType.attack: '攻击',
     ConationType.parry: '格挡',

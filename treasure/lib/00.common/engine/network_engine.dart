@@ -82,7 +82,7 @@ class NetworkEngine {
         closeBraceIndex + 1,
       );
 
-      _processNetworkMessage(NetworkMessage.fromString(jsonStr));
+      _processNetworkMessage(NetworkMessage.fromJsonString(jsonStr));
 
       // 更新起始位置
       startIndex = closeBraceIndex + 1;

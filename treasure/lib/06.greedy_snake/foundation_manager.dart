@@ -6,7 +6,7 @@ import 'package:flutter/scheduler.dart';
 import '../00.common/model/notifier.dart';
 import 'base.dart';
 
-abstract class BaseManager extends ChangeNotifier {
+abstract class FoundationalManager extends ChangeNotifier {
   final Random _random = Random();
 
   final Map<int, Snake> snakes = {};

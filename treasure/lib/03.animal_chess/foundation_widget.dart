@@ -8,11 +8,11 @@ import '../00.common/model/notifier.dart';
 import 'base.dart';
 import 'extension.dart';
 
-class BaseAnimalChessPage extends StatelessWidget {
+class FoundationalWidget extends StatelessWidget {
   final ListNotifier<GridNotifier> displayMap;
   final Function(int) onGridSelected;
 
-  const BaseAnimalChessPage({
+  const FoundationalWidget({
     super.key,
     required this.displayMap,
     required this.onGridSelected,

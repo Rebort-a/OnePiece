@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:treasure/04.elemental_battle/middleware/base_combat_page.dart';
+import 'package:treasure/04.elemental_battle/middleware/foundation_combat_widget.dart';
 
 import '../../00.common/game/step.dart';
 import '../../00.common/network/network_room.dart';
@@ -66,7 +66,9 @@ class NetCombatPage extends StatelessWidget {
         // 弹出页面
         NotifierNavigator(navigatorHandler: _combatManager.pageNavigator),
         ...(step.index >= GameStep.action.index
-            ? BaseCombatPage(combatManager: _combatManager).buildPage()
+            ? FoundationalCombatWidget(
+                combatManager: _combatManager,
+              ).buildPage()
             : _buildPrepare(step)),
 
         Expanded(

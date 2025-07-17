@@ -4,11 +4,11 @@ import '../00.common/game/gamer.dart';
 import '../00.common/style/theme.dart';
 import '../00.common/widget/notifier_navigator.dart';
 
-import 'local_chess_manager.dart';
-import 'foundation_page.dart';
+import 'local_manager.dart';
+import 'foundation_widget.dart';
 
 class LoaclAnimalChessPage extends StatelessWidget {
-  final LoaclAnimalChessManager _chessManager = LoaclAnimalChessManager();
+  final LoaclManager _manager = LoaclManager();
 
   LoaclAnimalChessPage({super.key});
 
@@ -19,7 +19,7 @@ class LoaclAnimalChessPage extends StatelessWidget {
   AppBar _buildAppBar() => AppBar(
     leading: IconButton(
       icon: const Icon(Icons.arrow_back),
-      onPressed: _chessManager.leavePage,
+      onPressed: _manager.leavePage,
     ),
     title: const Text('斗兽棋'),
     centerTitle: true,
@@ -29,26 +29,26 @@ class LoaclAnimalChessPage extends StatelessWidget {
         icon: const Icon(Icons.tune),
         // icon: const Icon(Icons.multitrack_audio_sharp),
         // icon: const Icon(Icons.equalizer),
-        onPressed: _chessManager.showBoardSizeSelector,
+        onPressed: _manager.showBoardSizeSelector,
       ),
     ],
   );
 
   Widget _buildBody() => Column(
     children: [
-      NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
+      NotifierNavigator(navigatorHandler: _manager.pageNavigator),
       _buildTurnIndicator(),
       Expanded(
-        child: BaseAnimalChessPage(
-          displayMap: _chessManager.displayMap,
-          onGridSelected: _chessManager.selectGrid,
+        child: FoundationalWidget(
+          displayMap: _manager.displayMap,
+          onGridSelected: _manager.selectGrid,
         ),
       ),
     ],
   );
 
   Widget _buildTurnIndicator() => ValueListenableBuilder(
-    valueListenable: _chessManager.currentGamer,
+    valueListenable: _manager.currentGamer,
     builder: (_, gamer, __) => Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(

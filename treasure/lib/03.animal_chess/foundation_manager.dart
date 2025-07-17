@@ -7,7 +7,7 @@ import '../00.common/widget/template_dialog.dart';
 import 'base.dart';
 import 'extension.dart';
 
-abstract class BaseAnimalChessManager {
+abstract class FoundationalManager {
   int boardLevel = 2;
   int get _boardSize => boardLevel * 2 + 1;
 

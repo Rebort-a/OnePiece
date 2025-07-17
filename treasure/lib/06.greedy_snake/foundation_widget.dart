@@ -7,7 +7,7 @@ import 'draw_paint.dart';
 import 'foundation_manager.dart';
 
 class GameScreen extends StatelessWidget {
-  final BaseManager manager;
+  final FoundationalManager manager;
   final bool showStateButton;
 
   const GameScreen({

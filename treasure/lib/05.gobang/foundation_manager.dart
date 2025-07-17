@@ -1,6 +1,6 @@
 import 'base.dart';
 
-abstract class BaseGomokuManager {
+abstract class FoundationalManager {
   final Board board = Board(size: 15);
 
   void placePiece(int index);

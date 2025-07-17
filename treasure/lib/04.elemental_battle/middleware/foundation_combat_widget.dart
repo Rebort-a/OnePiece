@@ -1,15 +1,14 @@
-// base_combat_page.dart
 import 'package:flutter/material.dart';
 import '../foundation/energy.dart';
-import 'base_combat_manager.dart';
+import 'foundation_combat_manager.dart';
 
 import '../middleware/elemental.dart';
 import 'common.dart';
 
-class BaseCombatPage {
-  final BaseCombatManager combatManager;
+class FoundationalCombatWidget {
+  final FoundationalCombatManager combatManager;
 
-  const BaseCombatPage({required this.combatManager});
+  const FoundationalCombatWidget({required this.combatManager});
 
   List<Widget> buildPage() {
     return [buildInfoRegion(), buildMessageRegion(), buildButtonRegion()];
@@ -196,7 +195,7 @@ class BattleMessageRegion extends StatelessWidget {
 }
 
 class BattleButtonRegion extends StatelessWidget {
-  final BaseCombatManager combatManager;
+  final FoundationalCombatManager combatManager;
 
   const BattleButtonRegion({super.key, required this.combatManager});
 
@@ -206,19 +205,19 @@ class BattleButtonRegion extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildButton(
-          "${BaseCombatManager.conationNames[ConationType.attack]}",
+          "${FoundationalCombatManager.conationNames[ConationType.attack]}",
           combatManager.conductAttack,
         ),
         _buildButton(
-          "${BaseCombatManager.conationNames[ConationType.parry]}",
+          "${FoundationalCombatManager.conationNames[ConationType.parry]}",
           combatManager.conductParry,
         ),
         _buildButton(
-          "${BaseCombatManager.conationNames[ConationType.skill]}",
+          "${FoundationalCombatManager.conationNames[ConationType.skill]}",
           combatManager.conductSkill,
         ),
         _buildButton(
-          "${BaseCombatManager.conationNames[ConationType.escape]}",
+          "${FoundationalCombatManager.conationNames[ConationType.escape]}",
           combatManager.conductEscape,
         ),
       ],

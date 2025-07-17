@@ -1,8 +1,8 @@
 import '../00.common/game/gamer.dart';
 import 'foundation_manager.dart';
 
-class LoaclAnimalChessManager extends BaseAnimalChessManager {
-  LoaclAnimalChessManager() {
+class LoaclManager extends FoundationalManager {
+  LoaclManager() {
     initGame();
   }
 

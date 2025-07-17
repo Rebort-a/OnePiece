@@ -3,10 +3,10 @@ import '../00.common/game/gamer.dart';
 import 'base.dart';
 import 'foundation_manager.dart';
 
-class GomokuBoard extends StatelessWidget {
-  final BaseGomokuManager manager;
+class FoundationalWidget extends StatelessWidget {
+  final FoundationalManager manager;
 
-  const GomokuBoard({super.key, required this.manager});
+  const FoundationalWidget({super.key, required this.manager});
 
   @override
   Widget build(BuildContext context) => _buildMapRegion();

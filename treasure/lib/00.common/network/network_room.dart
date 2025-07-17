@@ -56,19 +56,19 @@ class RoomInfo {
     return {'port': port, 'type': type, 'operation': operation.index};
   }
 
-  static String configToString(int port, int type, RoomState operation) {
+  static String configToJsonString(int port, int type, RoomState operation) {
     return jsonEncode(configToJson(port, type, operation));
   }
 
-  static RoomState getOperationFromString(String data) {
+  static RoomState getOperationFromJsonString(String data) {
     return getOperationFromJson(jsonDecode(data));
   }
 
-  static int getPortFromString(String data) {
+  static int getPortFromJsonString(String data) {
     return getPortFromJson(jsonDecode(data));
   }
 
-  static int getTypeFromString(String data) {
+  static int getTypeFromJsonString(String data) {
     return getTypeFromJson(jsonDecode(data));
   }
 }

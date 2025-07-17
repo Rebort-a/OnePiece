@@ -1,23 +1,22 @@
-// net_main_page.dart
 import 'package:flutter/material.dart';
 
 import '../00.common/network/network_room.dart';
 import '../00.common/game/gamer.dart';
 import '../00.common/game/step.dart';
 import '../00.common/widget/notifier_navigator.dart';
-import 'foundation_page.dart';
+import 'foundation_widget.dart';
 
-import 'net_chess_manager.dart';
+import 'net_manager.dart';
 
 class NetGomokuPage extends StatelessWidget {
-  late final NetGomokuManager _manager;
+  late final NetManager _manager;
 
   NetGomokuPage({
     super.key,
     required RoomInfo roomInfo,
     required String userName,
   }) {
-    _manager = NetGomokuManager(roomInfo: roomInfo, userName: userName);
+    _manager = NetManager(roomInfo: roomInfo, userName: userName);
   }
 
   @override
@@ -51,7 +50,7 @@ class NetGomokuPage extends StatelessWidget {
               ...(step == GameStep.action
                   ? [
                       _buildTurnIndicator(),
-                      Expanded(child: GomokuBoard(manager: _manager)),
+                      Expanded(child: FoundationalWidget(manager: _manager)),
                     ]
                   : _buildPrepare(step)),
             ],

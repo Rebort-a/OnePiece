@@ -33,10 +33,12 @@ class HomeManager {
   }
 
   void _handleReceivedMessage(String address, List<int> data) {
-    NetworkMessage message = NetworkMessage.fromSocket(data);
+    NetworkMessage message = NetworkMessage.fromSocketData(data);
     if (message.type == MessageType.broadcast) {
-      RoomState operation = RoomInfo.getOperationFromString(message.content);
-      int port = RoomInfo.getPortFromString(message.content);
+      RoomState operation = RoomInfo.getOperationFromJsonString(
+        message.content,
+      );
+      int port = RoomInfo.getPortFromJsonString(message.content);
 
       if (operation == RoomState.stop) {
         othersRooms.removeWhere(
@@ -46,7 +48,7 @@ class HomeManager {
               room.port == port,
         );
       } else if (operation == RoomState.start) {
-        int type = RoomInfo.getTypeFromString(message.content);
+        int type = RoomInfo.getTypeFromJsonString(message.content);
         RoomInfo newRoom = RoomInfo(
           name: message.source,
           type: type,

@@ -46,19 +46,19 @@ class NetworkMessage {
     return {'id': id, 'type': type.index, 'source': source, 'content': content};
   }
 
-  factory NetworkMessage.fromString(String data) {
+  factory NetworkMessage.fromJsonString(String data) {
     return NetworkMessage.fromJson(jsonDecode(data));
   }
 
-  String toStringData() {
+  String toJsonString() {
     return jsonEncode(toJson());
   }
 
-  factory NetworkMessage.fromSocket(List<int> data) {
-    return NetworkMessage.fromString(utf8.decode(data));
+  factory NetworkMessage.fromSocketData(List<int> data) {
+    return NetworkMessage.fromJsonString(utf8.decode(data));
   }
 
   List<int> toSocketData() {
-    return utf8.encode(toStringData());
+    return utf8.encode(toJsonString());
   }
 }

@@ -8,7 +8,7 @@ import '../../00.common/game/step.dart';
 import '../../00.common/network/network_message.dart';
 import '../../00.common/network/network_room.dart';
 
-import '../middleware/base_combat_manager.dart';
+import '../middleware/foundation_combat_manager.dart';
 import '../middleware/elemental.dart';
 import '../foundation/energy.dart';
 
@@ -18,7 +18,7 @@ import '../foundation/skill.dart';
 import '../upper/cast_page.dart';
 import '../upper/status_page.dart';
 
-class NetCombatManager extends BaseCombatManager {
+class NetCombatManager extends FoundationalCombatManager {
   late final NetTurnGameEngine netTurnEngine;
 
   NetCombatManager({required String userName, required RoomInfo roomInfo}) {

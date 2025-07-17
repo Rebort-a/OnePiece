@@ -8,11 +8,11 @@ import '../00.common/network/network_room.dart';
 
 import '../00.common/widget/notifier_navigator.dart';
 
-import 'net_chess_manager.dart';
-import 'foundation_page.dart';
+import 'net_manager.dart';
+import 'foundation_widget.dart';
 
 class NetAnimalChessPage extends StatelessWidget {
-  late final NetAnimalChessManager _chessManager;
+  late final NetManager _manager;
 
   final RoomInfo roomInfo;
   final String userName;
@@ -22,10 +22,7 @@ class NetAnimalChessPage extends StatelessWidget {
     required this.roomInfo,
     required this.userName,
   }) {
-    _chessManager = NetAnimalChessManager(
-      roomInfo: roomInfo,
-      userName: userName,
-    );
+    _manager = NetManager(roomInfo: roomInfo, userName: userName);
   }
 
   @override
@@ -35,7 +32,7 @@ class NetAnimalChessPage extends StatelessWidget {
 
   Widget _buildPage(BuildContext context) {
     return ValueListenableBuilder<GameStep>(
-      valueListenable: _chessManager.netTurnEngine.gameStep,
+      valueListenable: _manager.netTurnEngine.gameStep,
       builder: (__, step, _) {
         return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
       },
@@ -55,7 +52,7 @@ class NetAnimalChessPage extends StatelessWidget {
     }
 
     return AppBar(
-      leading: IconButton(icon: Icon(icon), onPressed: _chessManager.leavePage),
+      leading: IconButton(icon: Icon(icon), onPressed: _manager.leavePage),
       title: const Text('网络斗兽棋'),
       centerTitle: true,
     );
@@ -65,15 +62,15 @@ class NetAnimalChessPage extends StatelessWidget {
     return Column(
       children: [
         // 弹出页面
-        NotifierNavigator(navigatorHandler: _chessManager.pageNavigator),
+        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
         ...(step == GameStep.action
             ? [
                 _buildTurnIndicator(),
                 Expanded(
                   flex: 3,
-                  child: BaseAnimalChessPage(
-                    displayMap: _chessManager.displayMap,
-                    onGridSelected: _chessManager.sendActionMessage,
+                  child: FoundationalWidget(
+                    displayMap: _manager.displayMap,
+                    onGridSelected: _manager.sendActionMessage,
                   ),
                 ),
               ]
@@ -81,15 +78,15 @@ class NetAnimalChessPage extends StatelessWidget {
 
         Expanded(
           flex: 1,
-          child: MessageList(networkEngine: _chessManager.netTurnEngine),
+          child: MessageList(networkEngine: _manager.netTurnEngine),
         ),
-        MessageInput(networkEngine: _chessManager.netTurnEngine),
+        MessageInput(networkEngine: _manager.netTurnEngine),
       ],
     );
   }
 
   Widget _buildTurnIndicator() => ValueListenableBuilder(
-    valueListenable: _chessManager.currentGamer,
+    valueListenable: _manager.currentGamer,
     builder: (_, gamer, __) => Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -97,7 +94,7 @@ class NetAnimalChessPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        '${gamer == _chessManager.netTurnEngine.playerType ? "你的" : "对方"}回合',
+        '${gamer == _manager.netTurnEngine.playerType ? "你的" : "对方"}回合',
         style: globalTheme.textTheme.titleMedium?.copyWith(color: Colors.white),
       ),
     ),

@@ -1,8 +1,6 @@
-// local_chess_manager.dart
-
 import 'foundation_manager.dart';
 
-class LocalGomokuManager extends BaseGomokuManager {
+class LocalManager extends FoundationalManager {
   @override
   void placePiece(int index) {
     board.placePiece(index);

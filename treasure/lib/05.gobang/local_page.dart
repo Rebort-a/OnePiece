@@ -1,9 +1,8 @@
-// local_main_page.dart
 import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
-import 'local_chess_manager.dart';
-import 'foundation_page.dart';
+import 'local_manager.dart';
+import 'foundation_widget.dart';
 
 class LocalGomokuPage extends StatefulWidget {
   const LocalGomokuPage({super.key});
@@ -13,12 +12,12 @@ class LocalGomokuPage extends StatefulWidget {
 }
 
 class _LocalGomokuPageState extends State<LocalGomokuPage> {
-  late final LocalGomokuManager manager;
+  late final LocalManager _manager;
 
   @override
   void initState() {
     super.initState();
-    manager = LocalGomokuManager();
+    _manager = LocalManager();
   }
 
   @override
@@ -30,20 +29,20 @@ class _LocalGomokuPageState extends State<LocalGomokuPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: manager.restart,
+            onPressed: _manager.restart,
           ),
-          IconButton(icon: const Icon(Icons.undo), onPressed: manager.undo),
+          IconButton(icon: const Icon(Icons.undo), onPressed: _manager.undo),
         ],
       ),
       body: Column(
         children: [
           ValueListenableBuilder<TurnGamerType>(
-            valueListenable: manager.board.currentGamer,
+            valueListenable: _manager.board.currentGamer,
             builder: (context, gamer, child) {
               return Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  manager.board.gameOver == false
+                  _manager.board.gameOver == false
                       ? '当前回合: ${gamer == TurnGamerType.front ? "黑方" : "白方"}'
                       : '${gamer == TurnGamerType.rear ? "黑方" : "白方"}获胜!',
                   style: const TextStyle(
@@ -54,7 +53,7 @@ class _LocalGomokuPageState extends State<LocalGomokuPage> {
               );
             },
           ),
-          Expanded(child: GomokuBoard(manager: manager)),
+          Expanded(child: FoundationalWidget(manager: _manager)),
         ],
       ),
     );

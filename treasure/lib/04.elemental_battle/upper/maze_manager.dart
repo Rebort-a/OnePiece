@@ -47,7 +47,7 @@ class CellNotifier extends ValueNotifier<CellData> {
   }
 }
 
-class MapManager {
+class MazeManager {
   final int mapSize = 2 * mapLevel + 1; // 确定地图的宽和高
   final Random _random = Random(); // 初始化随机生成器
 
@@ -69,7 +69,7 @@ class MapManager {
 
   final ListNotifier<CellNotifier> displayMap = ListNotifier([]); // 供地图区域监听
 
-  MapManager() {
+  MazeManager() {
     _generateMap(); // 生成地图
     _startActive(); // 添加键盘响应，启动定时器
     _fillPropHandler(); // 填充玩家的道具作用

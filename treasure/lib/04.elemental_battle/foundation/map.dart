@@ -1,3 +1,4 @@
+import '../../00.common/game/map.dart';
 import '../../00.common/image/entity.dart';
 
 const int mapLevel = 6; // 地图级数
@@ -15,17 +16,6 @@ class CellData {
     this.backIndex = 0,
     this.fogFlag = true,
   });
-}
-
-// 可移动的实体
-mixin MovableEntity {
-  late final EntityType id;
-  late int y, x;
-
-  void updatePosition(int newY, int newX) {
-    y = newY;
-    x = newX;
-  }
 }
 
 // 地图栈

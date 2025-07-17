@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'base.dart';
 import 'foundation_manager.dart';
 
-class LocalManager extends BaseManager {
+class LocalManager extends FoundationalManager {
   static const int generateCount = 5;
   static const int initialSnakeLength = 100;
   double _foodCheckAccumulator = 0.0;

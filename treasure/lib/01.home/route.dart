@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../00.common/network/network_room.dart';
-import '../02.lan_chat/net_main_page.dart';
-import '../03.animal_chess/local_main_page.dart';
-import '../03.animal_chess/net_main_page.dart';
-import '../04.elemental_battle/upper/main_page.dart';
+import '../02.lan_chat/net_page.dart';
+import '../03.animal_chess/local_page.dart';
+import '../03.animal_chess/net_page.dart';
+import '../04.elemental_battle/upper/maze_page.dart';
 import '../04.elemental_battle/upper/net_combat_page.dart';
-import '../05.gobang/local_main_page.dart';
-import '../05.gobang/net_main_page.dart';
+import '../05.gobang/local_page.dart';
+import '../05.gobang/net_page.dart';
 import '../06.greedy_snake/local_page.dart';
 import '../06.greedy_snake/net_page.dart';
 
@@ -29,7 +29,7 @@ class RouteManager {
       case LocalItemType.elementalBattle:
         Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (_) => MapPage()));
+        ).push(MaterialPageRoute(builder: (_) => MazePage()));
         break;
       case LocalItemType.gobang:
         Navigator.of(

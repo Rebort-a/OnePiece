@@ -1,4 +1,3 @@
-// net_chess_manager.dart
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,12 +9,12 @@ import '../00.common/network/network_message.dart';
 import '../00.common/network/network_room.dart';
 import 'foundation_manager.dart';
 
-class NetGomokuManager extends BaseGomokuManager {
+class NetManager extends FoundationalManager {
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
   late final NetTurnGameEngine netTurnEngine;
 
-  NetGomokuManager({required String userName, required RoomInfo roomInfo}) {
+  NetManager({required String userName, required RoomInfo roomInfo}) {
     netTurnEngine = NetTurnGameEngine(
       userName: userName,
       roomInfo: roomInfo,

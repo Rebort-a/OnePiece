@@ -1,14 +1,13 @@
-// local_combat_page.dart
 import 'package:flutter/material.dart';
 
 import '../../00.common/game/gamer.dart';
 import '../../00.common/widget/notifier_navigator.dart';
-import '../middleware/base_combat_page.dart';
+import '../middleware/foundation_combat_widget.dart';
 import '../middleware/elemental.dart';
 import 'local_combat_manager.dart';
 
 class LocalCombatPage extends StatelessWidget {
-  late final LocalCombatManager _combatManager;
+  late final LocalCombatManager _manager;
 
   LocalCombatPage({
     super.key,
@@ -16,7 +15,7 @@ class LocalCombatPage extends StatelessWidget {
     required Elemental enemy,
     required TurnGamerType playerType,
   }) {
-    _combatManager = LocalCombatManager(
+    _manager = LocalCombatManager(
       player: player,
       enemy: enemy,
       playerType: playerType,
@@ -35,8 +34,8 @@ class LocalCombatPage extends StatelessWidget {
         ),
         body: Column(
           children: [
-            NotifierNavigator(navigatorHandler: _combatManager.pageNavigator),
-            ...BaseCombatPage(combatManager: _combatManager).buildPage(),
+            NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+            ...FoundationalCombatWidget(combatManager: _manager).buildPage(),
             _buildBlankRegion(),
           ],
         ),

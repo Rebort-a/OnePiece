@@ -6,7 +6,7 @@ import '../00.common/network/network_room.dart';
 import 'base.dart';
 import 'foundation_manager.dart';
 
-class NetManager extends BaseManager {
+class NetManager extends FoundationalManager {
   static const int generateCount = 10;
   static const int initialSnakeLength = 100;
 

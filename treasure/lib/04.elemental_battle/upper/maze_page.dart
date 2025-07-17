@@ -5,12 +5,12 @@ import '../../00.common/widget/scale_button.dart';
 import '../foundation/energy.dart';
 import '../../00.common/image/image_manager.dart';
 
-import 'map_manager.dart';
+import 'maze_manager.dart';
 
-class MapPage extends StatelessWidget {
-  final MapManager _mapManager = MapManager();
+class MazePage extends StatelessWidget {
+  final MazeManager _manager = MazeManager();
 
-  MapPage({super.key});
+  MazePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class MapPage extends StatelessWidget {
 
   AppBar _buildAppBar() => AppBar(
     title: ValueListenableBuilder<int>(
-      valueListenable: _mapManager.floorNum,
+      valueListenable: _manager.floorNum,
       builder: (context, value, _) => Text(value > 0 ? '地下$value层' : '主城'),
     ),
     centerTitle: true,
@@ -39,7 +39,7 @@ class MapPage extends StatelessWidget {
   Widget _buildPortraitLayout(BuildContext context) => Column(
     children: [
       // 弹出页面
-      NotifierNavigator(navigatorHandler: _mapManager.pageNavigator),
+      NotifierNavigator(navigatorHandler: _manager.pageNavigator),
 
       Flexible(
         child: Column(
@@ -71,7 +71,7 @@ class MapPage extends StatelessWidget {
   Widget _buildLandscapeLayout(BuildContext context) => Column(
     children: [
       // 弹出页面
-      NotifierNavigator(navigatorHandler: _mapManager.pageNavigator),
+      NotifierNavigator(navigatorHandler: _manager.pageNavigator),
 
       Flexible(
         child: Row(
@@ -115,7 +115,7 @@ class MapPage extends StatelessWidget {
           border: Border.all(color: Colors.grey, width: 8),
         ),
         child: ValueListenableBuilder(
-          valueListenable: _mapManager.displayMap,
+          valueListenable: _manager.displayMap,
           builder: (context, map, _) {
             if (map.isEmpty) {
               return const Center(child: Text('地图数据为空'));
@@ -124,23 +124,19 @@ class MapPage extends StatelessWidget {
             return LayoutBuilder(
               builder: (context, constraints) {
                 //取像素整数
-                final size = _calculateBoardSize(
-                  constraints,
-                  _mapManager.mapSize,
-                );
+                final size = _calculateBoardSize(constraints, _manager.mapSize);
 
                 return SizedBox(
                   width: size,
                   height: size,
                   child: GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _mapManager.mapSize, // 列数
+                      crossAxisCount: _manager.mapSize, // 列数
                       childAspectRatio: 1, // 单元格正方形
                       mainAxisSpacing: 0, // 移除网格间距
                       crossAxisSpacing: 0,
                     ),
-                    itemCount:
-                        _mapManager.mapSize * _mapManager.mapSize, // 总单元格数
+                    itemCount: _manager.mapSize * _manager.mapSize, // 总单元格数
                     itemBuilder: (context, index) {
                       return ValueListenableBuilder(
                         valueListenable: map[index],
@@ -171,18 +167,18 @@ class MapPage extends StatelessWidget {
 
   Widget _buildInfoRegion(Axis direction) {
     final infoItems = [
-      _InfoItem(label: "🌈", value: _mapManager.player.preview.typeString),
+      _InfoItem(label: "🌈", value: _manager.player.preview.typeString),
       _InfoItem(
         label: attributeNames[AttributeType.hp.index],
-        value: _mapManager.player.preview.health,
+        value: _manager.player.preview.health,
       ),
       _InfoItem(
         label: attributeNames[AttributeType.atk.index],
-        value: _mapManager.player.preview.attack,
+        value: _manager.player.preview.attack,
       ),
       _InfoItem(
         label: attributeNames[AttributeType.def.index],
-        value: _mapManager.player.preview.defence,
+        value: _manager.player.preview.defence,
       ),
     ];
 
@@ -206,17 +202,17 @@ class MapPage extends StatelessWidget {
     final buttons = [
       _ActionButton(
         text: "背包",
-        onPressed: () => _mapManager.navigateToPackagePage(context),
+        onPressed: () => _manager.navigateToPackagePage(context),
       ),
       _ActionButton(
         text: "技能",
-        onPressed: () => _mapManager.navigateToSkillsPage(context),
+        onPressed: () => _manager.navigateToSkillsPage(context),
       ),
       _ActionButton(
         text: "状态",
-        onPressed: () => _mapManager.navigateToStatusPage(context),
+        onPressed: () => _manager.navigateToStatusPage(context),
       ),
-      _ActionButton(text: "切换", onPressed: _mapManager.switchPlayerNext),
+      _ActionButton(text: "切换", onPressed: _manager.switchPlayerNext),
     ];
 
     return direction == Axis.horizontal
@@ -235,7 +231,7 @@ class MapPage extends StatelessWidget {
     children: [
       const SizedBox(height: 16),
       _DirectionButton(
-        onTap: _mapManager.movePlayerUp,
+        onTap: _manager.movePlayerUp,
         icon: Icons.keyboard_arrow_up,
       ),
       const SizedBox(height: 16),
@@ -243,19 +239,19 @@ class MapPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _DirectionButton(
-            onTap: _mapManager.movePlayerLeft,
+            onTap: _manager.movePlayerLeft,
             icon: Icons.keyboard_arrow_left,
           ),
           const SizedBox(width: 16 * 4),
           _DirectionButton(
-            onTap: _mapManager.movePlayerRight,
+            onTap: _manager.movePlayerRight,
             icon: Icons.keyboard_arrow_right,
           ),
         ],
       ),
       const SizedBox(height: 16),
       _DirectionButton(
-        onTap: _mapManager.movePlayerDown,
+        onTap: _manager.movePlayerDown,
         icon: Icons.keyboard_arrow_down,
       ),
     ],

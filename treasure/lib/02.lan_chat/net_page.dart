@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import '../00.common/network/network_room.dart';
 import '../00.common/widget/chat_component.dart';
 import '../00.common/widget/notifier_navigator.dart';
-import 'net_chat_manager.dart';
+import 'net_manager.dart';
 
 class NetChatPage extends StatelessWidget {
-  late final NetChatManager _chatManager;
+  late final NetManager _manager;
   final String userName;
   final RoomInfo roomInfo;
 
   NetChatPage({super.key, required this.userName, required this.roomInfo}) {
-    _chatManager = NetChatManager(userName: userName, roomInfo: roomInfo);
+    _manager = NetManager(userName: userName, roomInfo: roomInfo);
   }
 
   @override
@@ -24,7 +24,7 @@ class NetChatPage extends StatelessWidget {
       centerTitle: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
-        onPressed: _chatManager.networkEngine.leavePage,
+        onPressed: _manager.networkEngine.leavePage,
       ),
       actions: [
         IconButton(
@@ -42,9 +42,9 @@ class NetChatPage extends StatelessWidget {
   Widget _buildBody() {
     return Column(
       children: [
-        NotifierNavigator(navigatorHandler: _chatManager.pageNavigator),
-        Expanded(child: MessageList(networkEngine: _chatManager.networkEngine)),
-        MessageInput(networkEngine: _chatManager.networkEngine),
+        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+        Expanded(child: MessageList(networkEngine: _manager.networkEngine)),
+        MessageInput(networkEngine: _manager.networkEngine),
       ],
     );
   }

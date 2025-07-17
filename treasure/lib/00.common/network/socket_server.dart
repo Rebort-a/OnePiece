@@ -109,7 +109,7 @@ class SocketServer {
       id: 0,
       type: MessageType.broadcast,
       source: roomName,
-      content: RoomInfo.configToString(port, roomType, operation),
+      content: RoomInfo.configToJsonString(port, roomType, operation),
     );
   }
 
