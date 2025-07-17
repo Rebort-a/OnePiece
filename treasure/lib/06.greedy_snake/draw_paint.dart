@@ -263,7 +263,7 @@ class FoodPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final foodPaint = Paint()
-      ..color = Colors.red
+      ..color = Colors.redAccent
       ..style = PaintingStyle.fill;
 
     for (final food in foods) {

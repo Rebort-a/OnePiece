@@ -8,7 +8,6 @@ import 'foundation_manager.dart';
 
 class NetManager extends FoundationalManager {
   static const int generateCount = 10;
-  static const int initialSnakeLength = 100;
 
   int gamerCount = 0;
 
@@ -33,15 +32,17 @@ class NetManager extends FoundationalManager {
 
   void _handleSearch(int id) {
     if (snakes.isEmpty) {
-      snakes[engine.identity] = createSnake(initialSnakeLength);
-    }
-
-    if (foods.isEmpty) {
-      foods.addAll(List.generate(generateCount, (_) => createFood()));
+      snakes[engine.identity] = createSnake(FoundationalManager.initialLength);
     }
 
     if (!snakes.containsKey(id)) {
-      snakes[id] = createSnake(initialSnakeLength);
+      snakes[id] = createSnake(FoundationalManager.initialLength);
+    }
+
+    if (foods.isEmpty) {
+      for (int i = 0; i < generateCount; i++) {
+        createFood(randomPosition);
+      }
     }
 
     engine.sendNetworkMessage(MessageType.resource, _toJsonString());
@@ -99,7 +100,11 @@ class NetManager extends FoundationalManager {
     }
   }
 
-  void _handleEnd() {}
+  void _handleEnd(int id) {
+    if (snakes.containsKey(id)) {
+      snakes.remove(id);
+    }
+  }
 
   @override
   void updatePlayerAngle(double angle) => engine.sendNetworkMessage(
@@ -118,9 +123,6 @@ class NetManager extends FoundationalManager {
 
   @override
   void handleRemoveSnakeCallback(int index) {}
-
-  @override
-  void handleRemoveFoodCallback(int index) {}
 
   @override
   void leavePage() {

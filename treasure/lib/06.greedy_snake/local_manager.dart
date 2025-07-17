@@ -1,12 +1,10 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'base.dart';
 import 'foundation_manager.dart';
 
 class LocalManager extends FoundationalManager {
   static const int generateCount = 5;
-  static const int initialSnakeLength = 100;
   double _foodCheckAccumulator = 0.0;
 
   @override
@@ -18,10 +16,10 @@ class LocalManager extends FoundationalManager {
   }
 
   void _initGame() {
-    snakes[identity] = createSnake(initialSnakeLength);
+    snakes[identity] = createSnake(FoundationalManager.initialLength);
     for (int i = 1; i <= generateCount; i++) {
       snakes[identity + i] = createSnake(snakes[identity]!.length);
-      foods.add(createFood());
+      createFood(randomPosition);
     }
   }
 
@@ -32,53 +30,39 @@ class LocalManager extends FoundationalManager {
 
   void _handleFoodSearch(double deltaTime) {
     _foodCheckAccumulator += deltaTime;
-    if (_foodCheckAccumulator > 0.5) {
-      _adjustComputerAngle();
+    if (_foodCheckAccumulator > 0.3) {
+      _adjustAllComputersAngle();
       _foodCheckAccumulator = 0;
     }
   }
 
-  void _adjustComputerAngle() {
+  void _adjustAllComputersAngle() {
     for (final entry in snakes.entries) {
       if (entry.key != identity) {
-        _turnToFood(entry.value);
+        _turnToHappiness(entry.value);
       }
     }
   }
 
-  void _turnToFood(Snake snake) {
-    final nearest = _findNearestFood(snake.head);
+  void _turnToHappiness(Snake snake) {
+    final nearest = getNearbyFoodPosition(
+      snake.head,
+      FoundationalManager.initialLength * 4,
+    );
     if (nearest != null) {
-      final dx = nearest.position.dx - snake.head.dx;
-      final dy = nearest.position.dy - snake.head.dy;
+      final dx = nearest.dx - snake.head.dx;
+      final dy = nearest.dy - snake.head.dy;
+      snake.updateAngle(atan2(dy, dx));
+    } else if (!isPositionInSafeRange(snake.head)) {
+      final dx = mapWidth / 2 - snake.head.dx;
+      final dy = mapHeight / 2 - snake.head.dy;
       snake.updateAngle(atan2(dy, dx));
     }
-  }
-
-  Food? _findNearestFood(Offset position) {
-    if (foods.isEmpty) return null;
-
-    Food? nearest;
-    double? minDistance;
-
-    for (final food in foods) {
-      final distance = (position - food.position).distance;
-      if (minDistance == null || distance < minDistance) {
-        minDistance = distance;
-        nearest = food;
-      }
-    }
-    return nearest;
   }
 
   @override
   void handleRemoveSnakeCallback(int index) {
     snakes[index] = createSnake(snakes[identity]!.length);
-  }
-
-  @override
-  void handleRemoveFoodCallback(int index) {
-    foods.add(createFood());
   }
 
   @override

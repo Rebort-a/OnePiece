@@ -7,6 +7,7 @@ import '../00.common/model/notifier.dart';
 import 'base.dart';
 
 abstract class FoundationalManager extends ChangeNotifier {
+  static const int initialLength = 100;
   final Random _random = Random();
 
   final Map<int, Snake> snakes = {};
@@ -21,18 +22,43 @@ abstract class FoundationalManager extends ChangeNotifier {
   int get identity;
 
   Snake createSnake(int length) => Snake(
-    head: _randomPosition,
+    head: randomPosition,
     length: _random.nextInt(length) + 30,
     angle: _random.nextDouble() * 2 * pi,
     style: SnakeStyle.random(),
   );
 
-  Offset get _randomPosition => Offset(
-    _random.nextDouble() * (mapWidth - 200) + 100,
-    _random.nextDouble() * (mapHeight - 200) + 100,
+  Offset get randomPosition => Offset(
+    _random.nextDouble() * (mapWidth - initialLength * 2) + initialLength,
+    _random.nextDouble() * (mapHeight - initialLength * 2) + initialLength,
   );
 
-  Food createFood() => Food(position: _randomPosition);
+  bool isPositionInSafeRange(Offset position) {
+    final isXValid =
+        position.dx >= initialLength &&
+        position.dx < (mapWidth - initialLength);
+    final isYValid =
+        position.dy >= initialLength &&
+        position.dy < (mapHeight - initialLength);
+    return isXValid && isYValid;
+  }
+
+  void createFood(Offset position) {
+    if (getNearbyFoodPosition(position, Food.size * 2) == null &&
+        isPositionInSafeRange(position)) {
+      foods.add(Food(position: position));
+    }
+  }
+
+  Offset? getNearbyFoodPosition(Offset position, double threshold) {
+    for (final food in foods) {
+      final distance = (position - food.position).distance;
+      if (distance < threshold) {
+        return food.position;
+      }
+    }
+    return null; // 无附近食物
+  }
 
   void initTicker() {
     _ticker = Ticker(_gameLoop);
@@ -114,6 +140,12 @@ abstract class FoundationalManager extends ChangeNotifier {
     }
 
     for (final id in snakesToRemove) {
+      final removedSnake = snakes[id];
+      if (removedSnake != null) {
+        for (int i = 0; i < removedSnake.body.length; i++) {
+          createFood(removedSnake.body[i]);
+        }
+      }
       snakes.remove(id);
       handleRemoveSnakeCallback(id);
     }
@@ -146,14 +178,11 @@ abstract class FoundationalManager extends ChangeNotifier {
         if (_isFoodCollided(snake, foods[i])) {
           snake.updateLength(Food.growthPerFood);
           foods.removeAt(i);
-          handleRemoveFoodCallback(i);
           break;
         }
       }
     }
   }
-
-  void handleRemoveFoodCallback(int index);
 
   bool _isFoodCollided(Snake snake, Food food) {
     return (snake.head - food.position).distance <

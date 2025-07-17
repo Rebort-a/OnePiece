@@ -133,7 +133,7 @@ class Snake {
 
 class Food {
   static const double size = 20;
-  static const int growthPerFood = 20;
+  static const int growthPerFood = 10;
 
   Offset position;
   Food({required this.position});

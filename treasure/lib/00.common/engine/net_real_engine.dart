@@ -13,7 +13,7 @@ class NetRealGameEngine extends NetworkEngine {
   final void Function(NetworkMessage) resourceHandler;
   final void Function(int) syncHandler;
   final void Function(NetworkMessage) actionHandler;
-  final void Function() endHandler;
+  final void Function(int) endHandler;
 
   NetRealGameEngine({
     required super.userName,
