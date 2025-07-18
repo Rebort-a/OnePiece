@@ -26,9 +26,12 @@ class NetAnimalChessPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return PopScope(canPop: false, child: _buildPage(context));
-  }
+  Widget build(BuildContext context) => PopScope(
+    onPopInvokedWithResult: (bool didPop, Object? result) {
+      _manager.leavePage();
+    },
+    child: _buildPage(context),
+  );
 
   Widget _buildPage(BuildContext context) {
     return ValueListenableBuilder<GameStep>(

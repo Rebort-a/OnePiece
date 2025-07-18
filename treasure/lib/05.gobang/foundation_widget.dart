@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../00.common/game/gamer.dart';
 import 'base.dart';
@@ -9,9 +11,9 @@ class FoundationalWidget extends StatelessWidget {
   const FoundationalWidget({super.key, required this.manager});
 
   @override
-  Widget build(BuildContext context) => _buildMapRegion();
+  Widget build(BuildContext context) => Center(child: _buildChessBoard());
 
-  Widget _buildMapRegion() => AspectRatio(
+  Widget _buildChessBoard() => AspectRatio(
     aspectRatio: 1.0,
     child: Center(
       child: Container(
@@ -21,7 +23,7 @@ class FoundationalWidget extends StatelessWidget {
         ),
         child: ValueListenableBuilder(
           valueListenable: manager.board.grids,
-          builder: (context, grids, child) {
+          builder: (context, grids, _) {
             if (grids.isEmpty) {
               return const Center(child: Text('地图数据为空'));
             }
@@ -67,7 +69,7 @@ class FoundationalWidget extends StatelessWidget {
   );
 
   double _calculateBoardSize(BoxConstraints constraints, int cellCount) {
-    final double maxSize = constraints.maxWidth;
+    final double maxSize = min(constraints.maxWidth, constraints.maxHeight);
     return (maxSize ~/ cellCount) * cellCount.toDouble();
   }
 

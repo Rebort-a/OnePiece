@@ -9,7 +9,8 @@ class LocalGreedySnakePage extends StatelessWidget {
   LocalGreedySnakePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return GameScreen(manager: manager, showStateButton: true);
-  }
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    child: GameScreen(manager: manager, showStateButton: true),
+  );
 }

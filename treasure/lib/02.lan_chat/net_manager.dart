@@ -15,4 +15,8 @@ class NetManager {
       navigatorHandler: pageNavigator,
     );
   }
+
+  void leavePage() {
+    networkEngine.leavePage();
+  }
 }

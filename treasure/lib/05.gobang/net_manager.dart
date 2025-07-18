@@ -60,4 +60,16 @@ class NetManager extends FoundationalManager {
   void _exitHandler() {
     // 处理游戏结束
   }
+
+  void leavePage() {
+    _navigateToBack();
+  }
+
+  void _navigateToBack() {
+    pageNavigator.value = (context) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    };
+  }
 }

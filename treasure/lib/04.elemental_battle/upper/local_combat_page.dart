@@ -27,11 +27,6 @@ class LocalCombatPage extends StatelessWidget {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("战斗"),
-          centerTitle: true,
-          automaticallyImplyLeading: false,
-        ),
         body: Column(
           children: [
             NotifierNavigator(navigatorHandler: _manager.pageNavigator),

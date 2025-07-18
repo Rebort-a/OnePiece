@@ -20,6 +20,7 @@ class NetworkEngine {
   bool _isSending = false;
 
   bool _isDisposed = false;
+  bool _isConnected = false;
 
   int identity = 0;
 
@@ -52,7 +53,7 @@ class NetworkEngine {
 
   Future<void> _connectToServer() async {
     _socket = await Socket.connect(roomInfo.address, roomInfo.port);
-
+    _isConnected = true;
     _socket.listen(
       _handleSocketData,
       onError: (error) => _handleConnectionError(error),
@@ -61,7 +62,7 @@ class NetworkEngine {
   }
 
   void _handleSocketData(List<int> data) {
-    if (_isDisposed) return;
+    if (_isConnected || _isDisposed) return;
     _recvBuffer += utf8.decode(data);
     _extractMessages();
   }
@@ -139,6 +140,7 @@ class NetworkEngine {
   }
 
   void _handleConnectionError(Object error) {
+    _isConnected = false;
     navigatorHandler.value = (context) {
       TemplateDialog.confirmDialog(
         context: context,
@@ -152,6 +154,7 @@ class NetworkEngine {
   }
 
   void _handleSocketDone() {
+    _isConnected = false;
     if (_isDisposed) return;
     navigatorHandler.value = (context) {
       TemplateDialog.confirmDialog(
@@ -204,7 +207,7 @@ class NetworkEngine {
   }
 
   Future<void> _pushMessage() async {
-    if (_isSending || _sendBuffer.isEmpty) return;
+    if (_isConnected || _isSending || _sendBuffer.isEmpty) return;
 
     _isSending = true;
 
@@ -218,22 +221,15 @@ class NetworkEngine {
     _isSending = false;
   }
 
-  void leavePage() {
-    // 发送离开房间消息
-
-    sendNetworkMessage(MessageType.exit, 'give up');
-    sendNetworkMessage(MessageType.notify, 'leave room');
-
-    _dispose();
-  }
-
-  Future<void> _dispose() async {
+  Future<void> leavePage() async {
     if (_isDisposed) return;
 
     _isDisposed = true;
     _stopKeyboard();
 
-    while (_isSending) {
+    sendNetworkMessage(MessageType.notify, 'leave room');
+
+    while (_isConnected && _isSending) {
       await Future.delayed(const Duration(milliseconds: 20));
       await _pushMessage(); // 确保所有消息发送完毕
     }

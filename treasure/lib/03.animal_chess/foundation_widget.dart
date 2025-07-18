@@ -23,31 +23,29 @@ class FoundationalWidget extends StatelessWidget {
 
   Widget _buildBody() => _buildChessBoard();
 
-  Widget _buildChessBoard() {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Center(
-        child: Container(
-          decoration: _boardDecoration(),
-          child: ValueListenableBuilder(
-            valueListenable: displayMap,
-            builder: (_, map, __) => LayoutBuilder(
-              builder: (context, constraints) {
-                int boardSize = sqrt(map.length).floor();
-                double size = _calculateBoardSize(constraints, boardSize);
-                double scaleFactor = (5 / boardSize);
-                return SizedBox(
-                  width: size,
-                  height: size,
-                  child: _buildBoardGrid(map, boardSize, scaleFactor),
-                );
-              },
-            ),
+  Widget _buildChessBoard() => AspectRatio(
+    aspectRatio: 1,
+    child: Center(
+      child: Container(
+        decoration: _boardDecoration(),
+        child: ValueListenableBuilder(
+          valueListenable: displayMap,
+          builder: (_, map, __) => LayoutBuilder(
+            builder: (context, constraints) {
+              int boardSize = sqrt(map.length).floor();
+              double size = _calculateBoardSize(constraints, boardSize);
+              double scaleFactor = (5 / boardSize);
+              return SizedBox(
+                width: size,
+                height: size,
+                child: _buildBoardGrid(map, boardSize, scaleFactor),
+              );
+            },
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 
   BoxDecoration _boardDecoration() => BoxDecoration(
     color: Colors.white,

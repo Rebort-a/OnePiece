@@ -15,8 +15,12 @@ class NetChatPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      Scaffold(appBar: _buildAppBar(), body: _buildBody());
+  Widget build(BuildContext context) => PopScope(
+    onPopInvokedWithResult: (bool didPop, Object? result) {
+      _manager.leavePage();
+    },
+    child: Scaffold(appBar: _buildAppBar(), body: _buildBody()),
+  );
 
   AppBar _buildAppBar() {
     return AppBar(

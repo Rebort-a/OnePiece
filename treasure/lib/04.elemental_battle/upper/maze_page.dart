@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
+import '../../00.common/widget/floor_banner.dart';
 import '../../00.common/widget/notifier_navigator.dart';
 import '../../00.common/widget/scale_button.dart';
 import '../foundation/energy.dart';
@@ -14,26 +17,67 @@ class MazePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: OrientationBuilder(
-        builder: (context, orientation) {
-          // 根据屏幕方向选择布局
-          return orientation == Orientation.portrait
-              ? _buildPortraitLayout(context)
-              : _buildLandscapeLayout(context);
-        },
+    return PopScope(
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        _manager.leavePage();
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            OrientationBuilder(
+              builder: (context, orientation) {
+                return orientation == Orientation.portrait
+                    ? _buildPortraitLayout(context)
+                    : _buildLandscapeLayout(context);
+              },
+            ),
+
+            // 悬浮层数横幅
+            Positioned(top: 0, left: 50, right: 50, child: _buildBanner()),
+
+            // 退出按钮
+            Positioned(
+              top: 0,
+              left: 0,
+              child: _buildIconButton(
+                icon: Icons.arrow_back,
+                onPressed: _manager.leavePage,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  AppBar _buildAppBar() => AppBar(
-    title: ValueListenableBuilder<int>(
+  Widget _buildIconButton({
+    required IconData icon,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(10), // 圆角半径改为10
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white, size: 24),
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        splashRadius: 25, // 水波纹效果半径
+      ),
+    );
+  }
+
+  Widget _buildBanner() {
+    return ValueListenableBuilder<int>(
       valueListenable: _manager.floorNum,
-      builder: (context, value, _) => Text(value > 0 ? '地下$value层' : '主城'),
-    ),
-    centerTitle: true,
-  );
+      builder: (context, value, child) {
+        return FloorBanner(text: value > 0 ? '地下$value层' : '主城');
+      },
+    );
+  }
 
   // 竖屏布局
   Widget _buildPortraitLayout(BuildContext context) => Column(
@@ -68,37 +112,27 @@ class MazePage extends StatelessWidget {
   );
 
   // 横屏布局
-  Widget _buildLandscapeLayout(BuildContext context) => Column(
+  Widget _buildLandscapeLayout(BuildContext context) => Row(
     children: [
       // 弹出页面
       NotifierNavigator(navigatorHandler: _manager.pageNavigator),
-
-      Flexible(
+      Expanded(
+        flex: 3,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Expanded(
-              flex: 3,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // 行为按钮区域
-                  _buildActionButtonRegion(context, Axis.vertical),
+            // 行为按钮区域
+            _buildActionButtonRegion(context, Axis.vertical),
 
-                  //信息区域
-                  _buildInfoRegion(Axis.vertical),
-                ],
-              ),
-            ),
-            // 地图区域
-            Expanded(flex: 5, child: _buildMapRegion()),
-            // 方向按钮区域
-            Expanded(flex: 3, child: _buildDirectionButtonRegion()),
+            //信息区域
+            _buildInfoRegion(Axis.vertical),
           ],
         ),
       ),
-
-      // 底部空白区域
-      _buildBlankRegion(),
+      // 地图区域
+      Expanded(flex: 5, child: _buildMapRegion()),
+      // 方向按钮区域
+      Expanded(flex: 3, child: _buildDirectionButtonRegion()),
     ],
   );
 
@@ -130,6 +164,7 @@ class MazePage extends StatelessWidget {
                   width: size,
                   height: size,
                   child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: _manager.mapSize, // 列数
                       childAspectRatio: 1, // 单元格正方形
@@ -161,7 +196,7 @@ class MazePage extends StatelessWidget {
   );
 
   double _calculateBoardSize(BoxConstraints constraints, int cellCount) {
-    final double maxSize = constraints.maxWidth;
+    final double maxSize = min(constraints.maxWidth, constraints.maxHeight);
     return (maxSize ~/ cellCount) * cellCount.toDouble();
   }
 

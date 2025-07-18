@@ -8,79 +8,55 @@ import '../../00.common/widget/notifier_navigator.dart';
 import 'net_combat_manager.dart';
 
 class NetCombatPage extends StatelessWidget {
-  late final NetCombatManager _combatManager;
+  late final NetCombatManager _manager;
 
   NetCombatPage({
     super.key,
     required RoomInfo roomInfo,
     required String userName,
   }) {
-    _combatManager = NetCombatManager(roomInfo: roomInfo, userName: userName);
+    _manager = NetCombatManager(roomInfo: roomInfo, userName: userName);
   }
 
   @override
-  Widget build(BuildContext context) {
-    return PopScope(canPop: false, child: _buildPage(context));
-  }
+  Widget build(BuildContext context) =>
+      PopScope(canPop: false, child: _buildPage(context));
 
   Widget _buildPage(BuildContext context) {
     return ValueListenableBuilder<GameStep>(
-      valueListenable: _combatManager.netTurnEngine.gameStep,
+      valueListenable: _manager.netTurnEngine.gameStep,
       builder: (__, step, _) {
-        return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
+        return Scaffold(body: _buildBody(step));
       },
     );
-  }
-
-  AppBar _buildAppBar(GameStep step) {
-    if (step.index <= GameStep.connected.index) {
-      return AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: _combatManager.leavePage,
-        ),
-        title: Text("等待"),
-        centerTitle: true,
-      );
-    } else if (step.index == GameStep.action.index) {
-      return AppBar(
-        title: Text("战斗"),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-      );
-    } else {
-      return AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.exit_to_app),
-          onPressed: _combatManager.leavePage,
-        ),
-        title: Text("结算"),
-        centerTitle: true,
-      );
-    }
   }
 
   Widget _buildBody(GameStep step) {
     return Column(
       children: [
         // 弹出页面
-        NotifierNavigator(navigatorHandler: _combatManager.pageNavigator),
+        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
         ...(step.index >= GameStep.action.index
-            ? FoundationalCombatWidget(
-                combatManager: _combatManager,
-              ).buildPage()
+            ? FoundationalCombatWidget(combatManager: _manager).buildPage()
             : _buildPrepare(step)),
 
-        Expanded(
-          child: MessageList(networkEngine: _combatManager.netTurnEngine),
-        ),
-        MessageInput(networkEngine: _combatManager.netTurnEngine),
+        Expanded(child: MessageList(networkEngine: _manager.netTurnEngine)),
+        MessageInput(networkEngine: _manager.netTurnEngine),
       ],
     );
   }
 
   List<Widget> _buildPrepare(GameStep step) {
     return [
+      // 退出按钮
+      Positioned(
+        top: 0,
+        left: 0,
+        child: _buildIconButton(
+          icon: Icons.arrow_back,
+          onPressed: _manager.leavePage,
+        ),
+      ),
       const SizedBox(height: 20),
       if (step == GameStep.disconnect || step == GameStep.connected)
         const CircularProgressIndicator(),
@@ -89,15 +65,35 @@ class NetCombatPage extends StatelessWidget {
       const SizedBox(height: 20),
       if (step == GameStep.frontConfig || step == GameStep.rearConfig)
         ElevatedButton(
-          onPressed: () => _combatManager.navigateToCastPage(),
+          onPressed: () => _manager.navigateToCastPage(),
           child: const Text('配置角色'),
         ),
       const SizedBox(height: 20),
       if (step == GameStep.rearConfig)
         ElevatedButton(
-          onPressed: () => _combatManager.navigateToStatePage(),
+          onPressed: () => _manager.navigateToStatePage(),
           child: const Text('查看对手信息'),
         ),
     ];
+  }
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(10), // 圆角半径改为10
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white, size: 24),
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        splashRadius: 25, // 水波纹效果半径
+      ),
+    );
   }
 }

@@ -9,12 +9,19 @@ import 'network_room.dart';
 // 2.等待客户端连接，分配id，转发信息
 // 3.停止广播，发送结束信息，关闭连接，移除客户端
 
+class ClientManager {
+  final Socket socket;
+  final int id;
+
+  ClientManager(this.socket, this.id);
+}
+
 class SocketServer {
   static const _discoveryInterval = Duration(seconds: 1);
 
   late final Timer _timer;
   late final ServerSocket _server;
-  final Set<Socket> _clients = {};
+  final Set<ClientManager> _clients = {};
   int clientCounter = 0;
 
   final String roomName;
@@ -43,24 +50,26 @@ class SocketServer {
     });
   }
 
-  void _handleClientConnect(Socket client) {
+  void _handleClientConnect(Socket clientSocket) {
     clientCounter = clientCounter + 1;
+    ClientManager client = ClientManager(clientSocket, clientCounter);
     _clients.add(client);
-    _sendAcceptMessage(client, clientCounter);
 
-    client.listen(
+    clientSocket.listen(
       _broadcastMessage,
-      onDone: () => _removeClient(client),
-      onError: (_) => _removeClient(client),
+      onDone: () => _disconnectClient(client),
+      onError: (_) => _disconnectClient(client),
       cancelOnError: true,
     );
+
+    _sendAcceptMessage(client);
   }
 
-  void _sendAcceptMessage(Socket client, int id) {
+  void _sendAcceptMessage(ClientManager client) {
     _sendMessageToClient(
       client,
       NetworkMessage(
-        id: id,
+        id: client.id,
         type: MessageType.accept,
         source: roomName,
         content: 'server',
@@ -74,9 +83,9 @@ class SocketServer {
     }
   }
 
-  void _sendMessageToClient(Socket client, List<int> data) {
+  void _sendMessageToClient(ClientManager client, List<int> data) {
     if (_clients.contains(client)) {
-      client.add(data);
+      client.socket.add(data);
     }
   }
 
@@ -87,10 +96,22 @@ class SocketServer {
   //   }
   // }
 
-  void _removeClient(Socket client) {
+  void _disconnectClient(ClientManager client) {
+    _removeClient(client);
+    _broadcastMessage(
+      NetworkMessage(
+        id: client.id,
+        type: MessageType.exit,
+        source: roomName,
+        content: 'exit',
+      ).toSocketData(),
+    );
+  }
+
+  void _removeClient(ClientManager client) {
     if (_clients.contains(client)) {
       _clients.remove(client);
-      client.close();
+      client.socket.close();
     }
   }
 
