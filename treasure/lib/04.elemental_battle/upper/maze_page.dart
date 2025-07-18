@@ -16,20 +16,15 @@ class MazePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (bool didPop, Object? result) {
-        _manager.leavePage();
-      },
-      child: Scaffold(
-        appBar: _buildAppBar(),
-        body: OrientationBuilder(
-          builder: (context, orientation) {
-            // 根据屏幕方向选择布局
-            return orientation == Orientation.portrait
-                ? _buildPortraitLayout(context)
-                : _buildLandscapeLayout(context);
-          },
-        ),
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          // 根据屏幕方向选择布局
+          return orientation == Orientation.portrait
+              ? _buildPortraitLayout(context)
+              : _buildLandscapeLayout(context);
+        },
       ),
     );
   }

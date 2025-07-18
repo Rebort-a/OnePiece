@@ -659,16 +659,4 @@ class MazeManager {
   bool _checkInMap(y, x) {
     return (y >= 0) && (y < mapSize) && (x >= 0) && (x < mapSize);
   }
-
-  void leavePage() {
-    _navigateToBack();
-  }
-
-  void _navigateToBack() {
-    pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    };
-  }
 }
