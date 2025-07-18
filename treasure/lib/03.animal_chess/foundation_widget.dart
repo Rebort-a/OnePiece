@@ -19,9 +19,7 @@ class FoundationalWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => _buildBody();
-
-  Widget _buildBody() => _buildChessBoard();
+  Widget build(BuildContext context) => Center(child: _buildChessBoard());
 
   Widget _buildChessBoard() => AspectRatio(
     aspectRatio: 1,
@@ -63,7 +61,6 @@ class FoundationalWidget extends StatelessWidget {
     double scaleFactor,
   ) {
     return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: boardSize,
       ),

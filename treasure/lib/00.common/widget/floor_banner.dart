@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 class FloorBanner extends StatefulWidget {
@@ -18,6 +20,7 @@ class _FloorBannerState extends State<FloorBanner>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   bool _isVisible = true;
+  Timer? _hideTimer; // 添加计时器引用
 
   @override
   void initState() {
@@ -26,15 +29,31 @@ class _FloorBannerState extends State<FloorBanner>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _showBanner();
+  }
 
-    _animationController.forward();
-    Future.delayed(widget.displayDuration, _hideBanner);
+  // 添加文本变化监听
+  @override
+  void didUpdateWidget(FloorBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 当文本变化时重新显示横幅
+    if (widget.text != oldWidget.text) {
+      _resetAndShow();
+    }
   }
 
   @override
   void dispose() {
+    _hideTimer?.cancel(); // 取消计时器
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _showBanner() {
+    _animationController.forward();
+    // 保存计时器引用以便取消
+    _hideTimer = Timer(widget.displayDuration, _hideBanner);
   }
 
   void _hideBanner() {
@@ -42,11 +61,18 @@ class _FloorBannerState extends State<FloorBanner>
 
     _animationController.reverse().then((_) {
       if (mounted) {
-        setState(() {
-          _isVisible = false;
-        });
+        setState(() => _isVisible = false);
       }
     });
+  }
+
+  // 重置状态并重新显示
+  void _resetAndShow() {
+    _hideTimer?.cancel(); // 取消之前的计时器
+    _animationController.reset();
+
+    setState(() => _isVisible = true);
+    _showBanner();
   }
 
   @override
@@ -58,7 +84,7 @@ class _FloorBannerState extends State<FloorBanner>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black38, // 调整为更半透明的黑色 (15% 不透明度)
+          color: Colors.black38,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(

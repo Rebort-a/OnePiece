@@ -13,10 +13,10 @@ class LoaclAnimalChessPage extends StatelessWidget {
   LoaclAnimalChessPage({super.key});
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: false,
-    child: Scaffold(appBar: _buildAppBar(), body: _buildBody()),
-  );
+  Widget build(BuildContext context) =>
+      PopScope(canPop: false, child: _buildPage());
+
+  Widget _buildPage() => Scaffold(appBar: _buildAppBar(), body: _buildBody());
 
   AppBar _buildAppBar() => AppBar(
     leading: IconButton(

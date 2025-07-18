@@ -34,11 +34,13 @@ class NetAnimalChessPage extends StatelessWidget {
   );
 
   Widget _buildPage(BuildContext context) {
-    return ValueListenableBuilder<GameStep>(
-      valueListenable: _manager.netTurnEngine.gameStep,
-      builder: (__, step, _) {
-        return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
-      },
+    return Center(
+      child: ValueListenableBuilder<GameStep>(
+        valueListenable: _manager.netTurnEngine.gameStep,
+        builder: (__, step, _) {
+          return Scaffold(appBar: _buildAppBar(step), body: _buildBody(step));
+        },
+      ),
     );
   }
 

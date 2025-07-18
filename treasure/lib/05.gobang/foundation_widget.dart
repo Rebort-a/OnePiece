@@ -25,7 +25,7 @@ class FoundationalWidget extends StatelessWidget {
           valueListenable: manager.board.grids,
           builder: (context, grids, _) {
             if (grids.isEmpty) {
-              return const Center(child: Text('地图数据为空'));
+              return const Text('地图数据为空');
             }
 
             return LayoutBuilder(
@@ -40,7 +40,6 @@ class FoundationalWidget extends StatelessWidget {
                   width: boardSize,
                   height: boardSize,
                   child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: manager.board.size,
                       childAspectRatio: 1,
