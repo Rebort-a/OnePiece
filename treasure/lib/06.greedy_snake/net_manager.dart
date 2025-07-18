@@ -125,6 +125,11 @@ class NetManager extends FoundationalManager {
   void handleRemoveSnakeCallback(int index) {}
 
   @override
+  void handleGameOverCallback() {
+    engine.closeSocket();
+  }
+
+  @override
   void leavePage() {
     engine.leavePage();
   }

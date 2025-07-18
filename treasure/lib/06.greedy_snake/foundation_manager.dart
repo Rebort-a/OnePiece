@@ -116,7 +116,7 @@ abstract class FoundationalManager extends ChangeNotifier {
 
       if (checkWallCollision(snake.head)) {
         if (id == identity) {
-          _handleGameOver();
+          _handleGameOver(snake.length);
           return;
         } else {
           snakesToRemove.add(id);
@@ -129,7 +129,7 @@ abstract class FoundationalManager extends ChangeNotifier {
 
         if (checkSnakeCollision(snake, otherSnake)) {
           if (id == identity) {
-            _handleGameOver();
+            _handleGameOver(snake.length);
             return;
           } else {
             snakesToRemove.add(id);
@@ -194,14 +194,15 @@ abstract class FoundationalManager extends ChangeNotifier {
   void updatePlayerAngle(double newAngle);
   void updatePlayerSpeed(bool isFaster);
 
-  void _handleGameOver() {
+  void _handleGameOver(int length) {
     suspendGame();
+    handleGameOverCallback();
     pageNavigator.value = (context) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("游戏结束"),
-          content: Text("最终长度: ${snakes[identity]?.length}"),
+          content: Text("最终长度: $length"),
           actions: [
             TextButton(
               child: const Text('确定'),
@@ -212,6 +213,8 @@ abstract class FoundationalManager extends ChangeNotifier {
       ).then((_) => leavePage());
     };
   }
+
+  void handleGameOverCallback();
 
   void leavePage() {
     _navigateBack();

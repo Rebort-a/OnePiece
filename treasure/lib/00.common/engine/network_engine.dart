@@ -225,6 +225,15 @@ class NetworkEngine {
     if (_isDisposed) return;
 
     _isDisposed = true;
+
+    await closeSocket();
+
+    // 导航回上一页
+    _navigateBack();
+  }
+
+  Future<void> closeSocket() async {
+    _isConnected = false;
     _stopKeyboard();
 
     sendNetworkMessage(MessageType.notify, 'leave room');
@@ -235,7 +244,9 @@ class NetworkEngine {
     }
 
     _socket.destroy();
+  }
 
+  void _navigateBack() {
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {
       if (Navigator.of(context).canPop()) {

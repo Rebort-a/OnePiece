@@ -62,8 +62,13 @@ class LocalManager extends FoundationalManager {
 
   @override
   void handleRemoveSnakeCallback(int index) {
-    snakes[index] = createSnake(snakes[identity]!.length);
+    if (index != identity) {
+      snakes[index] = createSnake(snakes[identity]!.length);
+    }
   }
+
+  @override
+  void handleGameOverCallback() {}
 
   @override
   void updatePlayerAngle(double newAngle) {
