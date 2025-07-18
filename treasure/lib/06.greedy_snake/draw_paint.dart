@@ -239,14 +239,11 @@ class SnakePainter extends CustomPainter {
   }
 
   bool _snakesEqual(List<Snake> a, List<Snake> b) {
-    if (a.length != b.length) return true;
+    if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       final oldSnake = a[i];
       final newSnake = b[i];
-      if (oldSnake.body != newSnake.body ||
-          oldSnake.head != newSnake.head ||
-          oldSnake.angle != newSnake.angle ||
-          oldSnake.style != newSnake.style) {
+      if (oldSnake.head != newSnake.head || oldSnake.style != newSnake.style) {
         return false;
       }
     }
@@ -281,8 +278,8 @@ class FoodPainter extends CustomPainter {
   bool _listsEqual(List<Food> a, List<Food> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
-      if (a[i].position != b[i].position) return true;
+      if (a[i].position != b[i].position) return false;
     }
-    return false;
+    return true;
   }
 }

@@ -22,7 +22,7 @@ class NetManager extends FoundationalManager {
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
-      endHandler: _endHandler,
+      exitHandler: _exitHandler,
     );
   }
 
@@ -57,7 +57,7 @@ class NetManager extends FoundationalManager {
     }
   }
 
-  void _endHandler() {
+  void _exitHandler() {
     // 处理游戏结束
   }
 }

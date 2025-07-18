@@ -13,7 +13,7 @@ class NetRealGameEngine extends NetworkEngine {
   final void Function(NetworkMessage) resourceHandler;
   final void Function(int) syncHandler;
   final void Function(NetworkMessage) actionHandler;
-  final void Function(int) endHandler;
+  final void Function(int) exitHandler;
 
   NetRealGameEngine({
     required super.userName,
@@ -23,7 +23,7 @@ class NetRealGameEngine extends NetworkEngine {
     required this.resourceHandler,
     required this.syncHandler,
     required this.actionHandler,
-    required this.endHandler,
+    required this.exitHandler,
   }) {
     super.messageHandler = _handleMessage;
   }
@@ -95,9 +95,13 @@ class NetRealGameEngine extends NetworkEngine {
   }
 
   void _handleExitMessage(NetworkMessage message) {
-    if (message.id == _publisherId) {
-      _publisherId = identity; // 发布者退出，假定自己就是发布者，然后竞选
-      sendNetworkMessage(MessageType.match, 'Election publisher');
+    if (message.id != identity) {
+      // 只处理他人的退出消息，因为自己会直接退出
+      exitHandler(message.id);
+      if (message.id == _publisherId) {
+        _publisherId = identity; // 发布者退出，假定自己就是发布者，然后竞选
+        sendNetworkMessage(MessageType.match, 'Election publisher');
+      }
     }
   }
 

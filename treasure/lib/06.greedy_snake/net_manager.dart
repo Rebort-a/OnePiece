@@ -22,7 +22,7 @@ class NetManager extends FoundationalManager {
       resourceHandler: _handleResource,
       syncHandler: _handleSync,
       actionHandler: _handleAction,
-      endHandler: _handleEnd,
+      exitHandler: _handleEnd,
     );
     initTicker();
   }

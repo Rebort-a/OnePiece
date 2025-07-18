@@ -44,7 +44,7 @@ abstract class FoundationalManager extends ChangeNotifier {
   }
 
   void createFood(Offset position) {
-    if (getNearbyFoodPosition(position, Food.size * 2) == null &&
+    if (getNearbyFoodPosition(position, Food.size * 4) == null &&
         isPositionInSafeRange(position)) {
       foods.add(Food(position: position));
     }

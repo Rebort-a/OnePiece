@@ -30,7 +30,7 @@ class NetCombatManager extends FoundationalCombatManager {
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
-      endHandler: _endHandler,
+      exitHandler: _exitHandler,
     );
   }
 
@@ -77,7 +77,7 @@ class NetCombatManager extends FoundationalCombatManager {
     actionHandlers[actionType]?.call();
   }
 
-  void _endHandler() {}
+  void _exitHandler() {}
 
   @override
   void handleEnemyAction() {}

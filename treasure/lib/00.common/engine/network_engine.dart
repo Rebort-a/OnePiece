@@ -19,6 +19,8 @@ class NetworkEngine {
   final List<NetworkMessage> _sendBuffer = [];
   bool _isSending = false;
 
+  bool _isDisposed = false;
+
   int identity = 0;
 
   final String userName;
@@ -59,6 +61,7 @@ class NetworkEngine {
   }
 
   void _handleSocketData(List<int> data) {
+    if (_isDisposed) return;
     _recvBuffer += utf8.decode(data);
     _extractMessages();
   }
@@ -149,16 +152,17 @@ class NetworkEngine {
   }
 
   void _handleSocketDone() {
-    // navigatorHandler.value = (context) {
-    //   TemplateDialog.confirmDialog(
-    //     context: context,
-    //     title: "Disconnected",
-    //     content: "You have been disconnected from the server",
-    //     before: () => true,
-    //     onTap: () {},
-    //     after: () => leavePage(),
-    //   );
-    // };
+    if (_isDisposed) return;
+    navigatorHandler.value = (context) {
+      TemplateDialog.confirmDialog(
+        context: context,
+        title: "Disconnected",
+        content: "You have been disconnected from the server",
+        before: () => true,
+        onTap: () {},
+        after: () => leavePage(),
+      );
+    };
   }
 
   void _startKeyboard() {
@@ -186,7 +190,7 @@ class NetworkEngine {
   }
 
   void sendNetworkMessage(MessageType type, String content) {
-    if (identity == 0) return;
+    if (identity == 0 || _isDisposed) return;
 
     final message = NetworkMessage(
       id: identity,
@@ -220,17 +224,21 @@ class NetworkEngine {
     sendNetworkMessage(MessageType.exit, 'give up');
     sendNetworkMessage(MessageType.notify, 'leave room');
 
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _dispose();
-    });
+    _dispose();
   }
 
   Future<void> _dispose() async {
+    if (_isDisposed) return;
+
+    _isDisposed = true;
     _stopKeyboard();
 
-    await _pushMessage(); // 确保所有消息发送完毕
+    while (_isSending) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      await _pushMessage(); // 确保所有消息发送完毕
+    }
 
-    _socket.close();
+    _socket.destroy();
 
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {

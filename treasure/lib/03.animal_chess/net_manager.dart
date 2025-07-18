@@ -23,7 +23,7 @@ class NetManager extends FoundationalManager {
       searchHandler: _searchHandler,
       resourceHandler: _resourceHandler,
       actionHandler: _actionHandler,
-      endHandler: _endHandler,
+      exitHandler: _exitHandler,
     );
   }
 
@@ -58,7 +58,7 @@ class NetManager extends FoundationalManager {
     }
   }
 
-  void _endHandler() {}
+  void _exitHandler() {}
 
   String _mapToString() {
     // 只序列化动物分布信息

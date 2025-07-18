@@ -30,7 +30,7 @@ class LocalManager extends FoundationalManager {
 
   void _handleFoodSearch(double deltaTime) {
     _foodCheckAccumulator += deltaTime;
-    if (_foodCheckAccumulator > 0.3) {
+    if (_foodCheckAccumulator >= 0.5) {
       _adjustAllComputersAngle();
       _foodCheckAccumulator = 0;
     }

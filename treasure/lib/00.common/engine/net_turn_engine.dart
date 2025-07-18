@@ -15,7 +15,7 @@ class NetTurnGameEngine extends NetworkEngine {
   final void Function() searchHandler;
   final void Function(GameStep, NetworkMessage) resourceHandler;
   final void Function(bool, NetworkMessage) actionHandler;
-  final void Function() endHandler;
+  final void Function() exitHandler;
 
   NetTurnGameEngine({
     required super.userName,
@@ -24,7 +24,7 @@ class NetTurnGameEngine extends NetworkEngine {
     required this.searchHandler,
     required this.resourceHandler,
     required this.actionHandler,
-    required this.endHandler,
+    required this.exitHandler,
   }) {
     // 在构造函数体中设置messageHandler
     super.messageHandler = _handleMessage;
@@ -141,7 +141,7 @@ class NetTurnGameEngine extends NetworkEngine {
 
       if (isEnemy) {
         // 只处理敌人的结束信息，因为自己结束会直接退出
-        endHandler();
+        exitHandler();
         _handleOpponentExit();
       }
     }
