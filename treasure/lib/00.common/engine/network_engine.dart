@@ -20,7 +20,8 @@ class NetworkEngine {
   bool _isSending = false;
 
   bool _isDisposed = false;
-  bool _isConnected = false;
+  bool _isClosing = false;
+  bool _isClosed = true;
 
   int identity = 0;
 
@@ -53,7 +54,7 @@ class NetworkEngine {
 
   Future<void> _connectToServer() async {
     _socket = await Socket.connect(roomInfo.address, roomInfo.port);
-    _isConnected = true;
+    _isClosed = false;
     _socket.listen(
       _handleSocketData,
       onError: (error) => _handleConnectionError(error),
@@ -62,7 +63,7 @@ class NetworkEngine {
   }
 
   void _handleSocketData(List<int> data) {
-    if (!_isConnected || _isDisposed) return;
+    if (_isClosed || _isDisposed) return;
     _recvBuffer += utf8.decode(data);
     _extractMessages();
   }
@@ -140,7 +141,7 @@ class NetworkEngine {
   }
 
   void _handleConnectionError(Object error) {
-    _isConnected = false;
+    closeSocket();
     navigatorHandler.value = (context) {
       TemplateDialog.confirmDialog(
         context: context,
@@ -148,14 +149,14 @@ class NetworkEngine {
         content: "Could not connect to the server: ${error.toString()}",
         before: () => true,
         onTap: () {},
-        after: () => leavePage(),
+        after: () => _navigateBack(),
       );
     };
   }
 
   void _handleSocketDone() {
-    _isConnected = false;
-    if (_isDisposed) return;
+    closeSocket();
+    if (_isClosing || _isClosed) return;
     navigatorHandler.value = (context) {
       TemplateDialog.confirmDialog(
         context: context,
@@ -163,7 +164,7 @@ class NetworkEngine {
         content: "You have been disconnected from the server",
         before: () => true,
         onTap: () {},
-        after: () => leavePage(),
+        after: () => _navigateBack(),
       );
     };
   }
@@ -207,7 +208,7 @@ class NetworkEngine {
   }
 
   Future<void> _pushMessage() async {
-    if (!_isConnected || _isSending || _sendBuffer.isEmpty) return;
+    if (_isClosed || _isSending || _sendBuffer.isEmpty) return;
 
     _isSending = true;
 
@@ -221,29 +222,28 @@ class NetworkEngine {
     _isSending = false;
   }
 
-  Future<void> leavePage() async {
-    if (_isDisposed) return;
-
-    _isDisposed = true;
-
-    await closeSocket();
+  void leavePage() {
+    closeSocket();
 
     // 导航回上一页
     _navigateBack();
   }
 
   Future<void> closeSocket() async {
-    _isConnected = false;
-    _stopKeyboard();
+    if (!_isClosed && !_isClosing) {
+      _isClosing = true;
+      _stopKeyboard();
 
-    sendNetworkMessage(MessageType.notify, 'leave room');
+      sendNetworkMessage(MessageType.notify, 'leave room');
 
-    while (_isConnected && _isSending) {
-      await Future.delayed(const Duration(milliseconds: 20));
-      await _pushMessage(); // 确保所有消息发送完毕
+      while (_isSending) {
+        await Future.delayed(const Duration(milliseconds: 20));
+        await _pushMessage(); // 确保所有消息发送完毕
+      }
+
+      _isClosed = true;
+      _socket.destroy();
     }
-
-    _socket.destroy();
   }
 
   void _navigateBack() {
@@ -255,8 +255,11 @@ class NetworkEngine {
     };
 
     // 释放资源
-    scrollController.dispose();
-    textController.dispose();
-    messageList.dispose();
+    if (!_isDisposed) {
+      scrollController.dispose();
+      textController.dispose();
+      messageList.dispose();
+      _isDisposed = true;
+    }
   }
 }

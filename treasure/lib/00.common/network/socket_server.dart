@@ -137,7 +137,7 @@ class SocketServer {
   void _closeResources() {
     if (_clients.isNotEmpty) {
       for (var client in _clients) {
-        _removeClient(client);
+        client.socket.close();
       }
       _clients.clear();
     }
