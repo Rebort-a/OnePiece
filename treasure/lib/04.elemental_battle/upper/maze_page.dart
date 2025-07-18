@@ -16,17 +16,7 @@ class MazePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: OrientationBuilder(
-        builder: (context, orientation) {
-          // 根据屏幕方向选择布局
-          return orientation == Orientation.portrait
-              ? _buildPortraitLayout(context)
-              : _buildLandscapeLayout(context);
-        },
-      ),
-    );
+    return Scaffold(appBar: _buildAppBar(), body: _buildBody());
   }
 
   AppBar _buildAppBar() => AppBar(
@@ -37,6 +27,17 @@ class MazePage extends StatelessWidget {
     ),
     centerTitle: true,
   );
+
+  Widget _buildBody() {
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        // 根据屏幕方向选择布局
+        return orientation == Orientation.portrait
+            ? _buildPortraitLayout(context)
+            : _buildLandscapeLayout(context);
+      },
+    );
+  }
 
   // 竖屏布局
   Widget _buildPortraitLayout(BuildContext context) => Column(

@@ -62,7 +62,7 @@ class NetworkEngine {
   }
 
   void _handleSocketData(List<int> data) {
-    if (_isConnected || _isDisposed) return;
+    if (!_isConnected || _isDisposed) return;
     _recvBuffer += utf8.decode(data);
     _extractMessages();
   }
@@ -207,7 +207,7 @@ class NetworkEngine {
   }
 
   Future<void> _pushMessage() async {
-    if (_isConnected || _isSending || _sendBuffer.isEmpty) return;
+    if (!_isConnected || _isSending || _sendBuffer.isEmpty) return;
 
     _isSending = true;
 

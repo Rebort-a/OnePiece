@@ -24,19 +24,40 @@ class LocalCombatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        body: Column(
-          children: [
-            NotifierNavigator(navigatorHandler: _manager.pageNavigator),
-            ...FoundationalCombatWidget(combatManager: _manager).buildPage(),
-            _buildBlankRegion(),
-          ],
-        ),
-      ),
+    return PopScope(canPop: false, child: Scaffold(body: _buildBody()));
+  }
+
+  Widget _buildBody() {
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        // 根据屏幕方向选择布局
+        return orientation == Orientation.portrait
+            ? _buildPortraitLayout(context)
+            : _buildLandscapeLayout(context);
+      },
+    );
+  }
+
+  // 竖屏布局
+  Widget _buildPortraitLayout(BuildContext context) {
+    return Column(
+      children: [
+        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+        ...FoundationalCombatWidget(combatManager: _manager).buildPage(),
+        _buildBlankRegion(),
+      ],
     );
   }
 
   Widget _buildBlankRegion() => const SizedBox(height: 192);
+
+  // 横屏布局
+  Widget _buildLandscapeLayout(BuildContext context) {
+    return Column(
+      children: [
+        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+        ...FoundationalCombatWidget(combatManager: _manager).buildPage(),
+      ],
+    );
+  }
 }

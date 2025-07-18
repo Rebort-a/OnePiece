@@ -11,7 +11,16 @@ class FoundationalCombatWidget {
   const FoundationalCombatWidget({required this.combatManager});
 
   List<Widget> buildPage() {
-    return [buildInfoRegion(), buildMessageRegion(), buildButtonRegion()];
+    return [
+      buildBlankRegion(),
+      buildInfoRegion(),
+      buildMessageRegion(),
+      buildButtonRegion(),
+    ];
+  }
+
+  Widget buildBlankRegion() {
+    return const SizedBox(height: 24);
   }
 
   Widget buildInfoRegion() {

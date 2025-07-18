@@ -49,14 +49,8 @@ class NetCombatPage extends StatelessWidget {
   List<Widget> _buildPrepare(GameStep step) {
     return [
       // 退出按钮
-      Positioned(
-        top: 0,
-        left: 0,
-        child: _buildIconButton(
-          icon: Icons.arrow_back,
-          onPressed: _manager.leavePage,
-        ),
-      ),
+      _buildIconButton(icon: Icons.arrow_back, onPressed: _manager.leavePage),
+
       const SizedBox(height: 20),
       if (step == GameStep.disconnect || step == GameStep.connected)
         const CircularProgressIndicator(),
