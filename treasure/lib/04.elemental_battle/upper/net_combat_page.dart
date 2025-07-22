@@ -26,67 +26,63 @@ class NetCombatPage extends StatelessWidget {
     return ValueListenableBuilder<GameStep>(
       valueListenable: _manager.netTurnEngine.gameStep,
       builder: (__, step, _) {
-        return Scaffold(body: _buildBody(step));
+        if (step.index == GameStep.action.index) {
+          return _buildGame(step);
+        } else {
+          return _buildPrepare(step);
+        }
       },
     );
   }
 
-  Widget _buildBody(GameStep step) {
-    return Column(
-      children: [
-        // 弹出页面
-        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
-        ...(step.index >= GameStep.action.index
-            ? FoundationalCombatWidget(combatManager: _manager).buildPage()
-            : _buildPrepare(step)),
+  Widget _buildGame(GameStep step) {
+    return Scaffold(
+      body: Column(
+        children: [
+          // 弹出页面
+          NotifierNavigator(navigatorHandler: _manager.pageNavigator),
 
-        Expanded(child: MessageList(networkEngine: _manager.netTurnEngine)),
-        MessageInput(networkEngine: _manager.netTurnEngine),
-      ],
+          ...FoundationalCombatWidget(combatManager: _manager).buildPage(),
+
+          Expanded(child: MessageList(networkEngine: _manager.netTurnEngine)),
+          MessageInput(networkEngine: _manager.netTurnEngine),
+        ],
+      ),
     );
   }
 
-  List<Widget> _buildPrepare(GameStep step) {
-    return [
-      // 退出按钮
-      _buildIconButton(icon: Icons.arrow_back, onPressed: _manager.leavePage),
-
-      const SizedBox(height: 20),
-      if (step == GameStep.disconnect || step == GameStep.connected)
-        const CircularProgressIndicator(),
-      const SizedBox(height: 20),
-      Text(step.getExplaination()),
-      const SizedBox(height: 20),
-      if (step == GameStep.frontConfig || step == GameStep.rearConfig)
-        ElevatedButton(
-          onPressed: () => _manager.navigateToCastPage(),
-          child: const Text('配置角色'),
+  Widget _buildPrepare(GameStep step) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: _manager.leavePage,
+          icon: Icon(Icons.arrow_back),
         ),
-      const SizedBox(height: 20),
-      if (step == GameStep.rearConfig)
-        ElevatedButton(
-          onPressed: () => _manager.navigateToStatePage(),
-          child: const Text('查看对手信息'),
-        ),
-    ];
-  }
-
-  Widget _buildIconButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-  }) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(10), // 圆角半径改为10
+        title: const Text('准备中'),
+        centerTitle: true,
       ),
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 24),
-        onPressed: onPressed,
-        padding: EdgeInsets.zero,
-        splashRadius: 25, // 水波纹效果半径
+
+      body: Column(
+        children: [
+          NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+          const SizedBox(height: 20),
+          if (step == GameStep.disconnect || step == GameStep.connected)
+            const CircularProgressIndicator(),
+          const SizedBox(height: 20),
+          Text(step.getExplaination()),
+          const SizedBox(height: 20),
+          if (step == GameStep.frontConfig || step == GameStep.rearConfig)
+            ElevatedButton(
+              onPressed: () => _manager.navigateToCastPage(),
+              child: const Text('配置角色'),
+            ),
+          const SizedBox(height: 20),
+          if (step == GameStep.rearConfig)
+            ElevatedButton(
+              onPressed: () => _manager.navigateToStatePage(),
+              child: const Text('查看对手信息'),
+            ),
+        ],
       ),
     );
   }

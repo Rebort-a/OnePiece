@@ -25,12 +25,12 @@ class NetGreedySnakePage extends StatelessWidget {
       builder: (_, step, __) {
         return step == GameStep.action
             ? GameScreen(manager: manager, showStateButton: false)
-            : _waitingScreen(step);
+            : _buildPrepare(step);
       },
     );
   }
 
-  Widget _waitingScreen(GameStep step) {
+  Widget _buildPrepare(GameStep step) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(

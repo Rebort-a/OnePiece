@@ -14,13 +14,10 @@ import 'foundation_widget.dart';
 class NetAnimalChessPage extends StatelessWidget {
   late final NetManager _manager;
 
-  final RoomInfo roomInfo;
-  final String userName;
-
   NetAnimalChessPage({
     super.key,
-    required this.roomInfo,
-    required this.userName,
+    required RoomInfo roomInfo,
+    required String userName,
   }) {
     _manager = NetManager(roomInfo: roomInfo, userName: userName);
   }
@@ -58,7 +55,7 @@ class NetAnimalChessPage extends StatelessWidget {
 
     return AppBar(
       leading: IconButton(icon: Icon(icon), onPressed: _manager.leavePage),
-      title: const Text('网络斗兽棋'),
+      title: Text('网络斗兽棋'),
       centerTitle: true,
     );
   }

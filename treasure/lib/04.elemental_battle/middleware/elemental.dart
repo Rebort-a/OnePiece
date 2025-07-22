@@ -341,6 +341,7 @@ class Elemental {
 
   void switchPrevious() => switchAppoint(findPreviousAvailable(_current));
   void switchNext() => switchAppoint(findNextAvailable(_current));
+  void switchNextAlive() => switchAppoint(findNextAlive(_current));
 
   void switchAppoint(EnergyType sign) {
     if (sign != _current) {
@@ -350,21 +351,25 @@ class Elemental {
   }
 
   EnergyType findPreviousAvailable(EnergyType start) {
-    int count = EnergyType.values.length;
-    for (int i = 1; i < count; i++) {
-      int index = (start.index + count - i) % count;
-      EnergyManager energy = _core[EnergyType.values[index]];
-      if (energy.aptitude) return energy.type;
-    }
-    return start;
+    return findAvailable(start, -1, false);
   }
 
   EnergyType findNextAvailable(EnergyType start) {
+    return findAvailable(start, 1, false);
+  }
+
+  EnergyType findNextAlive(EnergyType start) {
+    return findAvailable(start, 1, true);
+  }
+
+  EnergyType findAvailable(EnergyType start, int direction, bool requireAlive) {
     int count = EnergyType.values.length;
     for (int i = 1; i < count; i++) {
-      int index = (start.index + i) % count;
+      int index = (start.index + direction * i + count) % count;
       EnergyManager energy = _core[EnergyType.values[index]];
-      if (energy.aptitude) return energy.type;
+      if (energy.aptitude && (!requireAlive || energy.health > 0)) {
+        return energy.type;
+      }
     }
     return start;
   }
@@ -469,7 +474,7 @@ class Elemental {
     return combat;
   }
 
-  int combatRequest(
+  CombatResult combatRequest(
     Elemental elemental,
     EnergyType sign,
     ValueNotifier<String> message,
@@ -481,7 +486,7 @@ class Elemental {
 
     _updatePreview();
     message.value += combat.message;
-    return combat.record;
+    return combat.result;
   }
 
   EnergyType _updatePreview() => preview.updatePreview(_core, _current);

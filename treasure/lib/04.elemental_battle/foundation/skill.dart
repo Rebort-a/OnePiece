@@ -162,7 +162,7 @@ class SkillCollection {
 
   static final CombatSkill metalPassive_0 = CombatSkill(
     id: SkillID.metalPassive_0,
-    name: "武器大师",
+    name: "攻防兼备",
     description: "战斗时，额外获得50%的攻击力和防御力。\n\n我将以高达形态出击。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
@@ -222,7 +222,7 @@ class SkillCollection {
 
   static final CombatSkill metalActive_0 = CombatSkill(
     id: SkillID.metalActive_0,
-    name: "双重打击",
+    name: "以退为进",
     description: "下次攻击时，额外进行一次，生效一次。",
     type: SkillType.active,
     targetType: SkillTarget.selfFront,
@@ -282,8 +282,8 @@ class SkillCollection {
 
   static final CombatSkill metalAdvanced_0 = CombatSkill(
     id: SkillID.metalAdvanced_0,
-    name: "攻守易形",
-    description: "双重打击可以施加给己方任一灵根，使其下次攻击时，额外进行一次。",
+    name: "以逸待劳",
+    description: "以退为进可以施加给己方任一灵根，使其下次攻击时，额外进行一次。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -316,7 +316,7 @@ class SkillCollection {
   static final CombatSkill fireAdvanced_0 = CombatSkill(
     id: SkillID.fireAdvanced_0,
     name: "薪火相传",
-    description: "爆裂魔法可以施加给己方任一灵根，使其攻击时，获得100%附魔比例，造成无视防御的法术伤害。并在生效后，切换其上场。",
+    description: "爆裂魔法可以施加给己方任一灵根，生命值降为1，根据降低的比例，提高伤害系数，并上场进行一次攻击。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -337,7 +337,7 @@ class SkillCollection {
 
   static final CombatSkill metalAuxiliary_0 = CombatSkill(
     id: SkillID.metalAuxiliary_0,
-    name: "金属颤音",
+    name: "全副武装",
     description: "战斗时，额外获得50%的攻击力和防御力，生效两次。",
     type: SkillType.active,
     targetType: SkillTarget.selfAny,
@@ -361,8 +361,8 @@ class SkillCollection {
 
   static final CombatSkill waterAuxiliary_0 = CombatSkill(
     id: SkillID.waterAuxiliary_0,
-    name: "水无常形",
-    description: "受到伤害后，防御力减少，根据减少量的75%，提高攻击力，生效两次。\n\n 兵无常势，水无常形。",
+    name: "因地制流",
+    description: "受到伤害后，防御力减少，根据减少量的75%，提高攻击力，生效两次。\n\n水因地制流，兵因敌制胜。",
     type: SkillType.active,
     targetType: SkillTarget.selfAny,
     handler: (skills, effects) {
@@ -397,7 +397,7 @@ class SkillCollection {
 
   static final CombatSkill metalFinal_0 = CombatSkill(
     id: SkillID.metalFinal_0,
-    name: "巨人杀手",
+    name: "屠龙",
     description: "攻击时，基于敌方当前生命值的25%，提高自身攻击力，生效一次。",
     type: SkillType.active,
     targetType: SkillTarget.selfFront,
@@ -434,7 +434,7 @@ class SkillCollection {
   static final CombatSkill fireFinal_0 = CombatSkill(
     id: SkillID.fireFinal_0,
     name: "灼烧",
-    description: "造成的法术伤害，会使敌人烧伤，使其再次受到伤害时，将会追加本次伤害25%的伤害，生效两次。\n\n阿玛忒拉斯",
+    description: "造成的法术伤害，会使敌人烧伤，使其再次受到伤害时，追加本次伤害值25%的伤害，生效两次。\n\n阿玛忒拉斯。",
     type: SkillType.active,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {

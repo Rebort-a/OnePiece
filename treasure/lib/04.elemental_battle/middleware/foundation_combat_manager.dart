@@ -29,10 +29,22 @@ abstract class FoundationalCombatManager {
     ResultType.draw: '对方逃跑了',
   };
   static const stepResultMapping = {
-    1: {true: ResultType.victory, false: ResultType.defeat},
-    -1: {true: ResultType.defeat, false: ResultType.victory},
-    2: {true: ResultType.escape, false: ResultType.draw},
-    -2: {true: ResultType.draw, false: ResultType.escape},
+    CombatResult.attackerWin: {
+      true: ResultType.victory,
+      false: ResultType.defeat,
+    },
+    CombatResult.defenderWin: {
+      true: ResultType.defeat,
+      false: ResultType.victory,
+    },
+    CombatResult.attackerEscape: {
+      true: ResultType.escape,
+      false: ResultType.draw,
+    },
+    CombatResult.defenderEscape: {
+      true: ResultType.draw,
+      false: ResultType.escape,
+    },
   };
 
   ResultType combatResult = ResultType.continued;
@@ -80,7 +92,11 @@ abstract class FoundationalCombatManager {
 
     addCombatInfo('${attacker.getAppointName(attacker.current)} 选择了 攻击');
 
-    final result = attacker.combatRequest(defender, defender.current, infoList);
+    CombatResult result = attacker.combatRequest(
+      defender,
+      defender.current,
+      infoList,
+    );
     handleActionResult(isSelf, result);
   }
 
@@ -139,7 +155,7 @@ abstract class FoundationalCombatManager {
       "${target.getAppointName(targetIndex)} 获得效果 ${skill.description}",
     );
 
-    int result = 0;
+    CombatResult result = CombatResult.undecided;
     target.appointSufferSkill(targetIndex, skill);
 
     switch (skill.id) {
@@ -165,29 +181,31 @@ abstract class FoundationalCombatManager {
   }
 
   void _switchAppoint(Elemental elemental, EnergyType targetIndex) {
-    elemental.switchAppoint(targetIndex);
-    addCombatInfo('${elemental.getAppointName(elemental.current)} 上场');
+    if (targetIndex != elemental.current) {
+      elemental.switchAppoint(targetIndex);
+      addCombatInfo('${elemental.getAppointName(elemental.current)} 上场');
+    }
   }
 
   void handleEscape(bool isSelf) {
-    updateGameStepAfterAction(isSelf, 2);
+    updateGameStepAfterAction(isSelf, CombatResult.attackerEscape);
   }
 
   void handleParry(bool isSelf, GameAction action) {
     return handleSkill(isSelf, action);
   }
 
-  void handleActionResult(bool isSelf, int result) {
+  void handleActionResult(bool isSelf, CombatResult result) {
     final shouldSwitch = _shouldSwitchElemental(result, isSelf);
     if (shouldSwitch != null && _switchNext(shouldSwitch)) {
-      result = 0;
+      result = CombatResult.undecided;
     }
     updateGameStepAfterAction(isSelf, result);
   }
 
-  Elemental? _shouldSwitchElemental(int result, bool isSelf) {
-    if (result == 1) return isSelf ? enemy : player;
-    if (result == -1) return isSelf ? player : enemy;
+  Elemental? _shouldSwitchElemental(CombatResult result, bool isSelf) {
+    if (result == CombatResult.attackerWin) return isSelf ? enemy : player;
+    if (result == CombatResult.defenderWin) return isSelf ? player : enemy;
     return null;
   }
 
@@ -200,8 +218,8 @@ abstract class FoundationalCombatManager {
     return true;
   }
 
-  void updateGameStepAfterAction(bool isSelf, int result) {
-    if (result == 0) {
+  void updateGameStepAfterAction(bool isSelf, CombatResult result) {
+    if (result == CombatResult.undecided) {
       _switchRound(isSelf);
     } else {
       final mapping = stepResultMapping[result];

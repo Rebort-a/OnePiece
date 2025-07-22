@@ -266,7 +266,7 @@ class MazeManager {
   }
 
   // 玩家操作
-  void switchPlayerNext() => player.switchNext();
+  void switchPlayerNext() => player.switchNextAlive();
   void movePlayerUp() => _movePlayer(Direction.up);
   void movePlayerDown() => _movePlayer(Direction.down);
   void movePlayerLeft() => _movePlayer(Direction.left);

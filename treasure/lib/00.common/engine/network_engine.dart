@@ -141,7 +141,6 @@ class NetworkEngine {
   }
 
   void _handleConnectionError(Object error) {
-    closeSocket();
     navigatorHandler.value = (context) {
       TemplateDialog.confirmDialog(
         context: context,
@@ -149,13 +148,12 @@ class NetworkEngine {
         content: "Could not connect to the server: ${error.toString()}",
         before: () => true,
         onTap: () {},
-        after: () => _navigateBack(),
+        after: () => _navigatoBack(),
       );
     };
   }
 
   void _handleSocketDone() {
-    closeSocket();
     if (_isClosing || _isClosed) return;
     navigatorHandler.value = (context) {
       TemplateDialog.confirmDialog(
@@ -164,7 +162,7 @@ class NetworkEngine {
         content: "You have been disconnected from the server",
         before: () => true,
         onTap: () {},
-        after: () => _navigateBack(),
+        after: () => _navigatoBack(),
       );
     };
   }
@@ -226,7 +224,7 @@ class NetworkEngine {
     closeSocket();
 
     // 导航回上一页
-    _navigateBack();
+    _navigatoBack();
   }
 
   Future<void> closeSocket() async {
@@ -246,7 +244,7 @@ class NetworkEngine {
     }
   }
 
-  void _navigateBack() {
+  void _navigatoBack() {
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {
       if (Navigator.of(context).canPop()) {
@@ -256,10 +254,10 @@ class NetworkEngine {
 
     // 释放资源
     if (!_isDisposed) {
+      _isDisposed = true;
       scrollController.dispose();
       textController.dispose();
       messageList.dispose();
-      _isDisposed = true;
     }
   }
 }

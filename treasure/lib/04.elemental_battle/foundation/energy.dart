@@ -160,16 +160,18 @@ class Energy {
 
   // 回复生命
   int recoverHealth(int value) {
+    if (value <= 0) return 0;
     return EnergyCombat.handleRecoverHealth(this, value, _changeHealth);
   }
 
   // 扣除生命
   int deductHealth(int value, bool isMagic) {
+    if (value <= 0) return 0;
     return EnergyCombat.handleDeductHealth(
       this,
       value,
       isMagic,
-      (v) => _changeHealth(-v),
+      (v) => -_changeHealth(-v),
     );
   }
 
@@ -230,22 +232,47 @@ class Energy {
   CombatEffect getEffect(EffectID id) => _effects[id.index];
 }
 
+enum CombatResult {
+  attackerWin,
+  defenderWin,
+  undecided,
+  attackerEscape,
+  defenderEscape,
+}
+
+extension CombatResultExtension on CombatResult {
+  CombatResult get reversed {
+    switch (this) {
+      case CombatResult.attackerWin:
+        return CombatResult.defenderWin;
+      case CombatResult.defenderWin:
+        return CombatResult.attackerWin;
+      case CombatResult.undecided:
+        return CombatResult.undecided;
+      case CombatResult.attackerEscape:
+        return CombatResult.defenderEscape;
+      case CombatResult.defenderEscape:
+        return CombatResult.attackerEscape;
+    }
+  }
+}
+
 class EnergyCombat {
   final Energy source;
   final Energy target;
   String message = "";
-  int record = 0;
+  CombatResult result = CombatResult.undecided;
 
   EnergyCombat({required this.source, required this.target});
 
   void execute() {
-    record = _handleExecute(source, target);
+    result = _handleExecute(source, target);
   }
 
   // 处理执行
-  int _handleExecute(Energy source, Energy target) {
+  CombatResult _handleExecute(Energy source, Energy target) {
     //如果有即时效果，处理完退出
-    if (_handleInstantEffect(source, target)) return 0;
+    if (_handleInstantEffect(source, target)) return CombatResult.undecided;
 
     // 如果没有，进行战斗
     return _handleCombat(source, target);
@@ -265,16 +292,14 @@ class EnergyCombat {
   }
 
   // 处理战斗
-  int _handleCombat(Energy attacker, Energy defender) {
-    int result = 0;
-
+  CombatResult _handleCombat(Energy attacker, Energy defender) {
     int combatCount = 1 + _handleHitCount(attacker);
 
     for (int i = 0; i < combatCount; i++) {
-      result = _handleBattle(attacker, defender);
-      if (result != 0) return result;
+      CombatResult result = _handleBattle(attacker, defender);
+      if (result != CombatResult.undecided) return result;
     }
-    return result;
+    return CombatResult.undecided;
   }
 
   // 处理额外攻击次数
@@ -284,7 +309,7 @@ class EnergyCombat {
   }
 
   // 执行一轮攻击
-  int _handleBattle(Energy attacker, Energy defender) {
+  CombatResult _handleBattle(Energy attacker, Energy defender) {
     int attack = handleAttackEffect(attacker, defender, true);
     int defence = handleDefenceEffect(attacker, defender, true);
     double coeff = _handleCoeffcientEffect(attacker, defender);
@@ -305,7 +330,7 @@ class EnergyCombat {
       magicAddition.value = 0;
     }
 
-    int result = _handleAttack(
+    CombatResult result = _handleAttack(
       attacker,
       defender,
       physicsAttack,
@@ -313,7 +338,7 @@ class EnergyCombat {
       coeff,
       false,
     );
-    if (result != 0) return result;
+    if (result != CombatResult.undecided) return result;
 
     return _handleAttack(attacker, defender, magicAttack, 0, coeff, true);
   }
@@ -403,7 +428,7 @@ class EnergyCombat {
   }
 
   // 处理攻击
-  int _handleAttack(
+  CombatResult _handleAttack(
     Energy attacker,
     Energy defender,
     double attack,
@@ -411,7 +436,7 @@ class EnergyCombat {
     double coeff,
     bool isMagic,
   ) {
-    if (attack <= 0) return 0;
+    if (attack <= 0) return CombatResult.undecided;
 
     int damage = _handleDamageAddition(
       defender,
@@ -432,7 +457,7 @@ class EnergyCombat {
 
     if (defender.health <= 0) {
       // 决出胜负
-      return 1;
+      return CombatResult.attackerWin;
     } else {
       // 未决出胜负，处理复仇
       return _handleRevenge(attacker, defender);
@@ -484,42 +509,42 @@ class EnergyCombat {
   }
 
   // 处理复仇
-  int _handleRevenge(Energy attacker, Energy defender) {
-    int result = _handleRugged(attacker, defender);
-    if (result != 0) return result;
+  CombatResult _handleRevenge(Energy attacker, Energy defender) {
+    CombatResult result = _handleRugged(attacker, defender);
+    if (result != CombatResult.undecided) return result;
 
     return _handleCounter(attacker, defender);
   }
 
   // 处理反伤
-  int _handleRugged(Energy attacker, Energy defender) {
+  CombatResult _handleRugged(Energy attacker, Energy defender) {
     CombatEffect rugged = defender.getEffect(EffectID.rugged);
-    if (!rugged.expend()) return 0;
+    if (!rugged.expend()) return CombatResult.undecided;
 
     double attack = (defender.capacityTotal - defender.health) * rugged.value;
 
     int defence = handleDefenceEffect(defender, attacker, true);
 
-    return -_handleAttack(
+    return _handleAttack(
       defender,
       attacker,
       attack,
       defence,
       rugged.value,
       false,
-    );
+    ).reversed;
   }
 
   // 处理反击
-  int _handleCounter(Energy attacker, Energy defender) {
+  CombatResult _handleCounter(Energy attacker, Energy defender) {
     CombatEffect revenge = defender.getEffect(EffectID.revengeAtonce);
-    if (!revenge.expend()) return 0;
+    if (!revenge.expend()) return CombatResult.undecided;
 
     for (int i = 0; i < revenge.value.round(); i++) {
-      int result = -_handleCombat(defender, attacker);
-      if (result != 0) return result;
+      CombatResult result = _handleCombat(defender, attacker).reversed;
+      if (result != CombatResult.undecided) return result;
     }
-    return 0;
+    return CombatResult.undecided;
   }
 
   // 处理生命值扣除
@@ -532,14 +557,14 @@ class EnergyCombat {
     // 扣除额外上限
     energy.changeCapacityExtra(-damage);
 
-    // 调整属性
-    _handleAdjustAttributes(energy, -damage, isMagic);
-
     // 应用伤害
-    int actual = -delHealth(damage);
+    int actual = delHealth(damage);
 
-    // 免死效果
-    _handleExemptionDeath(energy);
+    // 处理免死效果
+    actual -= _handleExemptionDeath(energy);
+
+    // 调整属性
+    _handleAdjustAttributes(energy, -actual, isMagic);
 
     // 怒气积累
     _handleAngerAccumulation(energy, actual, isMagic);
@@ -548,13 +573,15 @@ class EnergyCombat {
   }
 
   // 处理免死效果
-  static void _handleExemptionDeath(Energy energy) {
+  static int _handleExemptionDeath(Energy energy) {
     if (energy.health <= 0) {
       CombatEffect exemption = energy.getEffect(EffectID.exemptionDeath);
       if (exemption.expend()) {
-        energy.recoverHealth(exemption.value.round() - energy.health);
+        return exemption.value.round();
       }
     }
+
+    return 0;
   }
 
   // 处理怒气积累
@@ -587,7 +614,7 @@ class EnergyCombat {
     int actual = addHealth(recovery);
 
     // 调整属性
-    _handleAdjustAttributes(energy, recovery, false);
+    _handleAdjustAttributes(energy, actual, false);
 
     return actual;
   }
@@ -609,8 +636,13 @@ class EnergyCombat {
     CombatEffect adjustEffect = energy.getEffect(EffectID.adjustAttribute);
     if (!adjustEffect.expend()) return;
 
+    int health = energy.health;
+    if (value < 0) {
+      health -= value;
+    }
+
     double valueRatio = value / energy.capacityTotal;
-    double healthRatio = energy.health / energy.capacityTotal;
+    double healthRatio = health / energy.capacityTotal;
 
     int adjust = (energy.defenceBase * valueRatio * pow(healthRatio + 0.3, 6.2))
         .round();
