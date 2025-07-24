@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'base.dart';
 import 'foundation_manager.dart';
 
@@ -31,7 +30,7 @@ class LocalManager extends FoundationalManager {
 
   void _handleFoodSearch(double deltaTime) {
     _foodCheckAccumulator += deltaTime;
-    if (_foodCheckAccumulator >= 0.5) {
+    if (_foodCheckAccumulator >= 0.4) {
       _adjustAllComputersAngle();
       _foodCheckAccumulator = 0;
     }
@@ -46,18 +45,20 @@ class LocalManager extends FoundationalManager {
   }
 
   void _turnToHappiness(Snake snake) {
-    final nearest = getNearbyFoodPosition(
-      snake.head,
-      FoundationalManager.initialLength * 4,
-    );
-    if (nearest != null) {
-      final dx = nearest.dx - snake.head.dx;
-      final dy = nearest.dy - snake.head.dy;
-      snake.updateAngle(atan2(dy, dx));
-    } else if (!isInSafeRange(snake.head)) {
+    if (!isInSafeRange(snake.head)) {
       final dx = mapWidth / 2 - snake.head.dx;
       final dy = mapHeight / 2 - snake.head.dy;
       snake.updateAngle(atan2(dy, dx));
+    } else {
+      final nearest = getNearbyFoodPosition(
+        snake.head,
+        FoundationalManager.initialLength * 4,
+      );
+      if (nearest != null) {
+        final dx = nearest.dx - snake.head.dx;
+        final dy = nearest.dy - snake.head.dy;
+        snake.updateAngle(atan2(dy, dx));
+      }
     }
   }
 
@@ -73,7 +74,8 @@ class LocalManager extends FoundationalManager {
 
   @override
   void updatePlayerAngle(double newAngle) {
-    snakes[identity]!.updateAngle(newAngle);
+    final roundedAngle = (newAngle * 100).roundToDouble() / 100;
+    snakes[identity]!.updateAngle(roundedAngle);
   }
 
   @override

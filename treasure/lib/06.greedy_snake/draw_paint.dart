@@ -157,50 +157,31 @@ class SnakePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final snake in snakes) {
-      _drawSnake(canvas, snake);
+      _drawSnakeBody(canvas, snake);
+      _drawSnakeHead(canvas, snake);
     }
-  }
-
-  void _drawSnake(Canvas canvas, Snake snake) {
-    _drawSnakeBody(canvas, snake);
-    _drawSnakeHead(canvas, snake);
   }
 
   void _drawSnakeBody(Canvas canvas, Snake snake) {
-    final bodyPaint = Paint()
-      ..color = snake.style.bodyColor
-      ..style = PaintingStyle.fill;
+    if (snake.body.length < 2) return;
 
-    for (int i = 0; i < snake.body.length - 1; i++) {
-      final p1 = snake.body[i] - viewOffset;
-      final p2 = snake.body[i + 1] - viewOffset;
-      final dx = p2.dx - p1.dx;
-      final dy = p2.dy - p1.dy;
-      final distance = sqrt(dx * dx + dy * dy);
-      final angle = atan2(dy, dx);
+    final path = Path();
+    final first = snake.body.first - viewOffset;
+    path.moveTo(first.dx, first.dy);
 
-      // 创建变换矩阵
-      final matrix = Matrix4.identity()
-        ..translate(p1.dx, p1.dy)
-        ..rotateZ(angle);
-
-      canvas.save();
-      canvas.transform(matrix.storage);
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            0,
-            -snake.style.bodySize / 2,
-            distance,
-            snake.style.bodySize,
-          ),
-          Radius.circular(snake.style.bodySize / 2),
-        ),
-        bodyPaint,
-      );
-      canvas.restore();
+    for (int i = 1; i < snake.body.length; i++) {
+      final point = snake.body[i] - viewOffset;
+      path.lineTo(point.dx, point.dy);
     }
+
+    final paint = Paint()
+      ..color = snake.style.bodyColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = snake.style.bodySize
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(path, paint);
   }
 
   void _drawSnakeHead(Canvas canvas, Snake snake) {
@@ -234,20 +215,24 @@ class SnakePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SnakePainter oldDelegate) {
-    return oldDelegate.viewOffset != viewOffset ||
-        !_snakesEqual(oldDelegate.snakes, snakes);
-  }
+    if (oldDelegate.viewOffset != viewOffset) return true;
+    if (oldDelegate.snakes.length != snakes.length) return true;
 
-  bool _snakesEqual(List<Snake> a, List<Snake> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      final oldSnake = a[i];
-      final newSnake = b[i];
-      if (oldSnake.head != newSnake.head || oldSnake.style != newSnake.style) {
-        return false;
+    for (int i = 0; i < snakes.length; i++) {
+      final oldSnake = oldDelegate.snakes[i];
+      final newSnake = snakes[i];
+
+      if (oldSnake.head != newSnake.head ||
+          oldSnake.style != newSnake.style ||
+          oldSnake.body.length != newSnake.body.length ||
+          (oldSnake.body.isNotEmpty &&
+              newSnake.body.isNotEmpty &&
+              (oldSnake.body.first != newSnake.body.first ||
+                  oldSnake.body.last != newSnake.body.last))) {
+        return true;
       }
     }
-    return true;
+    return false;
   }
 }
 

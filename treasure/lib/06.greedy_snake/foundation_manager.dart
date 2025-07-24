@@ -1,29 +1,16 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../00.common/model/notifier.dart';
 import 'base.dart';
 
-class NearestPoint {
-  final int source;
-  final Offset position;
-  final double distance;
-
-  NearestPoint({
-    required this.source,
-    required this.position,
-    required this.distance,
-  });
-}
-
 abstract class FoundationalManager extends ChangeNotifier {
   static const int initialLength = 100;
   final Random _random = Random();
+  final SpatialGrid _foodGrid = SpatialGrid();
 
   final Map<int, Snake> snakes = {};
-  final Map<int, NearestPoint> _snakeCollision = {};
   final List<Food> foods = [];
 
   late final Ticker _ticker;
@@ -37,7 +24,6 @@ abstract class FoundationalManager extends ChangeNotifier {
   void addSnake(int id, int length) {
     if (snakes.containsKey(id)) return;
     final snake = _createSnake(length);
-    _updateSelfSnakeCollision(id, snake);
     snakes[id] = snake;
   }
 
@@ -77,7 +63,7 @@ abstract class FoundationalManager extends ChangeNotifier {
         return food.position;
       }
     }
-    return null; // 无附近食物
+    return null;
   }
 
   void initTicker() {
@@ -107,12 +93,13 @@ abstract class FoundationalManager extends ChangeNotifier {
   void _gameLoop(Duration elapsed) {
     if (!gameState.value) return;
 
-    // 计算当前帧与上一帧的时间间隔（单位：秒）
-    final currentElapsed = elapsed.inMilliseconds / 1000.0;
-    final deltaTime = currentElapsed - _lastElapsed;
-    _lastElapsed = currentElapsed; // 更新上一帧时间
+    final currentTime = elapsed.inMilliseconds;
 
-    final clampedDeltaTime = deltaTime.clamp(0.004, 0.02); // 限制到240hz到50hz之间
+    final currentElapsed = currentTime / 1000.0;
+    final deltaTime = currentElapsed - _lastElapsed;
+    _lastElapsed = currentElapsed;
+
+    final clampedDeltaTime = deltaTime.clamp(0.004, 0.02);
 
     _updateSnakes(clampedDeltaTime);
     _checkDangerousCollisions();
@@ -123,17 +110,10 @@ abstract class FoundationalManager extends ChangeNotifier {
 
   void _updateSnakes(double deltaTime) {
     for (final entry in snakes.entries) {
-      final id = entry.key;
       final snake = entry.value;
-
-      // 先将旧的头部添加到身体中
       snake.body.insert(0, snake.head);
 
-      _updateOtherSnakeCollision(id, snake.head);
-
       final moveDistance = snake.currentSpeed * deltaTime;
-
-      // 根据新的头部坐标创建新的头部
       snake.head = Offset(
         snake.head.dx + cos(snake.angle) * moveDistance,
         snake.head.dy + sin(snake.angle) * moveDistance,
@@ -141,73 +121,21 @@ abstract class FoundationalManager extends ChangeNotifier {
 
       snake.currentLength += moveDistance;
 
-      // 判断是否需要移除尾部
       while (snake.body.length > 2 && snake.currentLength > snake.length) {
         final last = snake.body.removeLast();
-        _cleanupOtherSnakeCollision(last);
         final secondLast = snake.body.last;
-        snake.currentLength -= (last - secondLast).distance;
-      }
-    }
-  }
-
-  // 遍历厂上每条蛇的身体，找到距离自己头部最近的点
-  void _updateSelfSnakeCollision(int id, Snake snake) {
-    for (final otherEntry in snakes.entries) {
-      final otherId = otherEntry.key;
-      final otherSnake = otherEntry.value;
-      for (final bodyPart in otherSnake.body) {
-        final distance = (snake.head - bodyPart).distance;
-
-        if (!_snakeCollision.containsKey(id) ||
-            _snakeCollision[id]!.distance > distance) {
-          _snakeCollision[id] = NearestPoint(
-            source: otherId,
-            position: bodyPart,
-            distance: distance,
-          );
+        final segmentLength = (last - secondLast).distance;
+        if (segmentLength > 0) {
+          snake.currentLength -= segmentLength;
+        } else {
+          break;
         }
       }
     }
   }
 
-  // 遍历其他蛇最近的点，如果比之更新，替换之
-  void _updateOtherSnakeCollision(int id, Offset position) {
-    for (final entry in snakes.entries) {
-      final otherId = entry.key;
-      final otherSnake = entry.value;
-
-      if (otherId == id) continue; // 跳过自己
-
-      final distance = (position - otherSnake.head).distance;
-      if (!_snakeCollision.containsKey(otherId) ||
-          _snakeCollision[otherId]!.distance > distance) {
-        _snakeCollision[otherId] = NearestPoint(
-          source: id,
-          position: position,
-          distance: distance,
-        );
-      }
-    }
-  }
-
-  // 遍历每条蛇最近的点，如果是该点，那么移除这个映射关系
-  void _cleanupOtherSnakeCollision(Offset position) {
-    final nearestToRemove = <int>[];
-    for (final entry in _snakeCollision.entries) {
-      if (entry.value.position == position) {
-        nearestToRemove.add(entry.key);
-      }
-    }
-
-    for (final id in nearestToRemove) {
-      _snakeCollision.remove(id);
-    }
-  }
-
   void _checkDangerousCollisions() {
     final snakesToRemove = <int>[];
-
     for (final entry in snakes.entries) {
       final id = entry.key;
       final snake = entry.value;
@@ -222,55 +150,35 @@ abstract class FoundationalManager extends ChangeNotifier {
         }
       }
 
-      // 使用snakeCollision进行快速碰撞检测
-      final nearestPoint = _snakeCollision[id];
-      if (nearestPoint != null) {
-        final otherSnake = snakes[nearestPoint.source];
-        if (otherSnake != null) {
-          final collisionDistance =
-              (snake.style.headSize + otherSnake.style.bodySize) / 2;
-
-          if (nearestPoint.distance < collisionDistance) {
-            if (id == identity) {
-              _handleGameOver(snake.length);
-              return;
-            } else {
-              snakesToRemove.add(id);
-            }
+      SpatialGrid snakeGrid = SpatialGrid();
+      for (final otherEntry in snakes.entries) {
+        if (otherEntry.key != id) {
+          final otherSnake = otherEntry.value;
+          for (final point in otherSnake.body) {
+            snakeGrid.insert(point, otherSnake.style.bodySize);
           }
+        }
+      }
+
+      if (snakeGrid.checkCollision(snake.head, snake.style.headSize)) {
+        if (id == identity) {
+          _handleGameOver(snake.length);
+          return;
+        } else {
+          snakesToRemove.add(id);
         }
       }
     }
 
     for (final id in snakesToRemove) {
       final removedSnake = snakes[id];
+      snakes.remove(id);
       if (removedSnake != null) {
-        for (int i = 0; i < removedSnake.body.length; i + 5) {
+        for (int i = 0; i < removedSnake.body.length; i += 12) {
           addFood(removedSnake.body[i]);
         }
-
-        _cleanupSelfSnakeCollision(id);
       }
-      snakes.remove(id);
       handleRemoveSnakeCallback(id);
-    }
-  }
-
-  // 遍历每条蛇最近的点，如果该点属于自己，移除该映射关系，最后移除自身的映射
-  void _cleanupSelfSnakeCollision(int id) {
-    final nearestToRemove = <int>[];
-    for (final entry in _snakeCollision.entries) {
-      if (entry.value.source == id) {
-        nearestToRemove.add(entry.key);
-      }
-    }
-
-    for (final removeId in nearestToRemove) {
-      _snakeCollision.remove(removeId);
-    }
-
-    if (_snakeCollision.containsKey(id)) {
-      _snakeCollision.remove(id);
     }
   }
 
@@ -281,24 +189,29 @@ abstract class FoundationalManager extends ChangeNotifier {
         head.dy > mapHeight;
   }
 
-  void handleRemoveSnakeCallback(int index);
-
   void _checkFoodCollisions() {
+    _foodGrid.clear();
+    for (final food in foods) {
+      _foodGrid.insert(food.position, Food.size);
+    }
+
     for (final snake in snakes.values) {
-      for (int i = foods.length - 1; i >= 0; i--) {
-        if (_isFoodCollided(snake, foods[i])) {
-          snake.updateLength(Food.growthPerFood);
-          foods.removeAt(i);
-          break;
-        }
+      if (_foodGrid.checkCollision(
+        snake.head,
+        snake.style.headSize + Food.size,
+      )) {
+        snake.updateLength(Food.growthPerFood);
+        foods.removeWhere(
+          (f) =>
+              (f.position - snake.head).distance <
+              (Food.size + snake.style.headSize) / 2,
+        );
+        break;
       }
     }
   }
 
-  bool _isFoodCollided(Snake snake, Food food) {
-    return (snake.head - food.position).distance <
-        (Food.size + snake.style.headSize) / 2;
-  }
+  void handleRemoveSnakeCallback(int index);
 
   void handleTickerCallback(double deltaTime);
 

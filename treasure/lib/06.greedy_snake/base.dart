@@ -23,23 +23,54 @@ class SnakeStyle {
 
   static SnakeStyle random() {
     final random = Random();
-    final colors = [
-      Colors.green,
-      Colors.blue,
-      Colors.red,
-      Colors.purple,
-      Colors.yellow,
-      Colors.orange,
-      Colors.pink,
+    // 1. 扩展基础色相（增加青色、棕色、深灰等）
+    final baseHues = [
+      120, // 绿色
+      240, // 蓝色
+      0, // 红色
+      300, // 紫色
+      60, // 黄色
+      30, // 橙色
+      330, // 粉色
+      180, // 青色
+      30, // 棕色（橙色偏暗）
+      210, // 靛蓝色
+      0, // 深红色（红色偏暗）
     ];
-    final color = colors[random.nextInt(colors.length)];
+    // 随机选择一个基础色相
+    final hue = baseHues[random.nextInt(baseHues.length)];
+
+    // 2. 随机调整饱和度（0.5-1.0，确保颜色鲜艳但不过度）
+    final saturation = 0.5 + random.nextDouble() * 0.5;
+
+    // 3. 随机调整亮度（头部稍暗，身体稍亮，形成对比）
+    final headLightness = 0.3 + random.nextDouble() * 0.2; // 0.3-0.5（偏暗）
+    final bodyLightness = 0.6 + random.nextDouble() * 0.2; // 0.6-0.8（偏亮）
+
+    // 4. 从HSL转换为RGB颜色
+    final headHsl = HSLColor.fromAHSL(
+      1.0,
+      hue.toDouble(),
+      saturation,
+      headLightness,
+    );
+    final bodyHsl = HSLColor.fromAHSL(
+      1.0,
+      hue.toDouble(),
+      saturation,
+      bodyLightness,
+    );
+
+    // 5. 随机生成眼睛颜色
+    final eyeColors = [Colors.white, Colors.yellow, Colors.pinkAccent];
+    final eyeColor = eyeColors[random.nextInt(eyeColors.length)];
 
     return SnakeStyle(
       headSize: 8 + random.nextDouble() * 4.0,
-      headColor: color.shade800,
-      eyeColor: Colors.white,
+      headColor: headHsl.toColor(), // 动态生成的头部颜色
+      eyeColor: eyeColor,
       bodySize: 10 + random.nextDouble() * 8.0,
-      bodyColor: color,
+      bodyColor: bodyHsl.toColor(), // 动态生成的身体颜色
     );
   }
 
@@ -113,6 +144,18 @@ class Snake {
   }
 }
 
+class NearestSnakeBody {
+  final int source;
+  final Offset position;
+  final double distance;
+
+  NearestSnakeBody({
+    required this.source,
+    required this.position,
+    required this.distance,
+  });
+}
+
 class Food {
   static const double size = 20;
   static const int growthPerFood = 10;
@@ -126,4 +169,50 @@ class Food {
 
   static Food fromJson(Map<String, dynamic> json) =>
       Food(position: ConvertUtils.offsetFromJson(json['position']));
+}
+
+class GridEntry {
+  final Offset position;
+  final double bodySize;
+
+  GridEntry(this.position, this.bodySize);
+}
+
+class SpatialGrid {
+  static const double cellSize = 20;
+
+  final Map<Point<int>, List<GridEntry>> grid = {};
+
+  void clear() => grid.clear();
+
+  void insert(Offset position, double bodySize) {
+    final cell = Point(
+      (position.dx / cellSize).floor(),
+      (position.dy / cellSize).floor(),
+    );
+    grid.putIfAbsent(cell, () => []).add(GridEntry(position, bodySize));
+  }
+
+  bool checkCollision(Offset position, double headSize) {
+    final centerCell = Point(
+      (position.dx / cellSize).floor(),
+      (position.dy / cellSize).floor(),
+    );
+
+    for (int x = -1; x <= 1; x++) {
+      for (int y = -1; y <= 1; y++) {
+        final cell = Point(centerCell.x + x, centerCell.y + y);
+        final entries = grid[cell];
+        if (entries != null) {
+          for (final entry in entries) {
+            final radius = headSize + entry.bodySize;
+            if ((position - entry.position).distance < radius) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
 }

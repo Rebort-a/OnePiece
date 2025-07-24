@@ -31,12 +31,12 @@ class NetManager extends FoundationalManager {
   int get identity => engine.identity;
 
   void _handleSearch(int id) {
-    if (snakes.isEmpty) {
+    if (!snakes.containsKey(identity)) {
       addSnake(identity, FoundationalManager.initialLength);
     }
 
     if (!snakes.containsKey(id)) {
-      addSnake(id, FoundationalManager.initialLength);
+      addSnake(id, snakes[identity]!.length ~/ 2);
     }
 
     for (int i = 0; i < generateCount; i++) {
@@ -105,10 +105,13 @@ class NetManager extends FoundationalManager {
   }
 
   @override
-  void updatePlayerAngle(double angle) => engine.sendNetworkMessage(
-    MessageType.action,
-    json.encode({'actionType': 'joystick', 'angle': angle}),
-  );
+  void updatePlayerAngle(double angle) {
+    final roundedAngle = (angle * 100).roundToDouble() / 100;
+    engine.sendNetworkMessage(
+      MessageType.action,
+      json.encode({'actionType': 'joystick', 'angle': roundedAngle}),
+    );
+  }
 
   @override
   void updatePlayerSpeed(bool isFaster) => engine.sendNetworkMessage(
