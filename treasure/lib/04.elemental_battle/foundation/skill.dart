@@ -151,7 +151,7 @@ class SkillCollection {
   static final CombatSkill baseParry = CombatSkill(
     id: SkillID.parry,
     name: "格挡",
-    description: "防守时，减少75%伤害，生效一次。",
+    description: "防守时，减少75%受到的伤害，生效一次。",
     type: SkillType.active,
     targetType: SkillTarget.selfAny,
     handler: (skills, effects) {
@@ -163,7 +163,7 @@ class SkillCollection {
   static final CombatSkill metalPassive_0 = CombatSkill(
     id: SkillID.metalPassive_0,
     name: "攻防兼备",
-    description: "战斗时，额外获得50%的攻击力和防御力。\n\n我将以高达形态出击。",
+    description: "战斗时，获得50%额外的攻击力和防御力。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -175,7 +175,7 @@ class SkillCollection {
   static final CombatSkill woodPassive_0 = CombatSkill(
     id: SkillID.woodPassive_0,
     name: "叶落归根",
-    description: "造成伤害后，根据伤害量的25%，回复生命。\n\n没有一滴血是原装的。",
+    description: "造成伤害后，根据伤害量的25%，回复生命。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -186,8 +186,8 @@ class SkillCollection {
 
   static final CombatSkill waterPassive_0 = CombatSkill(
     id: SkillID.waterPassive_0,
-    name: "因地制流",
-    description: "受到伤害后，防御力减少，根据减少量的75%，提高攻击力，并获取法术伤害的附魔。\n\n水因地而制流，兵因敌而制胜。",
+    name: "水无常形",
+    description: "受到伤害后，防御力减少，根据减少量的75%，提高攻击力，如果是法术伤害，还会因此附魔。\n\n兵无常势，水无常形。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -199,7 +199,7 @@ class SkillCollection {
   static final CombatSkill firePassive_0 = CombatSkill(
     id: SkillID.firePassive_0,
     name: "燃烧吧",
-    description: "攻击时，获得100%附魔比例，造成无视防御的法术伤害。\n\n燃起来了。",
+    description: "攻击时，获得100%附魔，所有伤害均为无视防御的法术伤害。\n\n燃起来了。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -235,7 +235,7 @@ class SkillCollection {
   static final CombatSkill woodActive_0 = CombatSkill(
     id: SkillID.woodActive_0,
     name: "根深蒂固",
-    description: "根据自身生命上限的12.5%的回复生命，生效一次。",
+    description: "根据自身生命上限的12.5%回复生命，生效一次。",
     type: SkillType.active,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -294,7 +294,7 @@ class SkillCollection {
   static final CombatSkill woodAdvanced_0 = CombatSkill(
     id: SkillID.woodAdvanced_0,
     name: "开枝散叶",
-    description: "根深蒂固可以施加给己方任一灵根，根据自身生命上限的12.5%的回复其生命。",
+    description: "根深蒂固可以施加给己方任一灵根，根据自身生命上限的12.5%回复其生命。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
@@ -410,7 +410,7 @@ class SkillCollection {
   static final CombatSkill woodFinal_0 = CombatSkill(
     id: SkillID.woodFinal_0,
     name: "桎梏",
-    description: "回复生命时，溢出的治疗量会提升生命值上限。",
+    description: "回复生命时，溢出的治疗量会提高生命值上限。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
