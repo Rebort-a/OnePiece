@@ -16,10 +16,11 @@ class LocalManager extends FoundationalManager {
   }
 
   void _initGame() {
-    snakes[identity] = createSnake(FoundationalManager.initialLength);
+    addSnake(identity, FoundationalManager.initialLength);
+
     for (int i = 1; i <= generateCount; i++) {
-      snakes[identity + i] = createSnake(snakes[identity]!.length);
-      createFood(randomPosition);
+      addSnake(identity + i, snakes[identity]!.length);
+      addFood(randomSafePosition);
     }
   }
 
@@ -53,7 +54,7 @@ class LocalManager extends FoundationalManager {
       final dx = nearest.dx - snake.head.dx;
       final dy = nearest.dy - snake.head.dy;
       snake.updateAngle(atan2(dy, dx));
-    } else if (!isPositionInSafeRange(snake.head)) {
+    } else if (!isInSafeRange(snake.head)) {
       final dx = mapWidth / 2 - snake.head.dx;
       final dy = mapHeight / 2 - snake.head.dy;
       snake.updateAngle(atan2(dy, dx));
@@ -61,9 +62,9 @@ class LocalManager extends FoundationalManager {
   }
 
   @override
-  void handleRemoveSnakeCallback(int index) {
-    if (index != identity) {
-      snakes[index] = createSnake(snakes[identity]!.length);
+  void handleRemoveSnakeCallback(int id) {
+    if (id != identity) {
+      addSnake(id, snakes[identity]!.length ~/ 2);
     }
   }
 

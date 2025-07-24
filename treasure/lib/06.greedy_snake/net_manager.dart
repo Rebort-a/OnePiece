@@ -32,17 +32,15 @@ class NetManager extends FoundationalManager {
 
   void _handleSearch(int id) {
     if (snakes.isEmpty) {
-      snakes[engine.identity] = createSnake(FoundationalManager.initialLength);
+      addSnake(identity, FoundationalManager.initialLength);
     }
 
     if (!snakes.containsKey(id)) {
-      snakes[id] = createSnake(FoundationalManager.initialLength);
+      addSnake(id, FoundationalManager.initialLength);
     }
 
-    if (foods.isEmpty) {
-      for (int i = 0; i < generateCount; i++) {
-        createFood(randomPosition);
-      }
+    for (int i = 0; i < generateCount; i++) {
+      addFood(randomSafePosition);
     }
 
     engine.sendNetworkMessage(MessageType.resource, _toJsonString());

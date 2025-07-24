@@ -69,8 +69,8 @@ class Snake {
   static const double fastSpeed = 400;
 
   List<Offset> body = [];
-  double _currentSpeed = initialSpeed;
-  double _currentLength = 0.0;
+  double currentSpeed = initialSpeed;
+  double currentLength = 0.0;
 
   Offset head;
   int length;
@@ -88,27 +88,9 @@ class Snake {
     return Offset(head.dx - viewSize.width / 2, head.dy - viewSize.height / 2);
   }
 
-  void updatePosition(double deltaTime) {
-    body.insert(0, head);
-    final moveDistance = _currentSpeed * deltaTime;
-
-    head = Offset(
-      head.dx + cos(angle) * moveDistance,
-      head.dy + sin(angle) * moveDistance,
-    );
-
-    _currentLength += moveDistance;
-
-    while (body.length > 2 && _currentLength > length) {
-      final last = body.removeLast();
-      final secondLast = body.last;
-      _currentLength -= (last - secondLast).distance;
-    }
-  }
-
   void updateAngle(double newAngle) => angle = newAngle;
   void updateSpeed(bool isFaster) =>
-      _currentSpeed = isFaster ? fastSpeed : initialSpeed;
+      currentSpeed = isFaster ? fastSpeed : initialSpeed;
   void updateLength(int step) => length += step;
 
   Map<String, dynamic> toJson() {
@@ -117,7 +99,7 @@ class Snake {
       'length': length,
       'angle': angle,
       'style': style.toJson(),
-      'isFaster': _currentSpeed == fastSpeed,
+      'isFaster': currentSpeed == fastSpeed,
     };
   }
 
@@ -127,7 +109,7 @@ class Snake {
       length: json['length'],
       angle: json['angle'],
       style: SnakeStyle.fromJson(json['style']),
-    ).._currentSpeed = json['isFaster'] as bool ? fastSpeed : initialSpeed;
+    )..currentSpeed = json['isFaster'] as bool ? fastSpeed : initialSpeed;
   }
 }
 
