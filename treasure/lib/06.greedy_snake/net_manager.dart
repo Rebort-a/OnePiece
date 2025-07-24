@@ -106,10 +106,9 @@ class NetManager extends FoundationalManager {
 
   @override
   void updatePlayerAngle(double angle) {
-    final roundedAngle = (angle * 100).roundToDouble() / 100;
     engine.sendNetworkMessage(
       MessageType.action,
-      json.encode({'actionType': 'joystick', 'angle': roundedAngle}),
+      json.encode({'actionType': 'joystick', 'angle': angle}),
     );
   }
 

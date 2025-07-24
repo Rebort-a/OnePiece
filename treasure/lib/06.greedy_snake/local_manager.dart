@@ -74,8 +74,7 @@ class LocalManager extends FoundationalManager {
 
   @override
   void updatePlayerAngle(double newAngle) {
-    final roundedAngle = (newAngle * 100).roundToDouble() / 100;
-    snakes[identity]!.updateAngle(roundedAngle);
+    snakes[identity]!.updateAngle(newAngle);
   }
 
   @override
