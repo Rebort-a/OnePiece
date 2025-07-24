@@ -316,7 +316,7 @@ class SkillCollection {
   static final CombatSkill fireAdvanced_0 = CombatSkill(
     id: SkillID.fireAdvanced_0,
     name: "薪火相传",
-    description: "爆裂魔法可以施加给己方任一灵根，生命值降为1，根据降低的比例，提高伤害系数，并上场进行一次攻击。",
+    description: "爆裂魔法可以施加给己方任一灵根，使其生命值降为1，根据降低的比例，提高伤害系数，并上场进行一次攻击。",
     type: SkillType.passive,
     targetType: SkillTarget.selfFront,
     handler: (skills, effects) {
