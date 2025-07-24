@@ -53,6 +53,7 @@ abstract class FoundationalManager extends ChangeNotifier {
     if (getNearbyFoodPosition(position, Food.size * 4) == null &&
         isInSafeRange(position)) {
       foods.add(Food(position: position));
+      _foodGrid.insert(position, Food.size);
     }
   }
 
@@ -160,7 +161,7 @@ abstract class FoundationalManager extends ChangeNotifier {
         }
       }
 
-      if (snakeGrid.checkCollision(snake.head, snake.style.headSize)) {
+      if (snakeGrid.checkCollision(snake.head, snake.style.headSize) != null) {
         if (id == identity) {
           _handleGameOver(snake.length);
           return;
@@ -190,23 +191,15 @@ abstract class FoundationalManager extends ChangeNotifier {
   }
 
   void _checkFoodCollisions() {
-    _foodGrid.clear();
-    for (final food in foods) {
-      _foodGrid.insert(food.position, Food.size);
-    }
-
     for (final snake in snakes.values) {
-      if (_foodGrid.checkCollision(
+      Offset? position = _foodGrid.checkCollision(
         snake.head,
-        snake.style.headSize + Food.size,
-      )) {
+        snake.style.headSize,
+      );
+      if (position != null) {
+        _foodGrid.remove(position);
+        foods.removeWhere((f) => (f.position == position));
         snake.updateLength(Food.growthPerFood);
-        foods.removeWhere(
-          (f) =>
-              (f.position - snake.head).distance <
-              (Food.size + snake.style.headSize) / 2,
-        );
-        break;
       }
     }
   }

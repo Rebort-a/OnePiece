@@ -193,7 +193,21 @@ class SpatialGrid {
     grid.putIfAbsent(cell, () => []).add(GridEntry(position, bodySize));
   }
 
-  bool checkCollision(Offset position, double headSize) {
+  // 添加移除方法
+  void remove(Offset position) {
+    final cell = Point(
+      (position.dx / cellSize).floor(),
+      (position.dy / cellSize).floor(),
+    );
+
+    final entries = grid[cell];
+    if (entries == null) return;
+
+    // 查找并移除匹配的条目（位置和大小都相同）
+    entries.removeWhere((entry) => entry.position == position);
+  }
+
+  Offset? checkCollision(Offset position, double headSize) {
     final centerCell = Point(
       (position.dx / cellSize).floor(),
       (position.dy / cellSize).floor(),
@@ -207,12 +221,12 @@ class SpatialGrid {
           for (final entry in entries) {
             final radius = headSize + entry.bodySize;
             if ((position - entry.position).distance < radius) {
-              return true;
+              return entry.position;
             }
           }
         }
       }
     }
-    return false;
+    return null;
   }
 }
