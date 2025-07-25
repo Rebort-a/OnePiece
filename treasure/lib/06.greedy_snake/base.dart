@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../00.common/model/convert.dart';
@@ -65,10 +66,10 @@ class SnakeStyle {
     );
 
     return SnakeStyle(
-      headSize: 8 + random.nextDouble() * 4.0,
+      headSize: 8 + random.nextDouble() * 8.0,
       headColor: headHsl.toColor(),
       eyeColor: eyeColors[random.nextInt(eyeColors.length)],
-      bodySize: 10 + random.nextDouble() * 8.0,
+      bodySize: 4 + random.nextDouble() * 4.0,
       bodyColor: bodyHsl.toColor(),
     );
   }
@@ -143,18 +144,6 @@ class Snake {
   }
 }
 
-class NearestSnakeBody {
-  final int source;
-  final Offset position;
-  final double distance;
-
-  NearestSnakeBody({
-    required this.source,
-    required this.position,
-    required this.distance,
-  });
-}
-
 class GridEntry {
   final Offset position;
   final double radius;
@@ -181,7 +170,6 @@ class SpatialGrid {
     grid.putIfAbsent(cell, () => []).add(entry);
   }
 
-  // 添加移除方法
   void remove(Offset position) {
     final cell = Point(
       (position.dx / cellSize).floor(),

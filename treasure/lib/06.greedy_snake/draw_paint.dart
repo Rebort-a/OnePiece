@@ -177,7 +177,7 @@ class SnakePainter extends CustomPainter {
     final paint = Paint()
       ..color = snake.style.bodyColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = snake.style.bodySize
+      ..strokeWidth = snake.style.bodySize * 2
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
