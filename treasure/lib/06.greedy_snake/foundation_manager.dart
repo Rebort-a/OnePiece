@@ -8,10 +8,9 @@ import 'base.dart';
 abstract class FoundationalManager extends ChangeNotifier {
   static const int initialLength = 100;
   final Random _random = Random();
-  final SpatialGrid _foodGrid = SpatialGrid();
 
   final Map<int, Snake> snakes = {};
-  final List<Food> foods = [];
+  final SpatialGrid foodGrid = SpatialGrid();
 
   late final Ticker _ticker;
   double _lastElapsed = 0;
@@ -50,21 +49,14 @@ abstract class FoundationalManager extends ChangeNotifier {
   }
 
   void addFood(Offset position) {
-    if (getNearbyFoodPosition(position, Food.size * 4) == null &&
+    if (getNearbyFoodPosition(position, SpatialGrid.cellSize * 4) == null &&
         isInSafeRange(position)) {
-      foods.add(Food(position: position));
-      _foodGrid.insert(position, Food.size);
+      foodGrid.insert(GridEntry(position, SpatialGrid.cellSize));
     }
   }
 
   Offset? getNearbyFoodPosition(Offset position, double threshold) {
-    for (final food in foods) {
-      final distance = (position - food.position).distance;
-      if (distance < threshold) {
-        return food.position;
-      }
-    }
-    return null;
+    return foodGrid.checkCollision(position, threshold);
   }
 
   void initTicker() {
@@ -156,7 +148,7 @@ abstract class FoundationalManager extends ChangeNotifier {
         if (otherEntry.key != id) {
           final otherSnake = otherEntry.value;
           for (final point in otherSnake.body) {
-            snakeGrid.insert(point, otherSnake.style.bodySize);
+            snakeGrid.insert(GridEntry(point, otherSnake.style.bodySize));
           }
         }
       }
@@ -192,14 +184,13 @@ abstract class FoundationalManager extends ChangeNotifier {
 
   void _checkFoodCollisions() {
     for (final snake in snakes.values) {
-      Offset? position = _foodGrid.checkCollision(
+      Offset? position = foodGrid.checkCollision(
         snake.head,
         snake.style.headSize,
       );
       if (position != null) {
-        _foodGrid.remove(position);
-        foods.removeWhere((f) => (f.position == position));
-        snake.updateLength(Food.growthPerFood);
+        foodGrid.remove(position);
+        snake.updateLength(SpatialGrid.cellSize ~/ 2);
       }
     }
   }

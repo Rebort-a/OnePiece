@@ -29,7 +29,7 @@ class GameScreen extends StatelessWidget {
               identity: manager.identity,
               backgroundColor: Colors.black87,
               snakes: manager.snakes,
-              foods: manager.foods,
+              foods: manager.foodGrid.getGridEntries(),
             );
           },
         ),

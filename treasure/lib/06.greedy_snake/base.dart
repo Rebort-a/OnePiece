@@ -23,7 +23,7 @@ class SnakeStyle {
 
   static SnakeStyle random() {
     final random = Random();
-    // 1. 扩展基础色相（增加青色、棕色、深灰等）
+    // 1. 扩展基础色相
     final baseHues = [
       120, // 绿色
       240, // 蓝色
@@ -37,6 +37,9 @@ class SnakeStyle {
       210, // 靛蓝色
       0, // 深红色（红色偏暗）
     ];
+
+    final eyeColors = [Colors.white, Colors.yellow, Colors.pinkAccent];
+
     // 随机选择一个基础色相
     final hue = baseHues[random.nextInt(baseHues.length)];
 
@@ -61,16 +64,12 @@ class SnakeStyle {
       bodyLightness,
     );
 
-    // 5. 随机生成眼睛颜色
-    final eyeColors = [Colors.white, Colors.yellow, Colors.pinkAccent];
-    final eyeColor = eyeColors[random.nextInt(eyeColors.length)];
-
     return SnakeStyle(
       headSize: 8 + random.nextDouble() * 4.0,
-      headColor: headHsl.toColor(), // 动态生成的头部颜色
-      eyeColor: eyeColor,
+      headColor: headHsl.toColor(),
+      eyeColor: eyeColors[random.nextInt(eyeColors.length)],
       bodySize: 10 + random.nextDouble() * 8.0,
-      bodyColor: bodyHsl.toColor(), // 动态生成的身体颜色
+      bodyColor: bodyHsl.toColor(),
     );
   }
 
@@ -156,26 +155,11 @@ class NearestSnakeBody {
   });
 }
 
-class Food {
-  static const double size = 20;
-  static const int growthPerFood = 10;
-
-  Offset position;
-  Food({required this.position});
-
-  Map<String, dynamic> toJson() => {
-    'position': ConvertUtils.offsetToJson(position),
-  };
-
-  static Food fromJson(Map<String, dynamic> json) =>
-      Food(position: ConvertUtils.offsetFromJson(json['position']));
-}
-
 class GridEntry {
   final Offset position;
-  final double bodySize;
+  final double radius;
 
-  GridEntry(this.position, this.bodySize);
+  GridEntry(this.position, this.radius);
 }
 
 class SpatialGrid {
@@ -185,12 +169,16 @@ class SpatialGrid {
 
   void clear() => grid.clear();
 
-  void insert(Offset position, double bodySize) {
+  List<GridEntry> getGridEntries() {
+    return grid.values.expand((entries) => entries).toList();
+  }
+
+  void insert(GridEntry entry) {
     final cell = Point(
-      (position.dx / cellSize).floor(),
-      (position.dy / cellSize).floor(),
+      (entry.position.dx / cellSize).floor(),
+      (entry.position.dy / cellSize).floor(),
     );
-    grid.putIfAbsent(cell, () => []).add(GridEntry(position, bodySize));
+    grid.putIfAbsent(cell, () => []).add(entry);
   }
 
   // 添加移除方法
@@ -207,20 +195,22 @@ class SpatialGrid {
     entries.removeWhere((entry) => entry.position == position);
   }
 
-  Offset? checkCollision(Offset position, double headSize) {
+  Offset? checkCollision(Offset position, double radius) {
     final centerCell = Point(
       (position.dx / cellSize).floor(),
       (position.dy / cellSize).floor(),
     );
 
-    for (int x = -1; x <= 1; x++) {
-      for (int y = -1; y <= 1; y++) {
+    int around = radius ~/ cellSize + 1;
+
+    for (int x = -around; x <= around; x++) {
+      for (int y = -around; y <= around; y++) {
         final cell = Point(centerCell.x + x, centerCell.y + y);
         final entries = grid[cell];
         if (entries != null) {
           for (final entry in entries) {
-            final radius = headSize + entry.bodySize;
-            if ((position - entry.position).distance < radius) {
+            final threshold = radius + entry.radius;
+            if ((position - entry.position).distance < threshold) {
               return entry.position;
             }
           }
@@ -228,5 +218,28 @@ class SpatialGrid {
       }
     }
     return null;
+  }
+
+  // 使用ConvertUtils的JSON序列化方法
+  Map<String, dynamic> toJson() {
+    return {
+      'entries': getGridEntries()
+          .map(
+            (entry) => {
+              'position': ConvertUtils.offsetToJson(entry.position),
+              'radius': entry.radius,
+            },
+          )
+          .toList(),
+    };
+  }
+
+  // 使用ConvertUtils的JSON反序列化方法
+  void fromJson(Map<String, dynamic> json) {
+    for (var entryData in (json['entries'] as List)) {
+      final position = ConvertUtils.offsetFromJson(entryData['position']);
+      final radius = entryData['radius'] as double;
+      insert(GridEntry(position, radius));
+    }
   }
 }

@@ -8,7 +8,7 @@ class DrawRegion extends StatelessWidget {
   final int identity;
   final Color backgroundColor;
   final Map<int, Snake> snakes;
-  final List<Food> foods;
+  final List<GridEntry> foods;
 
   const DrawRegion({
     super.key,
@@ -238,7 +238,7 @@ class SnakePainter extends CustomPainter {
 
 class FoodPainter extends CustomPainter {
   final Offset viewOffset;
-  final List<Food> foods;
+  final List<GridEntry> foods;
 
   FoodPainter({required this.viewOffset, required this.foods});
 
@@ -250,7 +250,7 @@ class FoodPainter extends CustomPainter {
 
     for (final food in foods) {
       final position = food.position - viewOffset;
-      canvas.drawCircle(position, Food.size, foodPaint);
+      canvas.drawCircle(position, food.radius, foodPaint);
     }
   }
 
@@ -260,7 +260,7 @@ class FoodPainter extends CustomPainter {
         !_listsEqual(oldDelegate.foods, foods);
   }
 
-  bool _listsEqual(List<Food> a, List<Food> b) {
+  bool _listsEqual(List<GridEntry> a, List<GridEntry> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i].position != b[i].position) return false;

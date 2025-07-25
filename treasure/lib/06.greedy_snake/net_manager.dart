@@ -59,7 +59,7 @@ class NetManager extends FoundationalManager {
 
   Map<String, dynamic> _toJson() => {
     'snakes': snakes.map((k, v) => MapEntry(k.toString(), v.toJson())),
-    'foods': foods.map((f) => f.toJson()).toList(),
+    'foods': foodGrid.toJson(),
   };
 
   void _fromJson(Map<String, dynamic> json) {
@@ -68,8 +68,8 @@ class NetManager extends FoundationalManager {
       snakes[int.parse(k)] = Snake.fromJson(v);
     });
 
-    foods.clear();
-    foods.addAll((json['foods'] as List).map((f) => Food.fromJson(f)));
+    foodGrid.clear();
+    foodGrid.fromJson(json['foods'] as Map<String, dynamic>);
   }
 
   void _handleSync(int id) {
