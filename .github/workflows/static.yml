@@ -1,0 +1,57 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 设置 Flutter 环境
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable  # 使用稳定版 Flutter
+          cache: true      # 启用依赖缓存
+
+      # 3. 进入 Flutter 项目目录并构建 Web 版本
+      - name: Build Flutter Web
+        run: |
+          cd treasure     # 进入 treasure 目录
+          flutter pub get # 获取依赖
+          flutter build web --release --web-renderer html  # 构建 Web 版本
+
+      # 4. 将构建产物移动到 GitHub Pages 的发布目录
+      - name: Prepare artifact
+        run: |
+          mkdir -p docs  # 创建发布目录
+          cp -r treasure/build/web/* docs/  # 复制 Flutter Web 构建文件
+
+      # 5. 上传构建产物到 GitHub Pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs'  # 指定上传目录为 docs
+
+      # 6. 部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
