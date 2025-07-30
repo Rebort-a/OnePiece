@@ -1,58 +1,38 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Pages验证页面</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-        }
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
 
-        .success {
-            color: green;
-        }
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
 
-        .error {
-            color: red;
-        }
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
 
-        .container {
-            margin-top: 50px;
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/">
 
-        h1 {
-            color: #333;
-        }
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
 
-        p {
-            color: #666;
-        }
-    </style>
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="treasure">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>treasure</title>
+  <link rel="manifest" href="manifest.json">
 </head>
-
 <body>
-    <div class="container">
-        <h1>GitHub Pages验证成功</h1>
-        <p class="success">恭喜！这个页面证明你的GitHub Pages配置正确。</p>
-        <p>你可以通过以下方式进一步自定义这个页面：</p>
-        <ul>
-            <li>修改这个HTML文件的内容</li>
-            <li>添加CSS样式使其更加美观</li>
-            <li>添加JavaScript实现交互功能</li>
-            <li>上传更多的文件和资源</li>
-        </ul>
-        <p class="error">如果你看到这个页面，说明GitHub Pages已经成功部署了你的网站。</p>
-    </div>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
-
 </html>
