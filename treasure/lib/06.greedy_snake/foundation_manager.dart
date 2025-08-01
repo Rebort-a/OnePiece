@@ -214,7 +214,11 @@ abstract class FoundationalManager extends ChangeNotifier {
           actions: [
             TextButton(
               child: const Text('确定'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
             ),
           ],
         ),

@@ -459,7 +459,8 @@ class _CastPageState extends State<CastPage> {
   }
 
   void _completeCast() {
-    // 返回Elemental对象
-    Navigator.of(context).pop(_configs);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(_configs);
+    }
   }
 }

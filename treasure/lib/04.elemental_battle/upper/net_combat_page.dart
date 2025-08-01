@@ -62,27 +62,29 @@ class NetCombatPage extends StatelessWidget {
         centerTitle: true,
       ),
 
-      body: Column(
-        children: [
-          NotifierNavigator(navigatorHandler: _manager.pageNavigator),
-          const SizedBox(height: 20),
-          if (step == GameStep.disconnect || step == GameStep.connected)
-            const CircularProgressIndicator(),
-          const SizedBox(height: 20),
-          Text(step.getExplaination()),
-          const SizedBox(height: 20),
-          if (step == GameStep.frontConfig || step == GameStep.rearConfig)
-            ElevatedButton(
-              onPressed: () => _manager.navigateToCastPage(),
-              child: const Text('配置角色'),
-            ),
-          const SizedBox(height: 20),
-          if (step == GameStep.rearConfig)
-            ElevatedButton(
-              onPressed: () => _manager.navigateToStatePage(),
-              child: const Text('查看对手信息'),
-            ),
-        ],
+      body: Center(
+        child: Column(
+          children: [
+            NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+            const SizedBox(height: 20),
+            if (step == GameStep.disconnect || step == GameStep.connected)
+              const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(step.getExplaination()),
+            const SizedBox(height: 20),
+            if (step == GameStep.frontConfig || step == GameStep.rearConfig)
+              ElevatedButton(
+                onPressed: () => _manager.navigateToCastPage(),
+                child: const Text('配置角色'),
+              ),
+            const SizedBox(height: 20),
+            if (step == GameStep.rearConfig)
+              ElevatedButton(
+                onPressed: () => _manager.navigateToStatePage(),
+                child: const Text('查看对手信息'),
+              ),
+          ],
+        ),
       ),
     );
   }
