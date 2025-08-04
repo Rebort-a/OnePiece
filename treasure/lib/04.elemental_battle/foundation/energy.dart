@@ -57,7 +57,6 @@ class Energy {
   late String _name;
   late final EnergyType _type;
 
-  int _level = 0;
   int _health = 0;
   int _capacityBase = 0;
   int _capacityExtra = 0;
@@ -127,8 +126,6 @@ class Energy {
   static int get healthStep => 32;
   static int get attackStep => 8;
   static int get defenceStep => 8;
-
-  int get level => _level;
 
   void changeName(String newName) {
     _name = newName;
@@ -201,14 +198,12 @@ class Energy {
         _defenceBase += defenceStep;
         break;
     }
-    _level++;
   }
 
   // 学习技能
   void learnSkill(int index) {
     if (index >= 0 && index < _skills.length) {
       _skills[index].learned = true;
-      _level++;
     }
   }
 

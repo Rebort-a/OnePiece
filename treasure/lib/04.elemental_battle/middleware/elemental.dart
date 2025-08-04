@@ -16,6 +16,8 @@ mixin EnergyConfigMixin {
   int attackPoints = 0;
   int defencePoints = 0;
   int skillPoints = 0;
+
+  int get level => healthPoints + attackPoints + defencePoints + skillPoints;
 }
 
 class EnergyConfig with EnergyConfigMixin {
@@ -269,7 +271,7 @@ class ElementalPreview {
 
   EnergyType updatePreview(EnergyManagers strategy, EnergyType current) {
     _updateResumesInfo(strategy, current);
-    _updateCurrentInfo(strategy[resumes.value.first.type]);
+    _updateCurrentInfo(strategy, resumes.value.first.type);
     return resumes.value.first.type;
   }
 
@@ -301,7 +303,8 @@ class ElementalPreview {
         : 0;
   }
 
-  void _updateCurrentInfo(Energy energy) {
+  void _updateCurrentInfo(EnergyManagers strategy, EnergyType current) {
+    EnergyManager energy = strategy[current];
     name.value = energy.name;
     type.value = energy.type;
     typeString.value = energyNames[energy.type.index];
