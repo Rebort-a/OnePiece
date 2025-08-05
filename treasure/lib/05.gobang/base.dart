@@ -4,28 +4,29 @@ import '../00.common/game/gamer.dart';
 import '../00.common/game/map.dart';
 import '../00.common/model/notifier.dart';
 
+// 围棋棋子状态
+enum PieceType { empty, black, white }
+
 class Grid {
   final int coordinate;
-  int state = TurnGamerType.values.length;
+  PieceType type = PieceType.empty;
 
   Grid({required this.coordinate});
 
-  bool hasPiece() {
-    return (state >= 0 && state < TurnGamerType.values.length);
-  }
+  bool isEmpty() => type == PieceType.empty;
 }
 
 class GridNotifier extends ValueNotifier<Grid> {
   GridNotifier(super.value);
 
-  void placePiece(TurnGamerType player) {
-    value.state = player.index;
+  void placePiece(PieceType type) {
+    value.type = type;
     notifyListeners();
   }
 
   void clear() {
-    if (value.hasPiece()) {
-      value.state = TurnGamerType.values.length;
+    if (!value.isEmpty()) {
+      value.type = PieceType.empty;
       notifyListeners();
     }
   }
@@ -46,11 +47,17 @@ class Board {
     });
   }
 
+  PieceType obtainPiece(TurnGamerType player) {
+    return currentGamer.value == TurnGamerType.front
+        ? PieceType.black
+        : PieceType.white;
+  }
+
   void placePiece(int index) {
     GridNotifier grid = grids.value[index];
 
-    if (!gameOver && !grid.value.hasPiece()) {
-      grid.placePiece(currentGamer.value);
+    if (!gameOver && grid.value.isEmpty()) {
+      grid.placePiece(obtainPiece(currentGamer.value));
       moveHistory.add(grid.value);
       _checkWin(index);
     }
@@ -68,8 +75,8 @@ class Board {
           final newCol = col + dc * i * dir;
 
           if (checkInMap(newRow, newCol) &&
-              (grids.value[newRow * size + newCol].value.state ==
-                  currentGamer.value.index)) {
+              (grids.value[newRow * size + newCol].value.type ==
+                  obtainPiece(currentGamer.value))) {
             count++;
           } else {
             break;

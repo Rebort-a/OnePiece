@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import '../00.common/game/gamer.dart';
 import 'base.dart';
 import 'foundation_manager.dart';
 
@@ -76,18 +75,17 @@ class FoundationalWidget extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: notifier,
       builder: (_, grid, __) {
-        if (grid.hasPiece()) {
-          final TurnGamerType piece = TurnGamerType.values[grid.state];
+        if (!grid.isEmpty()) {
           return Center(
             child: Container(
               width: cellSize * 0.8,
               height: cellSize * 0.8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: piece == TurnGamerType.front
+                color: grid.type == PieceType.black
                     ? Colors.black
                     : Colors.white,
-                border: piece == TurnGamerType.rear
+                border: grid.type == PieceType.white
                     ? Border.all(color: Colors.black, width: 1.5)
                     : null,
               ),

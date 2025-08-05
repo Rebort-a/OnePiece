@@ -110,11 +110,11 @@ class EnergyConfigs {
     }).toList();
 
     return EnergyConfigs(
-      metal: configs[0],
-      wood: configs[1],
-      water: configs[2],
-      fire: configs[3],
-      earth: configs[4],
+      metal: configs[EnergyType.metal.index],
+      wood: configs[EnergyType.wood.index],
+      water: configs[EnergyType.water.index],
+      fire: configs[EnergyType.fire.index],
+      earth: configs[EnergyType.earth.index],
     );
   }
 
@@ -133,16 +133,16 @@ class EnergyConfigs {
     final configStr = str.substring(1, str.length - 1);
     final configs = _parseConfigList(configStr);
 
-    if (configs.length != 5) {
+    if (configs.length != EnergyType.values.length) {
       throw FormatException('Invalid configs string format: $str');
     }
 
     return EnergyConfigs(
-      metal: configs[0],
-      wood: configs[1],
-      water: configs[2],
-      fire: configs[3],
-      earth: configs[4],
+      metal: configs[EnergyType.metal.index],
+      wood: configs[EnergyType.wood.index],
+      water: configs[EnergyType.water.index],
+      fire: configs[EnergyType.fire.index],
+      earth: configs[EnergyType.earth.index],
     );
   }
 
@@ -239,11 +239,11 @@ class EnergyManagers {
     }).toList();
 
     return EnergyManagers(
-      metal: managers[0],
-      wood: managers[1],
-      water: managers[2],
-      fire: managers[3],
-      earth: managers[4],
+      metal: managers[EnergyType.metal.index],
+      wood: managers[EnergyType.wood.index],
+      water: managers[EnergyType.water.index],
+      fire: managers[EnergyType.fire.index],
+      earth: managers[EnergyType.earth.index],
     );
   }
 }
