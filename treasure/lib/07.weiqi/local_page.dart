@@ -32,10 +32,7 @@ class _GoLocalPageState extends State<GoLocalPage> {
             onPressed: _manager.restart,
           ),
           IconButton(icon: const Icon(Icons.undo), onPressed: _manager.undo),
-          TextButton(
-            onPressed: () => _manager.resign(),
-            child: const Text('认输', style: TextStyle(color: Colors.white)),
-          ),
+          IconButton(icon: const Icon(Icons.flag), onPressed: _manager.resign),
         ],
       ),
       body: Column(

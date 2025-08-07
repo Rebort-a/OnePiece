@@ -35,10 +35,7 @@ class GoNetPage extends StatelessWidget {
         onPressed: _manager.netTurnEngine.leavePage,
       ),
       actions: [
-        TextButton(
-          onPressed: () => _manager.resign(),
-          child: const Text('认输', style: TextStyle(color: Colors.white)),
-        ),
+        IconButton(icon: const Icon(Icons.flag), onPressed: _manager.resign),
       ],
     );
   }
