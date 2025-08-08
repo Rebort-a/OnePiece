@@ -23,48 +23,39 @@ class SudokuPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          children: [
-            NotifierNavigator(navigatorHandler: manager.pageNavigator),
-            // 顶部区域
-            Expanded(flex: 1, child: _buildTop()),
-
-            // 数独棋盘
-            Expanded(flex: 5, child: SudokuBoardView(manager: manager)),
-
-            // 底部区域
-            Expanded(flex: 2, child: _buildBottom()),
-          ],
-        ),
+      body: Column(
+        children: [
+          NotifierNavigator(navigatorHandler: manager.pageNavigator),
+          Expanded(flex: 1, child: _buildTimer()),
+          Expanded(flex: 5, child: SudokuBoardView(manager: manager)),
+          Expanded(flex: 2, child: _buildInputArea()),
+        ],
       ),
     );
   }
 
-  Widget _buildTop() {
-    // 显示计时器
+  /// 构建计时器组件
+  Widget _buildTimer() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Center(
-        child: AnimatedBuilder(
-          animation: manager,
-          builder: (context, _) {
-            return Text(
-              manager.displayString,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            );
-          },
+      child: AnimatedBuilder(
+        animation: manager,
+        builder: (context, _) => Center(
+          child: Text(
+            manager.displayString,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBottom() {
+  /// 构建数字输入区域
+  Widget _buildInputArea() {
     return AnimatedBuilder(
       animation: manager,
       builder: (context, _) {
         final selectedCell = manager.selectedCell;
-
         if (selectedCell == null || selectedCell.value.type == CellType.fixed) {
           return const SizedBox.shrink();
         }
@@ -85,10 +76,7 @@ class SudokuPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 数字卡片
               Expanded(flex: 1, child: NumberCards(manager: manager)),
-
-              // 数字键盘
               Expanded(flex: 2, child: NumberKeyboard(manager: manager)),
             ],
           ),
@@ -98,7 +86,7 @@ class SudokuPage extends StatelessWidget {
   }
 }
 
-// 数独棋盘视图
+/// 数独棋盘视图
 class SudokuBoardView extends StatelessWidget {
   final SudokuManager manager;
 
@@ -115,53 +103,49 @@ class SudokuBoardView extends StatelessWidget {
           ),
           child: AnimatedBuilder(
             animation: manager,
-            builder: (context, _) {
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final double size = _calculateBoardSize(
-                    constraints,
-                    manager.boardSize,
-                  );
-                  return SizedBox(
-                    width: size,
-                    height: size, // 强制网格尺寸为计算出的精确值
-                    child: GridView.count(
-                      crossAxisCount: manager.boardSize,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: List.generate(
-                        manager.boardSize * manager.boardSize,
-                        (index) {
-                          final row = index ~/ manager.boardSize;
-                          final col = index % manager.boardSize;
-                          final cell = manager.cells[row][col];
-
-                          return CellWidget(
-                            cell: cell,
-                            boardLevel: manager.boardLevel,
-                            isSelected: manager.selectedCell == cell,
-                            onTap: () => manager.selectCell(cell),
-                          );
-                        },
-                      ),
+            builder: (context, _) => LayoutBuilder(
+              builder: (context, constraints) {
+                final size = _calculateBoardSize(constraints.maxWidth);
+                return SizedBox(
+                  width: size,
+                  height: size,
+                  child: GridView.count(
+                    crossAxisCount: manager.boardSize,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: List.generate(
+                      manager.boardSize * manager.boardSize,
+                      (index) => _buildCell(index),
                     ),
-                  );
-                },
-              );
-            },
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
     );
   }
 
-  double _calculateBoardSize(BoxConstraints constraints, int boardSize) {
-    final double maxSize = constraints.maxWidth;
-    return (maxSize ~/ boardSize) * boardSize.toDouble();
+  /// 计算棋盘尺寸
+  double _calculateBoardSize(double maxWidth) =>
+      (maxWidth ~/ manager.boardSize) * manager.boardSize.toDouble();
+
+  /// 构建单元格组件
+  Widget _buildCell(int index) {
+    final row = index ~/ manager.boardSize;
+    final col = index % manager.boardSize;
+    final cell = manager.cells[row][col];
+    return CellWidget(
+      cell: cell,
+      boardLevel: manager.boardLevel,
+      isSelected: manager.selectedCell == cell,
+      onTap: () => manager.selectCell(cell),
+    );
   }
 }
 
-// 单个单元格组件
+/// 单个单元格组件
 class CellWidget extends StatelessWidget {
   final CellNotifier cell;
   final int boardLevel;
@@ -180,123 +164,135 @@ class CellWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
       valueListenable: cell,
-      builder: (_, value, __) {
-        // 计算区块位置
-        final blockRow = (value.row ~/ boardLevel);
-        final blockCol = (value.col ~/ boardLevel);
-        final isBlockBorderBottom = (value.row + 1) % boardLevel == 0;
-        final isBlockBorderRight = (value.col + 1) % boardLevel == 0;
-
-        // 边框设置
-        final border = Border(
-          top: BorderSide(
-            color: value.row == 0 ? Colors.black : Colors.grey[300]!,
-            width: value.row == 0 ? 2 : 1,
-          ),
-          left: BorderSide(
-            color: value.col == 0 ? Colors.black : Colors.grey[300]!,
-            width: value.col == 0 ? 2 : 1,
-          ),
-          right: BorderSide(
-            color: isBlockBorderRight ? Colors.black : Colors.grey[300]!,
-            width: isBlockBorderRight ? 2 : 1,
-          ),
-          bottom: BorderSide(
-            color: isBlockBorderBottom ? Colors.black : Colors.grey[300]!,
-            width: isBlockBorderBottom ? 2 : 1,
-          ),
-        );
-
-        // 背景色
-        Color bgColor;
-        if (isSelected) {
-          bgColor = Colors.blue[50]!;
-        } else if ((blockRow + blockCol) % 2 == 0) {
-          bgColor = Colors.grey[100]!;
-        } else {
-          bgColor = Colors.white;
-        }
-
-        return Container(
-          decoration: BoxDecoration(border: border, color: bgColor),
-          child: InkWell(onTap: onTap, child: _buildCellContent(value)),
-        );
-      },
+      builder: (_, value, __) => Container(
+        decoration: BoxDecoration(
+          border: _buildCellBorder(value.row, value.col),
+          color: _getCellBgColor(value.row, value.col),
+        ),
+        child: InkWell(onTap: onTap, child: _buildCellContent(value)),
+      ),
     );
   }
 
+  /// 构建单元格边框
+  Border _buildCellBorder(int row, int col) {
+    final isBlockRight = (col + 1) % boardLevel == 0;
+    final isBlockBottom = (row + 1) % boardLevel == 0;
+
+    return Border(
+      top: _buildBorderSide(row == 0, false),
+      left: _buildBorderSide(col == 0, false),
+      right: _buildBorderSide(isBlockRight, true),
+      bottom: _buildBorderSide(isBlockBottom, true),
+    );
+  }
+
+  /// 构建边框样式
+  BorderSide _buildBorderSide(bool isBlockEdge, bool isInner) {
+    return BorderSide(
+      color: isBlockEdge ? Colors.black : Colors.grey[300]!,
+      width: isBlockEdge ? 2 : 1,
+    );
+  }
+
+  /// 获取单元格背景色
+  Color _getCellBgColor(int row, int col) {
+    if (isSelected) return Colors.blue[50]!;
+    final blockRow = row ~/ boardLevel;
+    final blockCol = col ~/ boardLevel;
+    return (blockRow + blockCol) % 2 == 0 ? Colors.grey[100]! : Colors.white;
+  }
+
+  /// 构建单元格内容
   Widget _buildCellContent(SudokuCell cellData) {
     switch (cellData.type) {
       case CellType.fixed:
-        return Center(
-          child: Text(
-            cellData.fixedDigit.toString(),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-        );
-
+        return _buildFixedCell(cellData.fixedDigit);
       case CellType.locked:
-        return Center(
-          child: Text(
-            cellData.fixedDigit.toString(),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.purple,
-            ),
-          ),
-        );
-
+        return _buildLockedCell(cellData.fixedDigit);
       case CellType.editable:
-        if (cellData.spareDigits.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        // 单个数字显示
-        if (cellData.spareDigits.length == 1) {
-          return Center(
-            child: Text(
-              cellData.spareDigits.first.toString(),
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.blue,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          );
-        }
-
-        // 多个数字网格显示
-        return Padding(
-          padding: const EdgeInsets.all(2),
-          child: GridView.count(
-            crossAxisCount: 3,
-            mainAxisSpacing: 1,
-            crossAxisSpacing: 1,
-            children: List.generate(9, (index) {
-              final num = index + 1;
-              final hasNum = cellData.spareDigits.contains(num);
-
-              return Center(
-                child: Text(
-                  hasNum ? num.toString() : "",
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: hasNum ? Colors.grey[600] : Colors.transparent,
-                  ),
-                ),
-              );
-            }),
-          ),
-        );
+        return _buildEditableCell(cellData.spareDigits);
     }
+  }
+
+  /// 构建固定单元格
+  Widget _buildFixedCell(int digit) {
+    return Center(
+      child: Text(
+        digit.toString(),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+      ),
+    );
+  }
+
+  /// 构建锁定单元格
+  Widget _buildLockedCell(int digit) {
+    return Center(
+      child: Text(
+        digit.toString(),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.purple,
+        ),
+      ),
+    );
+  }
+
+  /// 构建可编辑单元格
+  Widget _buildEditableCell(List<int> digits) {
+    if (digits.isEmpty) return const SizedBox.shrink();
+    if (digits.length == 1) {
+      return Center(
+        child: Text(
+          digits.first.toString(),
+          style: const TextStyle(
+            fontSize: 20,
+            color: Colors.blue,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+    return _buildDigitGrid(digits);
+  }
+
+  /// 构建数字网格（候选数）
+  Widget _buildDigitGrid(List<int> digits) {
+    final crossAxisCount = digits.length <= 4 ? 2 : 3;
+    final fontSize = digits.length <= 4 ? 14.0 : 10.0;
+
+    return Padding(
+      padding: const EdgeInsets.all(2),
+      child: GridView.count(
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: 1,
+        crossAxisSpacing: 1,
+        physics: const NeverScrollableScrollPhysics(),
+        children: List.generate(crossAxisCount * crossAxisCount, (index) {
+          if (index < digits.length) {
+            return Center(
+              child: Text(
+                digits[index].toString(),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  color: fontSize == 14 ? Colors.blue : Colors.grey[600],
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+      ),
+    );
   }
 }
 
+/// 已选数字卡片区域
 class NumberCards extends StatelessWidget {
   final SudokuManager manager;
 
@@ -308,76 +304,62 @@ class NumberCards extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: ValueListenableBuilder(
         valueListenable: manager.selectedCell!,
-        builder: (_, value, _) {
-          return Row(
+        builder: (_, value, _) => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Wrap(
-                // 水平间距与NumberCards保持一致
-                spacing: 8,
-                // 垂直间距
-                runSpacing: 8,
-                // 子组件居中对齐
-                alignment: WrapAlignment.center,
-                children: value.spareDigits.map((number) {
-                  // 使用圆角矩形Container替代Chip
-                  return GestureDetector(
-                    onTap: () => manager.removeDigit(number),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16), // 圆角矩形
-                        border: Border.all(
-                          color: Theme.of(context).primaryColor,
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        number.toString(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              // 根据cell.enableLock显示lock按钮
-              if (value.spareDigits.length == 1 &&
-                  value.type == CellType.editable)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: IconButton(
-                    onPressed: manager.lock,
-                    icon: Icon(Icons.lock_open),
-                  ),
+              // 锁定/解锁按钮
+              if (value.type == CellType.editable &&
+                  value.spareDigits.length == 1)
+                IconButton(
+                  icon: const Icon(Icons.lock_open),
+                  onPressed: manager.lock,
                 ),
-
               if (value.type == CellType.locked)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: IconButton(
-                    onPressed: manager.unlock,
-                    icon: Icon(Icons.lock),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.lock),
+                  onPressed: manager.unlock,
                 ),
+
+              // 候选数字标签
+              ...value.spareDigits.map(
+                (int num) => _buildNumberChip(context, num),
+              ),
             ],
-          );
-        },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建数字标签
+  Widget _buildNumberChip(BuildContext context, int number) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: GestureDetector(
+        onTap: () => manager.removeDigit(number),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Theme.of(context).primaryColor, width: 1),
+          ),
+          child: Text(
+            number.toString(),
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-// 数字键盘组件
+/// 数字键盘组件
 class NumberKeyboard extends StatelessWidget {
   final SudokuManager manager;
 
@@ -385,66 +367,44 @@ class NumberKeyboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 使用Padding控制整体边距，避免边缘紧贴
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      // 使用Wrap代替GridView，实现流式布局
       child: Wrap(
-        // 水平间距与NumberCards保持一致
         spacing: 8,
-        // 垂直间距
         runSpacing: 8,
-        // 子组件居中对齐
         alignment: WrapAlignment.center,
         children: [
-          // 清除按钮
-          _buildKeyboardButton(
-            label: "Clear",
-            onTap: () {
-              if (manager.selectedCell != null) {
-                manager.selectedCell!.clearDigits();
-              }
-            },
+          _buildKeyboardButton("Clear", () => manager.clearDigits()),
+          ...List.generate(
+            9,
+            (i) => _buildKeyboardButton(
+              (i + 1).toString(),
+              () => manager.addDigit(i + 1),
+            ),
           ),
-          // 数字按钮 1-9
-          ...List.generate(9, (index) {
-            final number = index + 1;
-            return _buildKeyboardButton(
-              label: number.toString(),
-              onTap: () => manager.addDigit(number),
-            );
-          }),
         ],
       ),
     );
   }
 
-  Widget _buildKeyboardButton({
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  /// 构建键盘按钮
+  Widget _buildKeyboardButton(String label, VoidCallback onTap) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        // 按钮最小尺寸，确保数字按钮大小一致
         minimumSize: const Size(48, 48),
-        // 去除固定形状，让按钮根据内容自适应
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
           side: BorderSide(color: Colors.grey.shade300),
         ),
-        // 内边距控制按钮大小，与文字匹配
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         elevation: 2,
       ),
       onPressed: onTap,
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 14, // 与NumberCards字体大小保持一致
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
     );
   }

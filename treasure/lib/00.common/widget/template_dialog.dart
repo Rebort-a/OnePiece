@@ -183,14 +183,17 @@ class TemplateDialog {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('当前值: ${sliderData.value}', style: TextStyle(fontSize: 16)),
+              Text(
+                '当前值: ${sliderData.value.toStringAsFixed(1)}',
+                style: TextStyle(fontSize: 16),
+              ),
               const SizedBox(height: 20),
               Slider(
                 value: sliderData.value,
                 min: sliderData.start,
                 max: sliderData.end,
                 divisions: sliderData.divisions,
-                label: '${sliderData.value}',
+                label: sliderData.value.toStringAsFixed(1),
                 onChanged: (value) {
                   setState(() {
                     sliderData.value = value;
