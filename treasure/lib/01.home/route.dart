@@ -12,8 +12,16 @@ import '../06.greedy_snake/local_page.dart';
 import '../06.greedy_snake/net_page.dart';
 import '../07.weiqi/local_page.dart';
 import '../07.weiqi/net_page.dart';
+import '../08.sudoku/local_page.dart';
 
-enum LocalItemType { animalChess, elementalBattle, gobang, greedySnake, weiqi }
+enum LocalItemType {
+  animalChess,
+  elementalBattle,
+  gobang,
+  greedySnake,
+  weiqi,
+  sudoku,
+}
 
 enum NetItemType {
   onlyChat,
@@ -54,6 +62,11 @@ class RouteManager {
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => GoLocalPage()));
+        break;
+      case LocalItemType.sudoku:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => SudokuPage()));
         break;
     }
   }

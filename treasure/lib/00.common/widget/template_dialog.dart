@@ -4,12 +4,18 @@ class SliderData {
   double start;
   double end;
   double value;
+  double step;
 
-  SliderData({required this.start, required this.end, required this.value}) {
+  SliderData({
+    required this.start,
+    required this.end,
+    required this.value,
+    required this.step,
+  }) {
     value = value.clamp(start, end);
   }
 
-  int get divisions => (end - start).toInt();
+  int get divisions => ((end - start) / step).toInt();
 }
 
 class TemplateDialog {

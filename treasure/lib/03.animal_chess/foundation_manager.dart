@@ -27,7 +27,12 @@ abstract class FoundationalManager {
       TemplateDialog.sliderDialog(
         context: context,
         title: '设置棋牌大小',
-        sliderData: SliderData(start: 2, end: 6, value: boardLevel.toDouble()),
+        sliderData: SliderData(
+          start: 2,
+          end: 6,
+          value: boardLevel.toDouble(),
+          step: 1.0,
+        ),
         onConfirm: (double value) {
           _updateBoardLevel(value.floor());
         },
