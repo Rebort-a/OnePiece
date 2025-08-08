@@ -46,6 +46,8 @@ HEAD_PATH := $(QT_TOOL_PATH)include/ \
              $(QT_TOOL_PATH)include/QtMultimedia/ \
              $(QT_TOOL_PATH)include/QtMultimediaWidgets/ \
              $(QT_TOOL_PATH)include/QtConcurrent/ \
+             $(QT_TOOL_PATH)include/QtXml/ \
+             $(QT_TOOL_PATH)include/QtNetwork/ \
              $(QT_TOOL_PATH)mkspecs/linux-g++/ \
              /root/workspace/code/third_party/log4cplus/include/ \
             ./
@@ -58,8 +60,9 @@ LIB_FLAG := $(QT_TOOL_PATH)lib/libQt5Widgets.so \
             $(QT_TOOL_PATH)lib/libQt5Multimedia.so \
             $(QT_TOOL_PATH)lib/libQt5MultimediaWidgets.so \
             $(QT_TOOL_PATH)lib/libQt5Concurrent.so \
+            $(QT_TOOL_PATH)lib/libQt5Network.so \
             /root/workspace/code/third_party/log4cplus/lib/liblog4cplus.so \
-            -lGL -lpthread
+            -lGL -lpthread -lprotobuf
 SRC_LIB :=
 SRC_CC :=
 SRC_CX :=
@@ -68,7 +71,7 @@ SRC_CX :=
 HEAD_TYPE := .h .hpp .hh
 LIB_TYPE := .a .so
 CC_TYPE := .c
-CX_TYPE := .cpp
+CX_TYPE := .cpp .cc
 EXCLUDE_FILES :=
 
 HEAD_TYPE_SIFT := $(patsubst .%,%,$(subst $(empty) .,\|,$(HEAD_TYPE)))
@@ -108,9 +111,9 @@ OBJ_CC := $(addprefix $(BUILD_DIR),$(notdir $(SRC_CC:%=%$(CC_MARK).o)))
 OBJ_CX := $(addprefix $(BUILD_DIR),$(notdir $(SRC_CX:%=%$(CX_MARK).o)))
 
 # 设置源文件查找路径
-vpath $(addprefix %,$(CC_TYPE)) $(sort $(dir $(SRC_CC)))
-vpath $(addprefix %,$(CX_TYPE)) $(sort $(dir $(SRC_CX)))
-vpath $(addprefix %,$(HEAD_TYPE)) $(HEAD_PATH)
+$(foreach type,$(CC_TYPE),$(eval vpath %$(type) $(sort $(dir $(SRC_CC)))))
+$(foreach type,$(CX_TYPE),$(eval vpath %$(type) $(sort $(dir $(SRC_CX)))))
+$(foreach type,$(HEAD_TYPE),$(eval vpath %$(type) $(HEAD_PATH)))
 
 # 定义all依赖
 all : $(TARGET) resource.rcc | Makefile

@@ -89,8 +89,9 @@ OBJ_CC := $(addprefix $(BUILD_DIR),$(notdir $(SRC_CC:%=%$(CC_MARK).o)))
 OBJ_CX := $(addprefix $(BUILD_DIR),$(notdir $(SRC_CX:%=%$(CX_MARK).o)))
 
 # 设置源文件查找路径
-vpath $(addprefix %,$(CC_TYPE)) $(sort $(dir $(SRC_CC)))
-vpath $(addprefix %,$(CX_TYPE)) $(sort $(dir $(SRC_CX)))
+$(foreach type,$(CC_TYPE),$(eval vpath %$(type) $(sort $(dir $(SRC_CC)))))
+$(foreach type,$(CX_TYPE),$(eval vpath %$(type) $(sort $(dir $(SRC_CX)))))
+$(foreach type,$(HEAD_TYPE),$(eval vpath %$(type) $(HEAD_PATH)))
 
 # 定义all依赖
 all : $(TARGET) | Makefile

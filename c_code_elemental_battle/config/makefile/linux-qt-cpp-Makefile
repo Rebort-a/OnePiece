@@ -74,7 +74,7 @@ LOCAL_CC := $(shell find . -type f -regex ".*\.\($(CC_TYPE_SIFT)\)" -printf "%P 
 LOCAL_CX := $(shell find . -type f -regex ".*\.\($(CX_TYPE_SIFT)\)" -printf "%P ")
 
 # 搜索resource.qrc相关文件
-QRC_TYPE := .qml .qss .js .ts .ttf .png
+QRC_TYPE := .qml .qss .js .ts .ttf .png .qm
 QRC_TYPE_SHIFT := $(patsubst .%,%,$(subst $(empty) .,\|,$(QRC_TYPE)))
 QRC_FILES := $(shell find . -type f -regex ".*\.\($(QRC_TYPE_SHIFT)\)" -printf "%P ")
 LOCAL_CX += resource.cpp
@@ -101,9 +101,9 @@ OBJ_CC := $(addprefix $(BUILD_DIR),$(notdir $(SRC_CC:%=%$(CC_MARK).o)))
 OBJ_CX := $(addprefix $(BUILD_DIR),$(notdir $(SRC_CX:%=%$(CX_MARK).o)))
 
 # 设置源文件查找路径
-vpath $(addprefix %,$(CC_TYPE)) $(sort $(dir $(SRC_CC)))
-vpath $(addprefix %,$(CX_TYPE)) $(sort $(dir $(SRC_CX)))
-vpath $(addprefix %,$(HEAD_TYPE)) $(HEAD_PATH)
+$(foreach type,$(CC_TYPE),$(eval vpath %$(type) $(sort $(dir $(SRC_CC)))))
+$(foreach type,$(CX_TYPE),$(eval vpath %$(type) $(sort $(dir $(SRC_CX)))))
+$(foreach type,$(HEAD_TYPE),$(eval vpath %$(type) $(HEAD_PATH)))
 
 # 定义all依赖
 all : $(TARGET) | Makefile
