@@ -27,8 +27,9 @@ class SudokuPage extends StatelessWidget {
         children: [
           NotifierNavigator(navigatorHandler: manager.pageNavigator),
           Expanded(flex: 1, child: _buildTimer()),
-          Expanded(flex: 5, child: SudokuBoardView(manager: manager)),
-          Expanded(flex: 2, child: _buildInputArea()),
+          Expanded(flex: 7, child: SudokuBoardView(manager: manager)),
+          Expanded(flex: 3, child: _buildInputArea()),
+          Spacer(flex: 1),
         ],
       ),
     );
@@ -64,7 +65,7 @@ class SudokuPage extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: const BorderRadius.all(Radius.circular(16)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -246,25 +247,13 @@ class CellWidget extends StatelessWidget {
   /// 构建可编辑单元格
   Widget _buildEditableCell(List<int> digits) {
     if (digits.isEmpty) return const SizedBox.shrink();
-    if (digits.length == 1) {
-      return Center(
-        child: Text(
-          digits.first.toString(),
-          style: const TextStyle(
-            fontSize: 20,
-            color: Colors.blue,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
-    }
     return _buildDigitGrid(digits);
   }
 
   /// 构建数字网格（候选数）
   Widget _buildDigitGrid(List<int> digits) {
     final crossAxisCount = digits.length <= 4 ? 2 : 3;
-    final fontSize = digits.length <= 4 ? 14.0 : 10.0;
+    final fontSize = digits.length <= 4 ? 14.0 : 9.0;
 
     return Padding(
       padding: const EdgeInsets.all(2),
@@ -278,10 +267,7 @@ class CellWidget extends StatelessWidget {
             return Center(
               child: Text(
                 digits[index].toString(),
-                style: TextStyle(
-                  fontSize: fontSize,
-                  color: fontSize == 14 ? Colors.blue : Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: fontSize, color: Colors.blue),
               ),
             );
           }

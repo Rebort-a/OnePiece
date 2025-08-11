@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../model/int_slider.dart';
+
 class SliderData {
   double start;
   double end;
@@ -7,6 +9,24 @@ class SliderData {
   double step;
 
   SliderData({
+    required this.start,
+    required this.end,
+    required this.value,
+    required this.step,
+  }) {
+    value = value.clamp(start, end);
+  }
+
+  int get divisions => ((end - start) / step).toInt();
+}
+
+class IntSliderData {
+  int start;
+  int end;
+  int value;
+  int step;
+
+  IntSliderData({
     required this.start,
     required this.end,
     required this.value,
@@ -184,7 +204,7 @@ class TemplateDialog {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '当前值: ${sliderData.value.toStringAsFixed(1)}',
+                '当前值: ${sliderData.value.toStringAsFixed(2)}',
                 style: TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 20),
@@ -193,7 +213,56 @@ class TemplateDialog {
                 min: sliderData.start,
                 max: sliderData.end,
                 divisions: sliderData.divisions,
-                label: sliderData.value.toStringAsFixed(1),
+                label: sliderData.value.toStringAsFixed(2),
+                onChanged: (value) {
+                  setState(() {
+                    sliderData.value = value;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text("确定"),
+              onPressed: () {
+                onConfirm(sliderData.value);
+                Navigator.pop(context);
+              },
+            ),
+
+            TextButton(
+              child: Text("取消"),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void intSliderDialog({
+    required BuildContext context,
+    required String title,
+    required IntSliderData sliderData,
+    required Function(int value) onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Center(child: Text(title)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('当前值: ${sliderData.value}', style: TextStyle(fontSize: 16)),
+              const SizedBox(height: 20),
+              IntSlider(
+                value: sliderData.value,
+                min: sliderData.start,
+                max: sliderData.end,
+                divisions: sliderData.divisions,
+                label: "${sliderData.value}",
                 onChanged: (value) {
                   setState(() {
                     sliderData.value = value;

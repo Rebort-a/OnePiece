@@ -7,8 +7,4 @@ class GoLocalManager extends GoFoundationalManager {
       board.placeStone(index);
     }
   }
-
-  void resign() {
-    board.resign();
-  }
 }

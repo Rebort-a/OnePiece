@@ -239,15 +239,20 @@ class GoBoard {
   // 认输
   void resign() {
     gameOver = true;
+    currentPlayer.value = currentPlayer.value == StoneState.black
+        ? StoneState.black
+        : StoneState.white;
   }
 
+  // 悔棋
   // 悔棋
   void undoMove() {
     if (moveHistory.isEmpty) return;
 
     final lastMove = moveHistory.removeLast();
-    int index = lastMove['index'];
-    List<int> captured = lastMove['captured'];
+    int index = lastMove['index'] as int;
+    // 显式将dynamic列表转换为int列表
+    List<int> captured = (lastMove['captured'] as List<dynamic>).cast<int>();
 
     // 恢复落子位置
     grids.value[index].clear();
@@ -264,7 +269,7 @@ class GoBoard {
     }
 
     // 切换回上一个玩家
-    currentPlayer.value = lastMove['player'];
+    currentPlayer.value = lastMove['player'] as StoneState;
     gameOver = false;
   }
 

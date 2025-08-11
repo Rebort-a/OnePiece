@@ -12,4 +12,8 @@ abstract class GoFoundationalManager {
   void undo() {
     board.undoMove();
   }
+
+  void resign() {
+    board.resign();
+  }
 }

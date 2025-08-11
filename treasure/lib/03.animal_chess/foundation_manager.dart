@@ -24,17 +24,12 @@ abstract class FoundationalManager {
 
   void showBoardSizeSelector() {
     pageNavigator.value = (context) {
-      TemplateDialog.sliderDialog(
+      TemplateDialog.intSliderDialog(
         context: context,
         title: '设置棋牌大小',
-        sliderData: SliderData(
-          start: 2,
-          end: 6,
-          value: boardLevel.toDouble(),
-          step: 1.0,
-        ),
-        onConfirm: (double value) {
-          _updateBoardLevel(value.floor());
+        sliderData: IntSliderData(start: 2, end: 6, value: boardLevel, step: 1),
+        onConfirm: (int value) {
+          _updateBoardLevel(value);
         },
       );
     };
