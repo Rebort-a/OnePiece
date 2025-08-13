@@ -435,11 +435,11 @@ class DLX {
   }
 
   DLXNode _chooseColumn() {
-    int minSize = 0x7FFFFFFFFFFFFFFF; // 十六进制表示的int最大值 (2^63 - 1)
+    int minSize = 0;
     DLXNode? chosen;
 
     for (DLXNode col = root.right!; col != root; col = col.right!) {
-      if (col.size < minSize) {
+      if (col.size < minSize || minSize == 0) {
         minSize = col.size;
         chosen = col;
       }
