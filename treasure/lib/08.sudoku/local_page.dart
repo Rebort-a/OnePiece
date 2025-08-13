@@ -27,9 +27,8 @@ class SudokuPage extends StatelessWidget {
         children: [
           NotifierNavigator(navigatorHandler: manager.pageNavigator),
           Expanded(flex: 1, child: _buildTimer()),
-          Expanded(flex: 7, child: SudokuBoardView(manager: manager)),
-          Expanded(flex: 3, child: _buildInputArea()),
-          Spacer(flex: 1),
+          Expanded(flex: 8, child: SudokuBoardView(manager: manager)),
+          Expanded(flex: 4, child: _buildInputArea()),
         ],
       ),
     );
@@ -65,7 +64,7 @@ class SudokuPage extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.all(Radius.circular(16)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -77,8 +76,9 @@ class SudokuPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(flex: 1, child: NumberCards(manager: manager)),
-              Expanded(flex: 2, child: NumberKeyboard(manager: manager)),
+              Expanded(flex: 3, child: NumberCards(manager: manager)),
+              Expanded(flex: 4, child: NumberKeyboard(manager: manager)),
+              Spacer(flex: 1),
             ],
           ),
         );
@@ -360,7 +360,7 @@ class NumberKeyboard extends StatelessWidget {
         runSpacing: 8,
         alignment: WrapAlignment.center,
         children: [
-          _buildKeyboardButton("Clear", () => manager.clearDigits()),
+          _buildKeyboardButton("CE", () => manager.clearDigits()),
           ...List.generate(
             9,
             (i) => _buildKeyboardButton(

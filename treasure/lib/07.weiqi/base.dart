@@ -245,7 +245,6 @@ class GoBoard {
   }
 
   // 悔棋
-  // 悔棋
   void undoMove() {
     if (moveHistory.isEmpty) return;
 

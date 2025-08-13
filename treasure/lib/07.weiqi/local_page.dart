@@ -54,7 +54,9 @@ class _GoLocalPageState extends State<GoLocalPage> {
               );
             },
           ),
-          Expanded(child: GoFoundationWidget(manager: _manager)),
+          Expanded(
+            child: Center(child: GoFoundationWidget(manager: _manager)),
+          ),
         ],
       ),
     );

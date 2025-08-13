@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'base.dart';
 import 'foundation_manager.dart';
@@ -10,7 +8,7 @@ class GoFoundationWidget extends StatelessWidget {
   const GoFoundationWidget({super.key, required this.manager});
 
   @override
-  Widget build(BuildContext context) => Center(child: _buildBoard());
+  Widget build(BuildContext context) => _buildBoard();
 
   Widget _buildBoard() => AspectRatio(
     aspectRatio: 1.0,
@@ -29,25 +27,26 @@ class GoFoundationWidget extends StatelessWidget {
 
             return LayoutBuilder(
               builder: (context, constraints) {
-                final double boardSize = _calculateBoardSize(
-                  constraints,
-                  manager.board.size,
-                );
-                final double cellSize = boardSize / manager.board.size;
+                // 棋盘配置参数
+                final int size = manager.board.size;
+                final double boardSize = constraints.biggest.shortestSide;
+                final double cellSize = boardSize / size;
+                final double offset = cellSize / 2;
+                final double stoneRadius = cellSize * 0.45;
 
-                return SizedBox(
-                  width: boardSize,
-                  height: boardSize,
-                  child: Stack(
-                    children: [
-                      // 绘制棋盘网格（十字线）
-                      _buildGridLines(cellSize, boardSize, manager.board.size),
-                      // 绘制星位
-                      _buildStarPoints(cellSize, manager.board.size),
-                      // 绘制棋子（在线交叉点上）
-                      _buildStones(grids, cellSize, manager.board.size),
-                    ],
-                  ),
+                // 构建棋盘元素
+                return Stack(
+                  children: [
+                    ..._buildGridLines(size, cellSize, offset),
+                    ..._buildStarPoints(size, cellSize, offset),
+                    ..._buildAllStones(
+                      grids,
+                      size,
+                      cellSize,
+                      offset,
+                      stoneRadius,
+                    ),
+                  ],
                 );
               },
             );
@@ -57,185 +56,158 @@ class GoFoundationWidget extends StatelessWidget {
     ),
   );
 
-  // 绘制网格线（改为十字线）
-  Widget _buildGridLines(
-    double cellSize,
-    double boardSize,
-    int boardSizeValue,
-  ) {
-    return CustomPaint(
-      size: Size(boardSize, boardSize),
-      painter: GridPainter(
-        lineCount: boardSizeValue, // 线数等于棋盘大小
-        cellSize: cellSize,
-      ),
-    );
-  }
+  // 绘制棋盘网格线
+  List<Widget> _buildGridLines(int size, double cellSize, double offset) {
+    List<Widget> gridLines = [];
 
-  // 绘制星位（围棋棋盘上的小圆点）
-  Widget _buildStarPoints(double cellSize, int boardSizeValue) {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: Stack(
-          children: _getStarPositions(boardSizeValue).map((pos) {
-            return Positioned(
-              left: pos.dx * cellSize - 3,
-              top: pos.dy * cellSize - 3,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            );
-          }).toList(),
+    // 横线
+    for (int i = 0; i < size; i++) {
+      gridLines.add(
+        Positioned(
+          left: offset,
+          right: offset,
+          top: offset + i * cellSize,
+          height: 1,
+          child: Container(color: const Color(0xFF8B4513)),
         ),
-      ),
-    );
-  }
-
-  // 获取星位位置（根据棋盘大小计算）
-  List<Offset> _getStarPositions(int boardSize) {
-    if (boardSize != 19 && boardSize != 13 && boardSize != 9) return [];
-
-    List<Offset> positions = [];
-    if (boardSize == 19) {
-      positions = [
-        const Offset(3, 3),
-        const Offset(3, 9),
-        const Offset(3, 15),
-        const Offset(9, 3),
-        const Offset(9, 9),
-        const Offset(9, 15),
-        const Offset(15, 3),
-        const Offset(15, 9),
-        const Offset(15, 15),
-      ];
-    } else if (boardSize == 13) {
-      positions = [
-        const Offset(3, 3),
-        const Offset(3, 9),
-        const Offset(6, 6),
-        const Offset(9, 3),
-        const Offset(9, 9),
-      ];
-    } else if (boardSize == 9) {
-      positions = [
-        const Offset(2, 2),
-        const Offset(2, 6),
-        const Offset(4, 4),
-        const Offset(6, 2),
-        const Offset(6, 6),
-      ];
+      );
     }
-    return positions;
+
+    // 竖线
+    for (int i = 0; i < size; i++) {
+      gridLines.add(
+        Positioned(
+          left: offset + i * cellSize,
+          top: offset,
+          bottom: offset,
+          width: 1,
+          child: Container(color: const Color(0xFF8B4513)),
+        ),
+      );
+    }
+
+    return gridLines;
   }
 
-  // 绘制棋子（调整为在线交叉点上）
-  Widget _buildStones(
+  // 绘制星位
+  List<Widget> _buildStarPoints(int size, double cellSize, double offset) {
+    // 19×19棋盘的9个星位位置
+    const List<List<int>> starPoints = [
+      [3, 3],
+      [3, 9],
+      [3, 15],
+      [9, 3],
+      [9, 9],
+      [9, 15],
+      [15, 3],
+      [15, 9],
+      [15, 15],
+    ];
+
+    return starPoints.map((point) {
+      final int x = point[0];
+      final int y = point[1];
+      return Positioned(
+        left: offset + x * cellSize - 3,
+        top: offset + y * cellSize - 3,
+        width: 6,
+        height: 6,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF8B4513),
+            shape: BoxShape.circle,
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  // 绘制所有棋子
+  List<Widget> _buildAllStones(
     List<GoGridNotifier> grids,
+    int size,
     double cellSize,
-    int boardSize,
+    double offset,
+    double stoneRadius,
   ) {
-    return Stack(
-      children: List.generate(grids.length, (index) {
-        return _buildStone(grids[index], index, cellSize, boardSize);
-      }),
-    );
+    return grids.asMap().entries.map((entry) {
+      final int index = entry.key;
+      final GoGridNotifier notifier = entry.value;
+      return _buildStone(
+        notifier: notifier,
+        index: index,
+        size: size,
+        cellSize: cellSize,
+        offset: offset,
+        stoneRadius: stoneRadius,
+        onTap: () => manager.placePiece(index),
+      );
+    }).toList();
   }
 
-  Widget _buildStone(
-    GoGridNotifier notifier,
-    int index,
-    double cellSize,
-    int boardSize,
-  ) {
-    // 计算交叉点坐标
-    int row = index ~/ boardSize;
-    int col = index % boardSize;
+  // 绘制单个棋子
+  Widget _buildStone({
+    required GoGridNotifier notifier,
+    required int index,
+    required int size,
+    required double cellSize,
+    required double offset,
+    required double stoneRadius,
+    required VoidCallback onTap,
+  }) {
+    // 计算该棋子在棋盘上的坐标
+    final int x = index % size;
+    final int y = index ~/ size;
+    final double left = offset + x * cellSize - stoneRadius;
+    final double top = offset + y * cellSize - stoneRadius;
 
     return ValueListenableBuilder(
       valueListenable: notifier,
       builder: (_, grid, __) {
         if (!grid.isEmpty()) {
-          // 棋子绘制在线交叉点上
+          // 有棋子时绘制棋子
           return Positioned(
-            left: col * cellSize - cellSize * 0.425,
-            top: row * cellSize - cellSize * 0.425,
+            left: left,
+            top: top,
+            width: stoneRadius * 2,
+            height: stoneRadius * 2,
             child: Container(
-              width: cellSize * 0.85,
-              height: cellSize * 0.85,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
                 color: grid.isBlack() ? Colors.black : Colors.white,
+                shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black12,
                     blurRadius: 2,
+                    spreadRadius: 1,
                     offset: const Offset(1, 1),
                   ),
                 ],
                 border: grid.isWhite()
-                    ? Border.all(color: Colors.black12, width: 1)
+                    ? Border.all(color: Colors.grey[300]!, width: 1)
                     : null,
               ),
             ),
           );
         } else {
-          // 点击区域覆盖交叉点周围
+          // 无棋子时显示点击区域，点击调用manager.placePiece(index)
           return Positioned(
-            left: col * cellSize - cellSize * 0.5,
-            top: row * cellSize - cellSize * 0.5,
-            width: cellSize,
-            height: cellSize,
-            child: GestureDetector(
-              onTap: () => manager.placePiece(index),
-              child: Container(color: Colors.transparent),
+            left: left,
+            top: top,
+            width: stoneRadius * 2,
+            height: stoneRadius * 2,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(stoneRadius),
+                onTap: onTap,
+                // 可选：添加悬停效果（桌面平台）
+                hoverColor: Colors.black12,
+              ),
             ),
           );
         }
       },
     );
-  }
-
-  double _calculateBoardSize(BoxConstraints constraints, int cellCount) {
-    final double maxSize = min(constraints.maxWidth, constraints.maxHeight);
-    // 调整计算方式，考虑线数比格子数多1
-    return (maxSize ~/ (cellCount - 1)) * (cellCount - 1).toDouble();
-  }
-}
-
-// 棋盘绘制器（改为绘制十字线）
-class GridPainter extends CustomPainter {
-  final int lineCount; // 线的数量
-  final double cellSize; // 线之间的间距
-
-  GridPainter({required this.lineCount, required this.cellSize});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black87
-      ..strokeWidth = 1.0;
-
-    // 绘制横线（lineCount条）
-    for (int i = 0; i < lineCount; i++) {
-      double y = i * cellSize;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // 绘制竖线（lineCount条）
-    for (int i = 0; i < lineCount; i++) {
-      double x = i * cellSize;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant GridPainter oldDelegate) {
-    return lineCount != oldDelegate.lineCount ||
-        cellSize != oldDelegate.cellSize;
   }
 }

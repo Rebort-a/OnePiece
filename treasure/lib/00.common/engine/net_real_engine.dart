@@ -84,6 +84,7 @@ class NetRealGameEngine extends NetworkEngine {
   }
 
   void _handleSyncMessage(NetworkMessage message) {
+    _handleMatchMessage(message.id);
     syncHandler(message.id);
   }
 
