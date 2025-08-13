@@ -8,7 +8,7 @@ class GoFoundationWidget extends StatelessWidget {
   const GoFoundationWidget({super.key, required this.manager});
 
   @override
-  Widget build(BuildContext context) => _buildBoard();
+  Widget build(BuildContext context) => Center(child: _buildBoard());
 
   Widget _buildBoard() => AspectRatio(
     aspectRatio: 1.0,
