@@ -32,97 +32,69 @@ enum NetItemType {
   weiqi,
 }
 
+extension LocalItemTypeExtension on LocalItemType {
+  Widget get page {
+    switch (this) {
+      case LocalItemType.animalChess:
+        return LocalAnimalChessPage();
+      case LocalItemType.elementalBattle:
+        return MazePage();
+      case LocalItemType.gobang:
+        return LocalGomokuPage();
+      case LocalItemType.greedySnake:
+        return LocalGreedySnakePage();
+      case LocalItemType.weiqi:
+        return GoLocalPage();
+      case LocalItemType.sudoku:
+        return SudokuPage();
+    }
+  }
+}
+
+extension NetItemTypeExtension on NetItemType {
+  Widget page(String userName, RoomInfo roomInfo) {
+    switch (this) {
+      case NetItemType.onlyChat:
+        return NetChatPage(userName: userName, roomInfo: roomInfo);
+      case NetItemType.animalChess:
+        return NetAnimalChessPage(userName: userName, roomInfo: roomInfo);
+      case NetItemType.elementalBattle:
+        return NetCombatPage(userName: userName, roomInfo: roomInfo);
+      case NetItemType.gobang:
+        return NetGomokuPage(userName: userName, roomInfo: roomInfo);
+      case NetItemType.greedySnake:
+        return NetGreedySnakePage(userName: userName, roomInfo: roomInfo);
+      case NetItemType.weiqi:
+        return GoNetPage(userName: userName, roomInfo: roomInfo);
+    }
+  }
+}
+
 class RouteManager {
+  /// 导航到本地页面
   static void navigateToLocalPage(
     BuildContext context,
     LocalItemType routeType,
   ) {
-    switch (routeType) {
-      case LocalItemType.animalChess:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => LoaclAnimalChessPage()));
-        break;
-      case LocalItemType.elementalBattle:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => MazePage()));
-        break;
-      case LocalItemType.gobang:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => LocalGomokuPage()));
-        break;
-      case LocalItemType.greedySnake:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => LocalGreedySnakePage()));
-        break;
-      case LocalItemType.weiqi:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => GoLocalPage()));
-        break;
-      case LocalItemType.sudoku:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => SudokuPage()));
-        break;
-    }
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => routeType.page));
   }
 
+  /// 导航到网络页面
   static void navigateToNetPage(
     BuildContext context,
     String userName,
     RoomInfo roomInfo,
   ) {
-    switch (NetItemType.values[roomInfo.type]) {
-      case NetItemType.onlyChat:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => NetChatPage(userName: userName, roomInfo: roomInfo),
-          ),
-        );
-        break;
-      case NetItemType.animalChess:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                NetAnimalChessPage(userName: userName, roomInfo: roomInfo),
-          ),
-        );
-        break;
-      case NetItemType.elementalBattle:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                NetCombatPage(userName: userName, roomInfo: roomInfo),
-          ),
-        );
-        break;
-      case NetItemType.gobang:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                NetGomokuPage(userName: userName, roomInfo: roomInfo),
-          ),
-        );
-        break;
-      case NetItemType.greedySnake:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                NetGreedySnakePage(userName: userName, roomInfo: roomInfo),
-          ),
-        );
-        break;
-      case NetItemType.weiqi:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => GoNetPage(userName: userName, roomInfo: roomInfo),
-          ),
-        );
-        break;
+    if (roomInfo.type < 0 || roomInfo.type >= NetItemType.values.length) {
+      debugPrint('Invalid page type index: ${roomInfo.type}');
+      return;
     }
+
+    final netType = NetItemType.values[roomInfo.type];
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => netType.page(userName, roomInfo)));
   }
 }

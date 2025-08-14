@@ -7,10 +7,10 @@ import '../00.common/widget/notifier_navigator.dart';
 import 'local_manager.dart';
 import 'foundation_widget.dart';
 
-class LoaclAnimalChessPage extends StatelessWidget {
-  final LoaclManager _manager = LoaclManager();
+class LocalAnimalChessPage extends StatelessWidget {
+  final LocalManager _manager = LocalManager();
 
-  LoaclAnimalChessPage({super.key});
+  LocalAnimalChessPage({super.key});
 
   @override
   Widget build(BuildContext context) =>
