@@ -11,7 +11,7 @@ class SudokuManager extends ChangeNotifier {
   int boardLevel = 3; // 固定为9x9数独（3x3宫格）
   late int boardSize; // 棋盘尺寸（9x9）
   late int difficulty; // 移除的数字数量（9-64）
-  final List<List<CellNotifier>> _cells = [];
+  final ListNotifier<CellNotifier> _cells = ListNotifier([]);
   CellNotifier? _selectedCell;
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
@@ -26,8 +26,7 @@ class SudokuManager extends ChangeNotifier {
   Duration _elapsed = Duration.zero;
 
   SudokuManager() {
-    boardSize = boardLevel * boardLevel;
-    difficulty = boardSize * boardLevel;
+    difficulty = boardLevel * boardLevel * boardLevel;
     init();
   }
 
@@ -41,38 +40,39 @@ class SudokuManager extends ChangeNotifier {
   }
 
   //  getter
-  List<List<CellNotifier>> get cells => _cells;
+  ListNotifier<CellNotifier> get cells => _cells;
+
   CellNotifier? get selectedCell => _selectedCell;
+
+  CellNotifier getCell(index) {
+    return _cells.value[index];
+  }
 
   /// 初始化单元格列表
   void _initializeCells() {
-    _cells
-      ..clear()
-      ..addAll(
-        List.generate(
-          boardSize,
-          (i) => List.generate(
-            boardSize,
-            (j) => CellNotifier(
-              SudokuCell(row: i, col: j, type: CellType.editable),
-            ),
-          ),
+    boardSize = boardLevel * boardLevel;
+
+    _cells.value = List.generate(
+      boardSize * boardSize,
+      (index) => CellNotifier(
+        SudokuCell(
+          row: index ~/ boardSize,
+          col: index % boardSize,
+          type: CellType.editable,
         ),
-      );
+      ),
+    );
   }
 
   /// 生成数独谜题（保证唯一解）
   void _generateSudoku() {
     // 使用SudokuGenerator生成数独
-    final generator = SudokuGenerator(
-      level: boardLevel,
-      difficulty: difficulty,
-    );
+    final generator = SudokuGenerator(level: boardLevel, target: difficulty);
     final puzzle = generator.generate();
     _solution = generator.getSolution();
 
     // 更新难度为实际生成的难度（可能已降低）
-    difficulty = generator.difficulty;
+    difficulty = generator.target;
 
     // 将生成的数独填充到单元格
     for (int i = 0; i < boardSize; i++) {
@@ -80,7 +80,7 @@ class SudokuManager extends ChangeNotifier {
         final value = puzzle[i][j];
         if (value != 0) {
           // 预填的数字设为固定类型
-          _cells[i][j].value = SudokuCell(
+          _cells.value[i * boardSize + j].value = SudokuCell(
             row: i,
             col: j,
             type: CellType.fixed,
@@ -88,7 +88,7 @@ class SudokuManager extends ChangeNotifier {
           );
         } else {
           // 空白格子设为可编辑
-          _cells[i][j].value = SudokuCell(
+          _cells.value[i * boardSize + j].value = SudokuCell(
             row: i,
             col: j,
             type: CellType.editable,
@@ -145,20 +145,15 @@ class SudokuManager extends ChangeNotifier {
   /// 更改难度系数
   void _changeDifficulty(int value) {
     if (value != difficulty) {
-      _isGameOver = true;
       difficulty = value;
-      init();
-      notifyListeners();
+      resetGame();
     }
   }
 
   void changeLevel(int value) {
     if (value != boardLevel) {
-      _isGameOver = true;
       boardLevel = value;
-      boardSize = boardLevel * boardLevel;
-      init();
-      notifyListeners();
+      resetGame();
     }
   }
 
@@ -194,11 +189,17 @@ class SudokuManager extends ChangeNotifier {
   /// 解锁选中单元格
   void unlock() => _selectedCell?.unlock();
 
+  /// 检查单元格的值是否正确
+  bool isCellCorrect(CellNotifier cell) {
+    final solutionValue = _solution[cell.value.row][cell.value.col];
+    return cell.value.fixedDigit == solutionValue;
+  }
+
   /// 检查游戏是否完成（所有单元格有效且已锁定）
   bool _isGameComplete() {
     for (int i = 0; i < boardSize; i++) {
       for (int j = 0; j < boardSize; j++) {
-        final cell = _cells[i][j].value;
+        final cell = _cells.value[i * boardSize + j].value;
         // 检查所有单元格是否已锁定且值正确
         if (cell.type == CellType.editable ||
             cell.fixedDigit != _solution[i][j]) {
@@ -209,24 +210,17 @@ class SudokuManager extends ChangeNotifier {
     return true;
   }
 
-  /// 检查单元格的值是否正确
-  bool isCellCorrect(CellNotifier cell) {
-    final solutionValue = _solution[cell.value.row][cell.value.col];
-    return cell.value.fixedDigit == solutionValue;
-  }
-
   /// 游戏完成处理
   void _onGameComplete() {
-    _isGameOver = true;
     _stopwatch.stop();
+    _isGameOver = true;
     notifyListeners();
   }
 
   /// 重置游戏
-  void reset() {
+  void resetGame() {
     _isGameOver = true;
     init();
-    notifyListeners();
   }
 
   @override

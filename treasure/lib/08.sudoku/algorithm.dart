@@ -1,28 +1,27 @@
 import 'dart:math';
 
 class SudokuGenerator {
-  final int level;
-  int difficulty; // 空白格子数
-  late int _size;
-  late int _boxSize;
   late List<List<int>> _sudoku;
   late List<List<int>> _solution;
 
-  SudokuGenerator({required this.level, required this.difficulty}) {
+  final int level;
+  int target;
+  late int _size;
+
+  SudokuGenerator({required this.level, required this.target}) {
     _size = level * level;
-    _boxSize = level;
     _sudoku = List.generate(_size, (i) => List.filled(_size, 0));
     _solution = List.generate(_size, (i) => List.filled(_size, 0));
   }
 
   List<List<int>> generate() {
     // 首先生成一个完整的数独解
-    _generateCompleteSudoku();
+    _generateSolution();
 
-    // 复制完整解作为答案
-    _copySolution();
+    // 复制完整解到数独
+    _sudoku = _copySolution();
 
-    // 根据难度移除数字（difficulty是需要填入的数量），确保唯一解
+    // 根据难度移除数独中的数字，确保唯一解
     _removeNumbers();
 
     return _sudoku;
@@ -32,13 +31,17 @@ class SudokuGenerator {
     return _solution;
   }
 
-  void _generateCompleteSudoku() {
+  List<List<int>> _copySolution() {
+    return _solution.map((row) => List<int>.from(row)).toList();
+  }
+
+  void _generateSolution() {
     _fillDiagonalBoxes();
-    _fillRemaining(0, _boxSize);
+    _fillRemaining(0, level);
   }
 
   void _fillDiagonalBoxes() {
-    for (int i = 0; i < _size; i += _boxSize) {
+    for (int i = 0; i < _size; i += level) {
       _fillBox(i, i);
     }
   }
@@ -47,21 +50,21 @@ class SudokuGenerator {
     int num;
     final random = Random();
 
-    for (int i = 0; i < _boxSize; i++) {
-      for (int j = 0; j < _boxSize; j++) {
+    for (int i = 0; i < level; i++) {
+      for (int j = 0; j < level; j++) {
         do {
           num = random.nextInt(_size) + 1;
         } while (!_isNumberUsedInBox(row, col, num));
 
-        _sudoku[row + i][col + j] = num;
+        _solution[row + i][col + j] = num;
       }
     }
   }
 
   bool _isNumberUsedInBox(int boxRow, int boxCol, int num) {
-    for (int i = 0; i < _boxSize; i++) {
-      for (int j = 0; j < _boxSize; j++) {
-        if (_sudoku[boxRow + i][boxCol + j] == num) {
+    for (int i = 0; i < level; i++) {
+      for (int j = 0; j < level; j++) {
+        if (_solution[boxRow + i][boxCol + j] == num) {
           return false;
         }
       }
@@ -77,16 +80,16 @@ class SudokuGenerator {
     if (i >= _size && j >= _size) {
       return true;
     }
-    if (i < _boxSize) {
-      if (j < _boxSize) {
-        j = _boxSize;
+    if (i < level) {
+      if (j < level) {
+        j = level;
       }
-    } else if (i < _size - _boxSize) {
-      if (j == (i ~/ _boxSize) * _boxSize) {
-        j += _boxSize;
+    } else if (i < _size - level) {
+      if (j == (i ~/ level) * level) {
+        j += level;
       }
     } else {
-      if (j == _size - _boxSize) {
+      if (j == _size - level) {
         i += 1;
         j = 0;
         if (i >= _size) {
@@ -97,11 +100,11 @@ class SudokuGenerator {
 
     for (int num = 1; num <= _size; num++) {
       if (_isValid(i, j, num)) {
-        _sudoku[i][j] = num;
+        _solution[i][j] = num;
         if (_fillRemaining(i, j + 1)) {
           return true;
         }
-        _sudoku[i][j] = 0;
+        _solution[i][j] = 0;
       }
     }
     return false;
@@ -115,7 +118,7 @@ class SudokuGenerator {
 
   bool _isRowValid(int row, int num) {
     for (int col = 0; col < _size; col++) {
-      if (_sudoku[row][col] == num) {
+      if (_solution[row][col] == num) {
         return false;
       }
     }
@@ -124,7 +127,7 @@ class SudokuGenerator {
 
   bool _isColValid(int col, int num) {
     for (int row = 0; row < _size; row++) {
-      if (_sudoku[row][col] == num) {
+      if (_solution[row][col] == num) {
         return false;
       }
     }
@@ -132,12 +135,12 @@ class SudokuGenerator {
   }
 
   bool _isBoxValid(int row, int col, int num) {
-    int boxRowStart = row - row % _boxSize;
-    int boxColStart = col - col % _boxSize;
+    int boxRowStart = row - row % level;
+    int boxColStart = col - col % level;
 
-    for (int i = 0; i < _boxSize; i++) {
-      for (int j = 0; j < _boxSize; j++) {
-        if (_sudoku[boxRowStart + i][boxColStart + j] == num) {
+    for (int i = 0; i < level; i++) {
+      for (int j = 0; j < level; j++) {
+        if (_solution[boxRowStart + i][boxColStart + j] == num) {
           return false;
         }
       }
@@ -145,17 +148,8 @@ class SudokuGenerator {
     return true;
   }
 
-  void _copySolution() {
-    for (int i = 0; i < _size; i++) {
-      for (int j = 0; j < _size; j++) {
-        _solution[i][j] = _sudoku[i][j];
-      }
-    }
-  }
-
   void _removeNumbers() {
-    // 初始化解谜所需移除的格子总数
-    int targetRemoved = difficulty;
+    // 统计已移除的格子数
     int removed = 0;
 
     // 生成0到_size*_size-1的连续数字（代表所有格子的索引）
@@ -187,15 +181,15 @@ class SudokuGenerator {
         // 解唯一，成功移除
         removed++;
         // 达到目标移除数量，提前退出
-        if (removed == targetRemoved) {
+        if (removed == target) {
           break;
         }
       }
     }
 
-    // 如果实际移除数量小于目标，更新difficulty为实际值
-    if (removed < targetRemoved) {
-      difficulty = removed;
+    // 移除完成，如果实际移除数量小于目标，更新target
+    if (removed < target) {
+      target = removed;
     }
   }
 
@@ -203,10 +197,9 @@ class SudokuGenerator {
     return _sudoku.map((row) => List<int>.from(row)).toList();
   }
 
-  int _countSolutions(List<List<int>> grid) {
+  int _countSolutions(List<List<int>> sudoku) {
     // 使用DLX算法计算解的数量
-    final solver = SudokuSolver(level: level);
-    return solver.countSolutions(grid);
+    return SudokuSolver(level: level).countSolutions(sudoku);
   }
 }
 
@@ -214,31 +207,29 @@ class SudokuGenerator {
 class SudokuSolver {
   final int level;
   late int _size;
-  late int _boxSize;
 
   SudokuSolver({required this.level}) {
     _size = level * level;
-    _boxSize = level;
   }
 
-  int countSolutions(List<List<int>> grid) {
+  int countSolutions(List<List<int>> sudoku) {
     // 将数独问题转换为精确覆盖问题
-    List<List<int>> matrix = _createExactCoverMatrix(grid);
+    List<List<int>> matrix = _createExactCoverMatrix(sudoku);
     final dlx = DLX(matrix);
     return dlx.countSolutions();
   }
 
-  List<List<int>> solve(List<List<int>> grid) {
-    List<List<int>> matrix = _createExactCoverMatrix(grid);
+  List<List<int>> solve(List<List<int>> sudoku) {
+    List<List<int>> matrix = _createExactCoverMatrix(sudoku);
     final dlx = DLX(matrix);
     List<int> solution = dlx.findFirstSolution();
 
     if (solution.isEmpty) return [];
 
-    return _convertSolutionToGrid(solution);
+    return _convertDimensional1to2(solution);
   }
 
-  List<List<int>> _createExactCoverMatrix(List<List<int>> grid) {
+  List<List<int>> _createExactCoverMatrix(List<List<int>> sudoku) {
     int constraints = 4 * _size * _size;
     int possibilities = _size * _size * _size;
     List<List<int>> matrix = List.generate(
@@ -251,7 +242,7 @@ class SudokuSolver {
     for (row = 0; row < _size; row++) {
       for (col = 0; col < _size; col++) {
         for (num = 1; num <= _size; num++) {
-          if (grid[row][col] != 0 && grid[row][col] != num) {
+          if (sudoku[row][col] != 0 && sudoku[row][col] != num) {
             idx++;
             continue;
           }
@@ -266,7 +257,7 @@ class SudokuSolver {
           matrix[idx][2 * _size * _size + col * _size + (num - 1)] = 1;
 
           // 宫-数约束
-          int box = (row ~/ _boxSize) * _boxSize + (col ~/ _boxSize);
+          int box = (row ~/ level) * level + (col ~/ level);
           matrix[idx][3 * _size * _size + box * _size + (num - 1)] = 1;
 
           idx++;
@@ -277,18 +268,18 @@ class SudokuSolver {
     return matrix;
   }
 
-  List<List<int>> _convertSolutionToGrid(List<int> solution) {
-    List<List<int>> grid = List.generate(_size, (i) => List.filled(_size, 0));
+  List<List<int>> _convertDimensional1to2(List<int> source) {
+    List<List<int>> result = List.generate(_size, (i) => List.filled(_size, 0));
 
-    for (int val in solution) {
+    for (int val in source) {
       int num = (val % _size) + 1;
       int pos = val ~/ _size;
       int row = pos ~/ _size;
       int col = pos % _size;
-      grid[row][col] = num;
+      result[row][col] = num;
     }
 
-    return grid;
+    return result;
   }
 }
 

@@ -16,7 +16,10 @@ class SudokuPage extends StatelessWidget {
         title: const Text('Sudoku'),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: manager.reset),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: manager.resetGame,
+          ),
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: manager.showSelector,
@@ -27,7 +30,7 @@ class SudokuPage extends StatelessWidget {
         children: [
           NotifierNavigator(navigatorHandler: manager.pageNavigator),
           Expanded(flex: 1, child: _buildTimer()),
-          Expanded(flex: 8, child: SudokuBoardView(manager: manager)),
+          Expanded(flex: 8, child: _buildBoard()),
           Expanded(flex: 4, child: _buildInputArea()),
         ],
       ),
@@ -47,6 +50,13 @@ class SudokuPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildBoard() {
+    return AnimatedBuilder(
+      animation: manager,
+      builder: (_, _) => SudokuBoardView(manager: manager),
     );
   }
 
@@ -102,9 +112,9 @@ class SudokuBoardView extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border.all(color: Colors.black, width: 2),
           ),
-          child: AnimatedBuilder(
-            animation: manager,
-            builder: (context, _) => LayoutBuilder(
+          child: ValueListenableBuilder(
+            valueListenable: manager.cells,
+            builder: (_, value, __) => LayoutBuilder(
               builder: (context, constraints) {
                 final size = _calculateBoardSize(constraints.maxWidth);
                 return SizedBox(
@@ -116,7 +126,7 @@ class SudokuBoardView extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     children: List.generate(
                       manager.boardSize * manager.boardSize,
-                      (index) => _buildCell(index),
+                      (index) => _buildCell(value[index]),
                     ),
                   ),
                 );
@@ -133,10 +143,7 @@ class SudokuBoardView extends StatelessWidget {
       (maxWidth ~/ manager.boardSize) * manager.boardSize.toDouble();
 
   /// 构建单元格组件
-  Widget _buildCell(int index) {
-    final row = index ~/ manager.boardSize;
-    final col = index % manager.boardSize;
-    final cell = manager.cells[row][col];
+  Widget _buildCell(CellNotifier cell) {
     return CellWidget(
       cell: cell,
       boardLevel: manager.boardLevel,
