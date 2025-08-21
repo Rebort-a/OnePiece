@@ -228,4 +228,29 @@ class SudokuManager extends ChangeNotifier {
     _timer.cancel();
     super.dispose();
   }
+
+  void leavePage() {
+    pageNavigator.value = (context) {
+      _showLeaveDialog(context);
+    };
+  }
+
+  void _showLeaveDialog(BuildContext context) {
+    TemplateDialog.confirmDialog(
+      context: context,
+      title: '请确认',
+      content: '离开房间将丢失进度',
+      before: () => true,
+      onTap: _navigateToBack,
+      after: () {},
+    );
+  }
+
+  void _navigateToBack() {
+    pageNavigator.value = (context) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    };
+  }
 }

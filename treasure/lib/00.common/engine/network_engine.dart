@@ -142,13 +142,12 @@ class NetworkEngine {
 
   void _handleConnectionError(Object error) {
     navigatorHandler.value = (context) {
-      TemplateDialog.confirmDialog(
+      TemplateDialog.promptDialog(
         context: context,
         title: "Connection failed",
         content: "Could not connect to the server: ${error.toString()}",
         before: () => true,
-        onTap: () {},
-        after: () => _navigatoBack(),
+        after: () => _navigateToBack(),
       );
     };
   }
@@ -156,13 +155,12 @@ class NetworkEngine {
   void _handleSocketDone() {
     if (_isClosing || _isClosed) return;
     navigatorHandler.value = (context) {
-      TemplateDialog.confirmDialog(
+      TemplateDialog.promptDialog(
         context: context,
         title: "Disconnected",
         content: "You have been disconnected from the server",
         before: () => true,
-        onTap: () {},
-        after: () => _navigatoBack(),
+        after: () => _navigateToBack(),
       );
     };
   }
@@ -224,7 +222,7 @@ class NetworkEngine {
     closeSocket();
 
     // 导航回上一页
-    _navigatoBack();
+    _navigateToBack();
   }
 
   Future<void> closeSocket() async {
@@ -244,7 +242,7 @@ class NetworkEngine {
     }
   }
 
-  void _navigatoBack() {
+  void _navigateToBack() {
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {
       if (Navigator.of(context).canPop()) {

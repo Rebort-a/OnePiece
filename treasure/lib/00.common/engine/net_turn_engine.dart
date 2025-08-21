@@ -149,12 +149,11 @@ class NetTurnGameEngine extends NetworkEngine {
 
   void _handleOpponentExit() {
     navigatorHandler.value = (context) {
-      TemplateDialog.confirmDialog(
+      TemplateDialog.promptDialog(
         context: context,
         title: "Competitors withdraw",
         content: "The opponent has withdrawn",
         before: () => true,
-        onTap: () {},
         after: () {},
       );
     };

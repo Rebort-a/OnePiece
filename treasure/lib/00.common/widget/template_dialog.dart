@@ -39,6 +39,38 @@ class IntSliderData {
 }
 
 class TemplateDialog {
+  static void promptDialog({
+    required BuildContext context,
+    required String title,
+    required String content,
+    required bool Function() before,
+    required VoidCallback after,
+  }) {
+    if (before()) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(title),
+            content: Text(content),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('关闭'),
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ).then((value) {
+        after();
+      });
+    }
+  }
+
   static void confirmDialog({
     required BuildContext context,
     required String title,
@@ -56,13 +88,21 @@ class TemplateDialog {
             content: Text(content),
             actions: <Widget>[
               TextButton(
-                child: const Text('关闭'),
                 onPressed: () {
                   if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
                   }
                   onTap();
                 },
+                child: const Text('确认'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: const Text('取消'),
               ),
             ],
           );

@@ -39,15 +39,12 @@ class RoomDialog {
     required RoomInfo room,
     required Function() onConfirm,
   }) {
-    TemplateDialog.confirmDialog(
+    TemplateDialog.promptDialog(
       context: context,
       title: '离开',
       content: '即将退出房间',
       before: () => true,
-      onTap: () {
-        onConfirm();
-      },
-      after: () {},
+      after: onConfirm,
     );
   }
 }

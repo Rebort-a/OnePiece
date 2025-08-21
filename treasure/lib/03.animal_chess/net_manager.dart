@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:treasure/00.common/widget/template_dialog.dart';
 
 import '../00.common/game/gamer.dart';
@@ -121,16 +120,11 @@ class NetManager extends FoundationalManager {
   void showChessResult(bool isRedWin) {
     netTurnEngine.gameStep.value = GameStep.gameOver;
     pageNavigator.value = (context) {
-      TemplateDialog.confirmDialog(
+      TemplateDialog.promptDialog(
         context: context,
         title: '游戏结束',
         content: "${isRedWin ? "红" : "蓝"}方获胜！",
         before: () => true,
-        onTap: () {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
-        },
         after: () {
           netTurnEngine.leavePage();
         },

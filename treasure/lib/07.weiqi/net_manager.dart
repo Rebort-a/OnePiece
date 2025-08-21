@@ -62,6 +62,7 @@ class GoNetManager extends GoFoundationalManager {
     }
   }
 
+  @override
   void resign() {
     if (!board.gameOver) {
       netTurnEngine.sendNetworkMessage(

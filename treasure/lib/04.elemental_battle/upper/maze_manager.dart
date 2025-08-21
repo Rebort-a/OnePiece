@@ -473,12 +473,11 @@ class MazeManager {
         case EntityType.home:
           _restorePlayer();
           pageNavigator.value = (BuildContext context) {
-            TemplateDialog.confirmDialog(
+            TemplateDialog.promptDialog(
               context: context,
               title: "提示",
               content: "你睡了一觉，恢复了状态",
               before: _stopActive,
-              onTap: () => {},
               after: _startActive,
             );
           };

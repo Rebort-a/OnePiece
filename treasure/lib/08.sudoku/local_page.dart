@@ -10,30 +10,46 @@ class SudokuPage extends StatelessWidget {
   SudokuPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sudoku'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: manager.resetGame,
-          ),
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: manager.showSelector,
-          ),
-        ],
+  Widget build(BuildContext context) => PopScope(
+    onPopInvokedWithResult: (bool didPop, Object? result) {
+      manager.leavePage();
+    },
+    child: _buildPage(),
+  );
+
+  Widget _buildPage() {
+    return Scaffold(appBar: _buildAppBar(), body: _buildBody());
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text('Sudoku'),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: manager.leavePage,
       ),
-      body: Column(
-        children: [
-          NotifierNavigator(navigatorHandler: manager.pageNavigator),
-          Expanded(flex: 1, child: _buildTimer()),
-          Expanded(flex: 8, child: _buildBoard()),
-          Expanded(flex: 4, child: _buildInputArea()),
-        ],
-      ),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: manager.resetGame,
+        ),
+        IconButton(
+          icon: const Icon(Icons.tune),
+          onPressed: manager.showSelector,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        NotifierNavigator(navigatorHandler: manager.pageNavigator),
+        Expanded(flex: 1, child: _buildTimer()),
+        Expanded(flex: 8, child: _buildBoard()),
+        Expanded(flex: 4, child: _buildInputArea()),
+      ],
     );
   }
 

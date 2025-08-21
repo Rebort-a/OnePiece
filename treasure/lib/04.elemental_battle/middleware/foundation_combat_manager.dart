@@ -239,13 +239,12 @@ abstract class FoundationalCombatManager {
 
   void _showGameResult() {
     pageNavigator.value = (BuildContext context) {
-      TemplateDialog.confirmDialog(
+      TemplateDialog.promptDialog(
         context: context,
         title: resultTitles[combatResult] ?? '',
         content: resultContents[combatResult] ?? '',
         before: () => true,
-        onTap: () => leavePage(),
-        after: () {},
+        after: leavePage,
       );
     };
   }
