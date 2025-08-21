@@ -21,6 +21,7 @@ class NetGomokuPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PopScope(
+    canPop: false,
     onPopInvokedWithResult: (bool didPop, Object? result) {
       _manager.leavePage();
     },

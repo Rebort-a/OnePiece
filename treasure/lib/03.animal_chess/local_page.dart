@@ -13,14 +13,13 @@ class LocalAnimalChessPage extends StatelessWidget {
   LocalAnimalChessPage({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      PopScope(canPop: false, child: _buildPage());
+  Widget build(BuildContext context) => _buildPage();
 
   Widget _buildPage() => Scaffold(appBar: _buildAppBar(), body: _buildBody());
 
   AppBar _buildAppBar() => AppBar(
     leading: IconButton(
-      icon: const Icon(Icons.arrow_back),
+      icon: const Icon(Icons.flag),
       onPressed: _manager.leavePage,
     ),
     title: const Text('斗兽棋'),
