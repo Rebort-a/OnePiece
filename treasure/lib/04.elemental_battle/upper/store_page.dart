@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../00.common/widget/template_dialog.dart';
+import '../../00.common/component/template_dialog.dart';
 import '../middleware/prop.dart';
 import '../middleware/player.dart';
 

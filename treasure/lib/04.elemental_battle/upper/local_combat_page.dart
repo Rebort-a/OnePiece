@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../00.common/game/gamer.dart';
-import '../../00.common/widget/notifier_navigator.dart';
+import '../../00.common/component/notifier_navigator.dart';
 import '../middleware/foundation_combat_widget.dart';
 import '../middleware/elemental.dart';
 import 'local_combat_manager.dart';

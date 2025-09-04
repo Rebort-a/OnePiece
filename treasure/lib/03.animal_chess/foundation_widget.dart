@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
-import '../00.common/model/notifier.dart';
+import '../00.common/tool/notifier.dart';
 
 import 'base.dart';
 import 'extension.dart';

@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../widget/template_dialog.dart';
-import '../model/notifier.dart';
+import '../component/template_dialog.dart';
+import '../tool/notifier.dart';
 import '../network/network_message.dart';
 import '../network/network_room.dart';
 

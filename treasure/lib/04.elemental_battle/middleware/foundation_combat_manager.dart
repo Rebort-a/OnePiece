@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:treasure/04.elemental_battle/foundation/energy.dart';
 
 import '../../00.common/game/gamer.dart';
-import '../../00.common/widget/template_dialog.dart';
-import '../../00.common/model/notifier.dart';
+import '../../00.common/component/template_dialog.dart';
+import '../../00.common/tool/notifier.dart';
 import '../middleware/elemental.dart';
 import '../foundation/skill.dart';
 import 'common.dart';

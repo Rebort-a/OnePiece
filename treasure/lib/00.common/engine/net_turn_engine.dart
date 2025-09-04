@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../widget/template_dialog.dart';
+import '../component/template_dialog.dart';
 import 'network_engine.dart';
 import '../network/network_message.dart';
 import '../game/gamer.dart';

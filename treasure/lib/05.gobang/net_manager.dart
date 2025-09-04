@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../00.common/engine/net_turn_engine.dart';
 import '../00.common/game/step.dart';
-import '../00.common/model/notifier.dart';
+import '../00.common/tool/notifier.dart';
 import '../00.common/network/network_message.dart';
 import '../00.common/network/network_room.dart';
 import 'foundation_manager.dart';

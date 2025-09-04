@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../00.common/widget/joystick_component.dart';
-import '../00.common/widget/notifier_navigator.dart';
-import '../00.common/widget/speed_button.dart';
+import '../00.common/component/joystick_component.dart';
+import '../00.common/component/notifier_navigator.dart';
+import '../00.common/component/speed_button.dart';
 import 'draw_paint.dart';
 import 'foundation_manager.dart';
 

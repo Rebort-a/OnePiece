@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../00.common/widget/template_dialog.dart';
+import '../00.common/component/template_dialog.dart';
 import '../00.common/network/network_room.dart';
 import 'route.dart';
 

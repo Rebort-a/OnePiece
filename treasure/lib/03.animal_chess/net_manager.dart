@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:treasure/00.common/widget/template_dialog.dart';
+import 'package:treasure/00.common/component/template_dialog.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/engine/net_turn_engine.dart';

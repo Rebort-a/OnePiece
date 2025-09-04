@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../00.common/widget/notifier_navigator.dart';
-import '../../00.common/widget/scale_button.dart';
+import '../../00.common/component/notifier_navigator.dart';
+import '../../00.common/component/scale_button.dart';
 import '../../00.common/image/image_manager.dart';
 import '../foundation/energy.dart';
 

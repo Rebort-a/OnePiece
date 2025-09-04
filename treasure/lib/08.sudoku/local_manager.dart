@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../00.common/model/notifier.dart';
-import '../00.common/widget/template_dialog.dart';
+import '../00.common/tool/notifier.dart';
+import '../00.common/component/template_dialog.dart';
 import 'algorithm.dart';
 import 'base.dart';
 

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/style/theme.dart';
-import '../00.common/widget/chat_component.dart';
+import '../00.common/component/chat_component.dart';
 import '../00.common/game/step.dart';
 import '../00.common/network/network_room.dart';
 
-import '../00.common/widget/notifier_navigator.dart';
+import '../00.common/component/notifier_navigator.dart';
 
 import 'net_manager.dart';
 import 'foundation_widget.dart';

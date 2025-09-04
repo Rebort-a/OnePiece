@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/game/map.dart';
-import '../00.common/model/notifier.dart';
-import '../00.common/widget/template_dialog.dart';
+import '../00.common/tool/notifier.dart';
+import '../00.common/component/template_dialog.dart';
 import 'base.dart';
 import 'extension.dart';
 

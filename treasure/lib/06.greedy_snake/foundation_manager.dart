@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../00.common/model/notifier.dart';
+import '../00.common/tool/notifier.dart';
 import 'base.dart';
 
 abstract class FoundationalManager extends ChangeNotifier {

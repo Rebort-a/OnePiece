@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../00.common/widget/notifier_navigator.dart';
+import '../00.common/component/notifier_navigator.dart';
 import 'base.dart';
 import 'local_manager.dart';
 

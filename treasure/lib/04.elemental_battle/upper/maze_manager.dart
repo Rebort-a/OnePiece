@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:treasure/00.common/game/gamer.dart';
 
-import '../../00.common/widget/template_dialog.dart';
-import '../../00.common/model/notifier.dart';
+import '../../00.common/component/template_dialog.dart';
+import '../../00.common/tool/notifier.dart';
 import '../../00.common/image/entity.dart';
 import '../../00.common/game/map.dart';
 

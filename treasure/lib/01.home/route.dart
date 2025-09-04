@@ -13,6 +13,7 @@ import '../06.greedy_snake/net_page.dart';
 import '../07.weiqi/local_page.dart';
 import '../07.weiqi/net_page.dart';
 import '../08.sudoku/local_page.dart';
+import '../09.guess/page.dart';
 
 enum LocalItemType {
   animalChess,
@@ -21,6 +22,7 @@ enum LocalItemType {
   greedySnake,
   weiqi,
   sudoku,
+  guess,
 }
 
 enum NetItemType {
@@ -47,6 +49,8 @@ extension LocalItemTypeExtension on LocalItemType {
         return GoLocalPage();
       case LocalItemType.sudoku:
         return SudokuPage();
+      case LocalItemType.guess:
+        return GuessPage();
     }
   }
 }

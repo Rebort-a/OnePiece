@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../model/int_slider.dart';
+import 'int_slider.dart';
 
 class SliderData {
   double start;
@@ -267,7 +267,9 @@ class TemplateDialog {
               child: Text("确定"),
               onPressed: () {
                 onConfirm(sliderData.value);
-                Navigator.pop(context);
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
               },
             ),
 
@@ -316,7 +318,9 @@ class TemplateDialog {
               child: Text("确定"),
               onPressed: () {
                 onConfirm(sliderData.value);
-                Navigator.pop(context);
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
               },
             ),
 

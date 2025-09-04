@@ -69,4 +69,18 @@ class ListNotifier<T> extends ValueNotifier<List<T>> {
     super.notifyListeners();
     notifyAll();
   }
+
+  T operator [](int index) {
+    return super.value[index];
+  }
+
+  void operator []=(int index, T value) {
+    super.value[index] = value;
+    super.notifyListeners();
+    notifyAll();
+  }
+
+  bool contains(T element) {
+    return super.value.contains(element);
+  }
 }
