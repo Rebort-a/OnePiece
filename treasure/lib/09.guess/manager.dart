@@ -111,6 +111,8 @@ class GuessManager {
   }
 
   void markSelect(int index) {
+    if (_isGameOver) return;
+
     if (index == -1 || markItemIndex.value == index) {
       markItemIndex.value = -1;
     } else {
