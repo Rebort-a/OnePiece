@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../00.common/component/notifier_navigator.dart';
-import 'base.dart';
 import 'manager.dart';
 
 class GuessPage extends StatelessWidget {
@@ -150,7 +149,7 @@ class GuessPage extends StatelessWidget {
           onTap: () => _manager.markSelect(index),
           child: Card(
             elevation: 4,
-            color: isSelected ? Colors.blue : Colors.amber[100],
+            color: isSelected ? Colors.yellow : Colors.amber[100],
             child: Padding(
               padding: EdgeInsets.all(12),
               child: Text(emoji, style: TextStyle(fontSize: 32)),
@@ -170,56 +169,63 @@ class GuessPage extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        return Material(
-          color: Colors.black54,
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () => _manager.markSelect(-1), // 点击收起面板
-                  child: const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 24,
-                    color: Colors.black87,
-                  ),
+        // 使用LayoutBuilder获取父容器约束
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // 计算面板宽度为可用宽度的3/4
+            final panelWidth = constraints.maxWidth * 3 / 4;
+
+            return Material(
+              child: Container(
+                // 设置固定宽度
+                width: panelWidth,
+                // 水平居中
+                margin: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth * 1 / 8,
                 ),
-                const SizedBox(height: 12),
-                // 可选标记列表
-                ValueListenableBuilder<List<String>>(
-                  valueListenable: _manager.guessItems,
-                  builder: (_, items, __) {
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        // 1. unknown 选项（index = -1）
-                        _buildMarkChip(unknownItem, -1),
-                        // 2. 场上所有 guessItems，index 即其在列表中的位置
-                        ...List.generate(items.length, (index) {
-                          return _buildMarkChip(items[index], index);
-                        }),
-                      ],
-                    );
-                  },
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
                 ),
-              ],
-            ),
-          ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => _manager.markSelect(-1),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 24,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ValueListenableBuilder<List<String>>(
+                      valueListenable: _manager.guessItems,
+                      builder: (_, items, __) {
+                        return Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: [_buildMarkChip("❓"), _buildMarkChip("✔️")],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
   // 单个标记 Chip —— FilterChip 版
-  Widget _buildMarkChip(String emoji, int index) {
+  Widget _buildMarkChip(String emoji) {
     return ValueListenableBuilder<List<String>>(
       valueListenable: _manager.markItems,
       builder: (_, markItems, __) {
@@ -228,7 +234,7 @@ class GuessPage extends StatelessWidget {
           label: Text(emoji, style: const TextStyle(fontSize: 24)),
           selected: isSelected,
           onSelected: (_) {
-            _manager.changeMark(index); // 更新标记
+            _manager.changeMark(emoji); // 更新标记
           },
         );
       },

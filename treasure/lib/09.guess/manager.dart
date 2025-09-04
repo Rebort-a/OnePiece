@@ -32,7 +32,7 @@ class GuessManager {
       guessItem,
     )..shuffle()).take(_itemCount).toList();
     guessItems.value = List.from(_correctItems)..shuffle();
-    markItems.value = List.filled(_itemCount, unknownItem);
+    markItems.value = List.filled(_itemCount, "❓");
     markItemIndex.value = -1;
     _isGameOver = false;
     display.value = _displayText;
@@ -118,12 +118,8 @@ class GuessManager {
     }
   }
 
-  void changeMark(int index) {
-    if (index == -1) {
-      markItems[markItemIndex.value] = unknownItem;
-    } else {
-      markItems[markItemIndex.value] = guessItems[index];
-    }
+  void changeMark(String enmoji) {
+    markItems[markItemIndex.value] = enmoji;
   }
 
   void leavePage() {
