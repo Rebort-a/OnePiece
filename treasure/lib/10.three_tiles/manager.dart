@@ -5,14 +5,12 @@ import '../00.common/tool/notifier.dart';
 import '../00.common/tool/timer_counter.dart';
 import 'base.dart';
 
-/// 虚拟桌面大小
-const double boardVirtualSize = 500;
+/// 虚拟棋牌大小
+const double boardVirtualWidth = 600;
+const double boardVirtualHeight = 800;
 
-/// 卡片大小
-const double cardVirtualSize = 50;
-
-/// 离边距（虚拟值）
-const int _safeMargin = 50;
+/// 虚拟卡片大小
+const double cardVirtualSize = 80;
 
 class ThreeTilesManager {
   final Random _random = Random();
@@ -87,12 +85,16 @@ class ThreeTilesManager {
 
     for (int z = 0; z < layerCount; z++) {
       final shrink = z * 0.08;
-      final xMin = _safeMargin + (boardVirtualSize * shrink / 2);
+      final xMin = (boardVirtualWidth * shrink / 2);
       final xMax =
-          boardVirtualSize - _safeMargin - (boardVirtualSize * shrink / 2);
-      final yMin = _safeMargin + (boardVirtualSize * shrink / 2);
+          boardVirtualWidth -
+          cardVirtualSize -
+          (boardVirtualWidth * shrink / 2);
+      final yMin = (boardVirtualHeight * shrink / 2);
       final yMax =
-          boardVirtualSize - _safeMargin - (boardVirtualSize * shrink / 2);
+          boardVirtualHeight -
+          cardVirtualSize -
+          (boardVirtualHeight * shrink / 2);
 
       final quota = (count / layerCount).ceil();
       for (int i = 0; i < quota && positions.length < count; i++) {

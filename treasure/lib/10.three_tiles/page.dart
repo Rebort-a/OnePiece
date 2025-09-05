@@ -64,41 +64,47 @@ class ThreeTilesPage extends StatelessWidget {
   );
 
   Widget _boardArea() => LayoutBuilder(
-    builder: (_, cons) {
-      double boardRealSize = cons.maxWidth - 32 < cons.maxHeight
-          ? cons.maxWidth - 32
-          : cons.maxHeight;
+    builder: (_, constraints) {
+      double ratio = (constraints.maxWidth - 32) / boardVirtualWidth;
+      double boardRealHeight = boardVirtualHeight * ratio;
 
-      double ratio = boardRealSize / boardVirtualSize;
-
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ClipRect(
-          child: Stack(
-            children: [
-              ..._buildGrid(ratio),
-              ValueListenableBuilder<List<GameCard>>(
-                valueListenable: _manager.cards,
-                builder: (_, cards, __) => Stack(
-                  children: cards.map((c) => _buildCard(c, ratio)).toList(),
+      return SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          height: boardRealHeight, // 固定高度
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRect(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ..._buildGrid(ratio),
+                ValueListenableBuilder<List<GameCard>>(
+                  valueListenable: _manager.cards,
+                  builder: (_, cards, __) => Stack(
+                    clipBehavior: Clip.none,
+                    children: cards.map((c) => _buildCard(c, ratio)).toList(),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
     },
   );
 
-  List<Widget> _buildGrid(double radio) {
-    final cardRealSize = cardVirtualSize * radio;
-    return List.generate(cardRealSize.floor() * cardRealSize.floor(), (i) {
-      final x = i % cardRealSize;
-      final y = i ~/ cardRealSize;
+  List<Widget> _buildGrid(double ratio) {
+    final cardRealSize = cardVirtualSize * ratio;
+    // 根据实际宽高计算网格数量
+    final xCount = (boardVirtualWidth / cardVirtualSize).floor();
+    final yCount = (boardVirtualHeight / cardVirtualSize).floor();
+
+    return List.generate(xCount * yCount, (i) {
+      final x = i % xCount;
+      final y = i ~/ xCount;
       return Positioned(
         left: x * cardRealSize,
         top: y * cardRealSize,
