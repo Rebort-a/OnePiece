@@ -11,14 +11,13 @@ class GuessManager {
     (_) {},
   );
   int _itemCount = 6;
-  late List<String> _correctItems;
-  late bool _isGameOver;
 
+  late bool _isGameOver;
+  final ListNotifier<String> correctItems = ListNotifier([]);
   final ListNotifier<String> guessItems = ListNotifier([]);
+  final ListNotifier<String> markItems = ListNotifier([]);
   final ListNotifier<int> selectedIndices = ListNotifier([]);
   final ValueNotifier<String> display = ValueNotifier('');
-  final ListNotifier<String> markItems = ListNotifier([]);
-  final ValueNotifier<int> markItemIndex = ValueNotifier(-1);
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
@@ -27,13 +26,14 @@ class GuessManager {
     _initGame();
   }
 
+  int get itemCount => _itemCount;
+
   void _initGame() {
-    _correctItems = (List<String>.from(
+    correctItems.value = (List<String>.from(
       guessItem,
     )..shuffle()).take(_itemCount).toList();
-    guessItems.value = List.from(_correctItems)..shuffle();
-    markItems.value = List.filled(_itemCount, "❓");
-    markItemIndex.value = -1;
+    guessItems.value = List.from(correctItems.value)..shuffle();
+    markItems.value = List.filled(_itemCount, MarkType.unknown.emoji);
     _isGameOver = false;
     display.value = _displayText;
     _timerCounter.start();
@@ -68,8 +68,6 @@ class GuessManager {
   void guessSelect(int index) {
     if (_isGameOver) return;
 
-    markItemIndex.value = -1;
-
     if (selectedIndices.contains(index)) {
       selectedIndices.remove(index);
     } else {
@@ -88,12 +86,17 @@ class GuessManager {
     guessItems[j] = temp;
     selectedIndices.clear();
     if (_correctCount == _itemCount) {
-      _isGameOver = true;
-      display.value = _displayText;
-      _timerCounter.stop();
+      _handleGameOver();
     } else {
       display.value = _displayText;
     }
+  }
+
+  void _handleGameOver() {
+    _isGameOver = true;
+    display.value = _displayText;
+    markItems.value = List.from(guessItems.value);
+    _timerCounter.stop();
   }
 
   String get _displayText => _isGameOver
@@ -103,7 +106,7 @@ class GuessManager {
   int get _correctCount {
     int count = 0;
     for (int i = 0; i < guessItems.length; i++) {
-      if (guessItems[i] == _correctItems[i]) {
+      if (guessItems[i] == correctItems[i]) {
         count++;
       }
     }
@@ -113,15 +116,9 @@ class GuessManager {
   void markSelect(int index) {
     if (_isGameOver) return;
 
-    if (index == -1 || markItemIndex.value == index) {
-      markItemIndex.value = -1;
-    } else {
-      markItemIndex.value = index;
-    }
-  }
+    selectedIndices.clear();
 
-  void changeMark(String enmoji) {
-    markItems[markItemIndex.value] = enmoji;
+    markItems[index] = MarkTypeExt.toggle(markItems[index]);
   }
 
   void leavePage() {

@@ -49,7 +49,6 @@ class GuessPage extends StatelessWidget {
         NotifierNavigator(navigatorHandler: _manager.pageNavigator),
         _buildDisplayArea(),
         _buildGuessArea(),
-        _buildMarkPanel(),
       ],
     );
   }
@@ -76,14 +75,14 @@ class GuessPage extends StatelessWidget {
         // ② 让整个内容在主轴+交叉轴都居中
         child: SingleChildScrollView(
           child: ValueListenableBuilder<List<String>>(
-            valueListenable: _manager.guessItems,
-            builder: (_, guessItems, __) => Wrap(
+            valueListenable: _manager.correctItems,
+            builder: (_, correctItems, __) => Wrap(
               spacing: 24,
-              runSpacing: 32,
+              runSpacing: 24,
               alignment: WrapAlignment.center, // ③ 行内居中
               children: List.generate(
-                guessItems.length,
-                (index) => _buildOnePair(index, guessItems[index]), // ④ 抽出来
+                correctItems.length,
+                (index) => _buildOnePair(index), // ④ 抽出来
               ),
             ),
           ),
@@ -93,11 +92,15 @@ class GuessPage extends StatelessWidget {
   }
 
   /// 一对卡片：左侧猜物品 + 右侧标记
-  Widget _buildOnePair(int index, String emoji) {
+  Widget _buildOnePair(int index) {
     return Row(
       mainAxisSize: MainAxisSize.min, // ⑤ 关键：让这一行只包裹内容宽度
       children: [
-        _buildGuessCard(index, emoji),
+        ValueListenableBuilder<List<String>>(
+          valueListenable: _manager.guessItems,
+          builder: (_, guessItems, __) =>
+              _buildGuessCard(index, guessItems[index]),
+        ),
         const SizedBox(width: 8),
         ValueListenableBuilder<List<String>>(
           valueListenable: _manager.markItems,
@@ -140,104 +143,17 @@ class GuessPage extends StatelessWidget {
   }
 
   Widget _buildMarkCard(int index, String emoji) {
-    return ValueListenableBuilder<int>(
-      valueListenable: _manager.markItemIndex,
-      builder: (_, markItemIndex, __) {
-        final isSelected = index == markItemIndex;
-        // 可点击的卡
-        return GestureDetector(
-          onTap: () => _manager.markSelect(index),
-          child: Card(
-            elevation: 4,
-            color: isSelected ? Colors.yellow : Colors.amber[100],
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(emoji, style: TextStyle(fontSize: 32)),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// 底部滑出的标记面板
-  Widget _buildMarkPanel() {
-    return ValueListenableBuilder<int>(
-      valueListenable: _manager.markItemIndex,
-      builder: (_, markItemIndex, __) {
-        if (markItemIndex == -1) {
-          return const SizedBox.shrink();
-        }
-
-        // 使用LayoutBuilder获取父容器约束
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            // 计算面板宽度为可用宽度的3/4
-            final panelWidth = constraints.maxWidth * 3 / 4;
-
-            return Material(
-              child: Container(
-                // 设置固定宽度
-                width: panelWidth,
-                // 水平居中
-                margin: EdgeInsets.symmetric(
-                  horizontal: constraints.maxWidth * 1 / 8,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _manager.markSelect(-1),
-                      child: const Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 24,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ValueListenableBuilder<List<String>>(
-                      valueListenable: _manager.guessItems,
-                      builder: (_, items, __) {
-                        return Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          alignment: WrapAlignment.center,
-                          children: [_buildMarkChip("❓"), _buildMarkChip("✔️")],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // 单个标记 Chip —— FilterChip 版
-  Widget _buildMarkChip(String emoji) {
-    return ValueListenableBuilder<List<String>>(
-      valueListenable: _manager.markItems,
-      builder: (_, markItems, __) {
-        final isSelected = markItems[_manager.markItemIndex.value] == emoji;
-        return FilterChip(
-          label: Text(emoji, style: const TextStyle(fontSize: 24)),
-          selected: isSelected,
-          onSelected: (_) {
-            _manager.changeMark(emoji); // 更新标记
-          },
-        );
-      },
+    // 可点击的卡
+    return GestureDetector(
+      onTap: () => _manager.markSelect(index),
+      child: Card(
+        elevation: 4,
+        color: Colors.amber[100],
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Text(emoji, style: TextStyle(fontSize: 32)),
+        ),
+      ),
     );
   }
 }
