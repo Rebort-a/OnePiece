@@ -112,10 +112,10 @@ class GuessPage extends StatelessWidget {
   }
 
   Widget _buildGuessCard(int index, String emoji) {
-    return ValueListenableBuilder<List<int>>(
-      valueListenable: _manager.selectedIndices,
+    return ValueListenableBuilder<int>(
+      valueListenable: _manager.selectedItem,
       builder: (_, selectedIndices, __) {
-        final isSelected = selectedIndices.contains(index);
+        final isSelected = index == selectedIndices;
         return
         // 可点击的卡片（带动画）
         GestureDetector(

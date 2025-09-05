@@ -16,7 +16,7 @@ class GuessManager {
   final ListNotifier<String> correctItems = ListNotifier([]);
   final ListNotifier<String> guessItems = ListNotifier([]);
   final ListNotifier<String> markItems = ListNotifier([]);
-  final ListNotifier<int> selectedIndices = ListNotifier([]);
+  final ValueNotifier<int> selectedItem = ValueNotifier(-1);
   final ValueNotifier<String> display = ValueNotifier('');
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
@@ -68,23 +68,18 @@ class GuessManager {
   void guessSelect(int index) {
     if (_isGameOver) return;
 
-    if (selectedIndices.contains(index)) {
-      selectedIndices.remove(index);
+    if (selectedItem.value == index) {
+      selectedItem.value = -1;
     } else {
-      selectedIndices.add(index);
-      if (selectedIndices.length >= 2) {
-        _swapItems();
-      }
+      _swapItems(selectedItem.value, index);
     }
   }
 
-  void _swapItems() {
-    final i = selectedIndices[0];
-    final j = selectedIndices[1];
-    final temp = guessItems[i];
+  void _swapItems(int i, int j) {
+    String temp = guessItems[i];
     guessItems[i] = guessItems[j];
     guessItems[j] = temp;
-    selectedIndices.clear();
+    selectedItem.value = -1;
     if (_correctCount == _itemCount) {
       _handleGameOver();
     } else {
@@ -116,7 +111,7 @@ class GuessManager {
   void markSelect(int index) {
     if (_isGameOver) return;
 
-    selectedIndices.clear();
+    selectedItem.value = -1;
 
     markItems[index] = MarkTypeExt.toggle(markItems[index]);
   }
