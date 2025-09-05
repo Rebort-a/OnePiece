@@ -70,6 +70,8 @@ class GuessManager {
 
     if (selectedItem.value == index) {
       selectedItem.value = -1;
+    } else if (selectedItem.value == -1) {
+      selectedItem.value = index;
     } else {
       _swapItems(selectedItem.value, index);
     }
