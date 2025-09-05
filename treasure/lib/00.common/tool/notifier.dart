@@ -50,6 +50,12 @@ class ListNotifier<T> extends ValueNotifier<List<T>> {
     notifyAll();
   }
 
+  void addAll(Iterable<T> iterable) {
+    super.value.addAll(iterable);
+    super.notifyListeners();
+    notifyAll();
+  }
+
   void remove(T value) {
     super.value.remove(value);
     super.notifyListeners();
