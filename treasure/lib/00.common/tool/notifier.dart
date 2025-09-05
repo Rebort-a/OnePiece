@@ -40,6 +40,10 @@ class ListNotifier<T> extends ValueNotifier<List<T>> {
 
   int get length => value.length;
 
+  bool get isEmpty => length == 0;
+
+  void update() => notifyListeners();
+
   void add(T value) {
     super.value.add(value);
     super.notifyListeners();
