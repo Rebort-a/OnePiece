@@ -1,4 +1,9 @@
-/// 3TILES游戏基础数据定义
+import 'package:flutter/material.dart';
+
+/// 游戏难度
+enum Difficulty { easy, medium, hard }
+
+/// 基础数据定义
 enum CardType {
   sheep,
   grass,
@@ -17,83 +22,52 @@ enum CardType {
   mushroom,
 }
 
+/// 卡片信息复合类型，包含emoji和颜色
+class CardInfo {
+  final String emoji;
+  final int color;
+
+  const CardInfo({required this.emoji, required this.color});
+}
+
 /// 卡片扩展方法
 extension CardTypeExt on CardType {
-  /// 获取卡片对应的emoji
-  String get emoji {
+  /// 获取卡片对应的信息（emoji和颜色）
+  CardInfo get info {
     switch (this) {
       case CardType.sheep:
-        return "🐑";
+        return const CardInfo(emoji: "🐑", color: 0xFFFFF3E0);
       case CardType.grass:
-        return "🌱";
+        return const CardInfo(emoji: "🌱", color: 0xFFE8F5E9);
       case CardType.tree:
-        return "🌳";
+        return const CardInfo(emoji: "🌳", color: 0xFFC8E6C9);
       case CardType.flower:
-        return "🌸";
+        return const CardInfo(emoji: "🌸", color: 0xFFFCE4EC);
       case CardType.cloud:
-        return "☁️";
+        return const CardInfo(emoji: "☁️", color: 0xFFEBF5FB);
       case CardType.sun:
-        return "☀️";
+        return const CardInfo(emoji: "☀️", color: 0xFFFFFDE7);
       case CardType.moon:
-        return "🌙";
+        return const CardInfo(emoji: "🌙", color: 0xFFE8EAF6);
       case CardType.star:
-        return "⭐";
+        return const CardInfo(emoji: "⭐", color: 0xFFF3E5F5);
       case CardType.mountain:
-        return "⛰️";
+        return const CardInfo(emoji: "⛰️", color: 0xFFEEEEEE);
       case CardType.river:
-        return "🌊";
+        return const CardInfo(emoji: "🌊", color: 0xFFE3F2FD);
       case CardType.house:
-        return "🏠";
+        return const CardInfo(emoji: "🏠", color: 0xFFFFEBEE);
       case CardType.fence:
-        return "🚧";
+        return const CardInfo(emoji: "🚧", color: 0xFFFFF3E0);
       case CardType.carrot:
-        return "🥕";
+        return const CardInfo(emoji: "🥕", color: 0xFFE8F5E9);
       case CardType.wheat:
-        return "🌾";
+        return const CardInfo(emoji: "🌾", color: 0xFFFFF8E1);
       case CardType.mushroom:
-        return "🍄";
-    }
-  }
-
-  /// 获取卡片背景颜色
-  int get color {
-    switch (this) {
-      case CardType.sheep:
-        return 0xFFFFF3E0;
-      case CardType.grass:
-        return 0xFFE8F5E9;
-      case CardType.tree:
-        return 0xFFC8E6C9;
-      case CardType.flower:
-        return 0xFFFCE4EC;
-      case CardType.cloud:
-        return 0xFFEBF5FB;
-      case CardType.sun:
-        return 0xFFFFFDE7;
-      case CardType.moon:
-        return 0xFFE8EAF6;
-      case CardType.star:
-        return 0xFFF3E5F5;
-      case CardType.mountain:
-        return 0xFFEEEEEE;
-      case CardType.river:
-        return 0xFFE3F2FD;
-      case CardType.house:
-        return 0xFFFFEBEE;
-      case CardType.fence:
-        return 0xFFFFF3E0;
-      case CardType.carrot:
-        return 0xFFE8F5E9;
-      case CardType.wheat:
-        return 0xFFFFF8E1;
-      case CardType.mushroom:
-        return 0xFFFCE4EC;
+        return const CardInfo(emoji: "🍄", color: 0xFFFCE4EC);
     }
   }
 }
-
-/// 游戏难度
-enum Difficulty { easy, medium, hard }
 
 /// 卡片位置信息
 class CardPosition {
@@ -106,17 +80,51 @@ class CardPosition {
 
 /// 游戏卡片
 class GameCard {
-  final CardType type;
-  CardPosition position;
-  bool enable; // 是否可以被选择（上面没有其他卡片）
-  bool hint; // 是否显示提示
+  final CardType _type; // 私有字段，类型一旦确定不可修改
+  CardPosition _position; // 私有字段，只能通过内部方法修改
+  bool _enable; // 私有字段
+  bool _hint; // 私有字段
 
-  GameCard({
-    required this.type,
-    required this.position,
-    this.enable = true,
-    this.hint = false,
-  });
+  CardType get type => _type;
+  CardPosition get position => _position;
+  bool get enable => _enable;
+  bool get hint => _hint;
+
+  GameCard({required CardType type, required CardPosition position})
+    : _type = type,
+      _position = position,
+      _enable = true,
+      _hint = false;
+}
+
+class CardNotifier extends ValueNotifier<GameCard> {
+  CardNotifier(super.value);
+
+  CardType get type => value.type;
+  CardPosition get position => value.position;
+  bool get enable => value.enable;
+  bool get hint => value.hint;
+
+  void changePosition(CardPosition position) {
+    if (position != value._position) {
+      value._position = position;
+      notifyListeners();
+    }
+  }
+
+  void changeEnable(bool enable) {
+    if (enable != value._enable) {
+      value._enable = enable;
+      notifyListeners();
+    }
+  }
+
+  void changeHint(bool hint) {
+    if (hint != value._hint) {
+      value._hint = hint;
+      notifyListeners();
+    }
+  }
 }
 
 /// 道具类型

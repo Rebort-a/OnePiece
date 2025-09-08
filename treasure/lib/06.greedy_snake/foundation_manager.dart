@@ -215,9 +215,7 @@ abstract class FoundationalManager extends ChangeNotifier {
             TextButton(
               child: const Text('确定'),
               onPressed: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
+                Navigator.pop(context);
               },
             ),
           ],
@@ -234,9 +232,7 @@ abstract class FoundationalManager extends ChangeNotifier {
 
   void _navigateBack() {
     pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      Navigator.pop(context);
     };
   }
 

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../00.common/component/grid_boundary.dart';
 import '../00.common/component/notifier_navigator.dart';
 import 'base.dart';
 import 'manager.dart';
 
 class ThreeTilesPage extends StatelessWidget {
-  final ThreeTilesManager _manager = ThreeTilesManager();
+  final Manager _manager = Manager();
 
   ThreeTilesPage({super.key});
 
@@ -54,7 +55,7 @@ class ThreeTilesPage extends StatelessWidget {
           builder: (_, value, __) =>
               Text('时间: $value 秒', style: const TextStyle(fontSize: 16)),
         ),
-        ValueListenableBuilder<List<GameCard>>(
+        ValueListenableBuilder<List<CardNotifier>>(
           valueListenable: _manager.cards,
           builder: (_, cards, __) =>
               Text('剩余: ${cards.length}', style: const TextStyle(fontSize: 16)),
@@ -65,8 +66,9 @@ class ThreeTilesPage extends StatelessWidget {
 
   Widget _boardArea() => LayoutBuilder(
     builder: (_, constraints) {
-      double ratio = (constraints.maxWidth - 32) / boardVirtualWidth;
-      double boardRealHeight = boardVirtualHeight * ratio;
+      double boardRealWidth = constraints.maxWidth - 32;
+      double ratio = boardRealWidth / Manager.boardVirtualWidth;
+      double boardRealHeight = Manager.boardVirtualHeight * ratio;
 
       return SingleChildScrollView(
         child: Container(
@@ -80,8 +82,19 @@ class ThreeTilesPage extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                ..._buildGrid(ratio),
-                ValueListenableBuilder<List<GameCard>>(
+                // 绘制网格线
+                CustomPaint(
+                  size: Size(boardRealWidth, boardRealHeight),
+                  painter: GridBoundary(
+                    columnCount: 6,
+                    rowCount: 8,
+                    lineColor: Colors.grey[300]!,
+                    lineWidth: 1.0,
+                  ),
+                ),
+
+                // 卡片区域
+                ValueListenableBuilder<List<CardNotifier>>(
                   valueListenable: _manager.cards,
                   builder: (_, cards, __) => Stack(
                     clipBehavior: Clip.none,
@@ -96,65 +109,48 @@ class ThreeTilesPage extends StatelessWidget {
     },
   );
 
-  List<Widget> _buildGrid(double ratio) {
-    final cardRealSize = cardVirtualSize * ratio;
-    // 根据实际宽高计算网格数量
-    final xCount = (boardVirtualWidth / cardVirtualSize).floor();
-    final yCount = (boardVirtualHeight / cardVirtualSize).floor();
+  Widget _buildCard(CardNotifier cardNotifier, double radio) {
+    final cardRealSize = Manager.cardVirtualSize * radio;
 
-    return List.generate(xCount * yCount, (i) {
-      final x = i % xCount;
-      final y = i ~/ xCount;
-      return Positioned(
-        left: x * cardRealSize,
-        top: y * cardRealSize,
-        child: Container(
-          width: cardRealSize,
-          height: cardRealSize,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-        ),
-      );
-    });
-  }
+    return ValueListenableBuilder<GameCard>(
+      valueListenable: cardNotifier,
+      builder: (_, card, __) {
+        return Positioned(
+          left: card.position.x * radio,
+          top: card.position.y * radio,
 
-  Widget _buildCard(GameCard card, double radio) {
-    final cardRealSize = cardVirtualSize * radio;
-
-    return Positioned(
-      left: card.position.x * radio,
-      top: card.position.y * radio,
-      child: GestureDetector(
-        onTap: () => _manager.selectCard(card),
-        child: Container(
-          width: cardRealSize,
-          height: cardRealSize,
-          decoration: BoxDecoration(
-            color: Color(
-              card.type.color,
-            ).withValues(alpha: card.enable ? 1 : 0.3),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: card.hint ? Colors.blue : Colors.grey,
-              width: card.hint ? 3 : 1,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 2,
-                offset: Offset(1, 1),
+          child: GestureDetector(
+            onTap: () => _manager.selectCard(cardNotifier),
+            child: Container(
+              width: cardRealSize,
+              height: cardRealSize,
+              decoration: BoxDecoration(
+                color: Color(
+                  card.type.info.color,
+                ).withValues(alpha: card.enable ? 1 : 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: card.hint ? Colors.yellow : Colors.grey,
+                  width: card.hint ? 3 : 1,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 2,
+                    offset: Offset(1, 1),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              card.type.emoji,
-              style: TextStyle(fontSize: cardRealSize * 0.5),
+              child: Center(
+                child: Text(
+                  card.type.info.emoji,
+                  style: TextStyle(fontSize: cardRealSize * 0.5),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -207,7 +203,7 @@ class ThreeTilesPage extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       border: Border.all(color: Colors.grey),
     ),
-    child: ValueListenableBuilder<List<GameCard>>(
+    child: ValueListenableBuilder<List<CardNotifier>>(
       valueListenable: _manager.selectedCards,
       builder: (_, cards, __) => ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -219,12 +215,15 @@ class ThreeTilesPage extends StatelessWidget {
             height: 50,
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: Color(c.type.color),
+              color: Color(c.type.info.color),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.blue, width: 2),
             ),
             child: Center(
-              child: Text(c.type.emoji, style: const TextStyle(fontSize: 24)),
+              child: Text(
+                c.type.info.emoji,
+                style: const TextStyle(fontSize: 24),
+              ),
             ),
           );
         },

@@ -245,9 +245,7 @@ class NetworkEngine {
   void _navigateToBack() {
     // 导航回上一页
     navigatorHandler.value = (BuildContext context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      Navigator.pop(context);
     };
 
     // 释放资源

@@ -259,9 +259,7 @@ abstract class FoundationalCombatManager {
 
   void _navigateToBack() {
     pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(combatResult);
-      }
+      Navigator.of(context).pop(combatResult);
     };
   }
 }

@@ -119,17 +119,13 @@ class _SkillsPageState extends State<SkillsPage> {
               } else {
                 TemplateDialog.snackBarDialog(context, '经验不足！');
               }
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
+              Navigator.pop(context);
             },
           ),
         TextButton(
           child: Text(_showSkills[index].learned ? '关闭' : '取消'),
           onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
+            Navigator.pop(context);
           },
         ),
       ],

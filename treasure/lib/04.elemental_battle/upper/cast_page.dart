@@ -424,9 +424,7 @@ class _CastPageState extends State<CastPage> {
                       setState(() {
                         config.skillPoints++;
                         _remainingPoints--;
-                        if (Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        }
+                        Navigator.pop(context);
                       });
                     }
                   : null,
@@ -438,18 +436,14 @@ class _CastPageState extends State<CastPage> {
                 setState(() {
                   config.skillPoints--;
                   _remainingPoints++;
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.pop(context);
                 });
               },
               child: const Text('遗忘'),
             ),
           TextButton(
             onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
+              Navigator.pop(context);
             },
             child: const Text('关闭'),
           ),
@@ -459,8 +453,6 @@ class _CastPageState extends State<CastPage> {
   }
 
   void _completeCast() {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop(_configs);
-    }
+    Navigator.of(context).pop(_configs);
   }
 }

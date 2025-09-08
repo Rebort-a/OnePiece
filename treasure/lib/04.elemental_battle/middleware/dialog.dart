@@ -40,16 +40,12 @@ class ElementalDialog {
                             ? health > 0
                                   ? () {
                                       onSelected(EnergyType.values[index]);
-                                      if (Navigator.of(context).canPop()) {
-                                        Navigator.of(context).pop();
-                                      }
+                                      Navigator.pop(context);
                                     }
                                   : null
                             : () {
                                 onSelected(EnergyType.values[index]);
-                                if (Navigator.of(context).canPop()) {
-                                  Navigator.of(context).pop();
-                                }
+                                Navigator.pop(context);
                               },
                         style: ElevatedButton.styleFrom(
                           foregroundColor: health > 0
@@ -101,9 +97,7 @@ class ElementalDialog {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          if (Navigator.of(context).canPop()) {
-                            Navigator.of(context).pop();
-                          }
+                          Navigator.pop(context);
                           handleSkill(index);
                         },
                         child: Text(skill.name),
@@ -203,9 +197,7 @@ class ElementalDialog {
                   TextButton(
                     child: const Text('取消'),
                     onPressed: () {
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
+                      Navigator.pop(context);
                     },
                   ),
                   TextButton(
@@ -213,9 +205,7 @@ class ElementalDialog {
                       if (chosenElement != -1) {
                         upgrade(chosenElement, chosenAttribute);
                       }
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
+                      Navigator.pop(context);
                     },
                     child: const Text('确定'),
                   ),

@@ -1,33 +1,31 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../00.common/component/template_dialog.dart';
 import '../00.common/tool/notifier.dart';
 import '../00.common/tool/timer_counter.dart';
 import 'base.dart';
 
-/// 虚拟棋牌大小
-const double boardVirtualWidth = 600;
-const double boardVirtualHeight = 800;
+class Manager {
+  /// 虚拟棋牌和卡片尺寸，用来做层级判断
+  /// 在显示时会根据真实尺寸动态映射
+  static const double boardVirtualWidth = 600;
+  static const double boardVirtualHeight = 800;
+  static const double cardVirtualSize = 80;
 
-/// 虚拟卡片大小
-const double cardVirtualSize = 80;
+  final Random _random = Random(); // 随机数生成器
+  late final TimerCounter _timer; // 计时器
 
-class ThreeTilesManager {
-  final Random _random = Random();
-  late final TimerCounter _timer;
+  Difficulty _difficulty = Difficulty.medium; // 游戏难度默认为中等
+  bool _isGameOver = false; // 游戏进展
 
-  Difficulty _difficulty = Difficulty.medium;
-  bool _isGameOver = false;
-
-  final ListNotifier<GameCard> cards = ListNotifier([]);
-  final ListNotifier<GameCard> selectedCards = ListNotifier([]);
-  final ListNotifier<PropType> props = ListNotifier([]);
-  final ValueNotifier<int> elapsed = ValueNotifier(0);
+  final ListNotifier<CardNotifier> cards = ListNotifier([]); // 场上的卡片
+  final ListNotifier<CardNotifier> selectedCards = ListNotifier([]); // 选中的卡片
+  final ListNotifier<PropType> props = ListNotifier([]); //道具袋
+  final ValueNotifier<int> elapsed = ValueNotifier(0); // 秒数
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
-      AlwaysNotifier((_) {});
+      AlwaysNotifier((_) {}); // 弹窗器
 
-  ThreeTilesManager() {
+  Manager() {
     _initTimer();
     _initGame();
   }
@@ -39,49 +37,46 @@ class ThreeTilesManager {
   }
 
   void _initGame() {
+    // 初始化道具区
     props
       ..clear()
       ..addAll([PropType.removeThree, PropType.reshuffle, PropType.hint]);
 
+    // 根据难度生成卡片
     _generateCards((_difficulty.index + 1) * 30);
+
+    // 启动计时器
     _timer.start();
 
+    // 更新进展
     _isGameOver = false;
   }
 
   void _generateCards(int count) {
-    final positions = _generateCardPositions(count);
-    final cardTypes = CardType.values;
-    final typeQuota = (count / 3).ceil();
-    final typeCounter = <CardType, int>{};
-    for (final t in cardTypes) {
-      typeCounter[t] = 0;
-    }
+    final List<CardPosition> positionPool = _getPositions(count); // 坐标池
+    final List<CardType> cardPool = CardType.values.toList()
+      ..shuffle(_random); // 卡片池
 
-    final typePool = cardTypes.toList()..shuffle(_random);
-
+    // 从卡片池中取出卡片，赋予坐标，每种卡片一次三个
     int posIndex = 0;
     while (posIndex < count) {
-      for (final t in typePool) {
-        if (posIndex >= count) break;
-        if (typeCounter[t]! >= typeQuota) continue;
+      for (final t in cardPool) {
         for (int i = 0; i < 3; i++) {
-          cards.add(GameCard(type: t, position: positions[posIndex]));
-          posIndex++;
           if (posIndex >= count) break;
-          typeCounter[t] = typeCounter[t]! + 1;
+          cards.add(
+            CardNotifier(GameCard(type: t, position: positionPool[posIndex])),
+          );
+          posIndex++;
         }
       }
     }
 
-    cards.value = List<GameCard>.from(cards.value)
-      ..sort((a, b) => a.position.z.compareTo(b.position.z));
     _updateCardVisibility();
   }
 
-  List<CardPosition> _generateCardPositions(int count) {
-    final layerCount = (count / 15).ceil() + 1;
-    final positions = <CardPosition>[];
+  List<CardPosition> _getPositions(int count) {
+    final int layerCount = (count / 15).ceil() + 1; // 层级数量
+    final List<CardPosition> positions = <CardPosition>[];
 
     for (int z = 0; z < layerCount; z++) {
       final shrink = z * 0.08;
@@ -96,7 +91,7 @@ class ThreeTilesManager {
           cardVirtualSize -
           (boardVirtualHeight * shrink / 2);
 
-      final quota = (count / layerCount).ceil();
+      final quota = (count / layerCount).ceil(); // 每层配额
       for (int i = 0; i < quota && positions.length < count; i++) {
         final x = xMin + _random.nextDouble() * (xMax - xMin);
         final y = yMin + _random.nextDouble() * (yMax - yMin);
@@ -107,46 +102,112 @@ class ThreeTilesManager {
   }
 
   void _updateCardVisibility() {
-    for (int i = 0; i < cards.length; i++) {
+    final int cardCount = cards.length;
+    if (cardCount == 0) return;
+    if (cardCount == 1) {
+      cards.first.changeEnable(true);
+      return;
+    }
+
+    // 1. 预计算所有卡片的矩形区域和中心坐标（减少重复计算）
+    final List<Rect> cardRects = List.generate(cardCount, (i) {
       final card = cards[i];
-      final cardRect = Rect.fromLTWH(
+      return Rect.fromLTWH(
         card.position.x.toDouble(),
         card.position.y.toDouble(),
         cardVirtualSize,
         cardVirtualSize,
       );
+    });
 
-      bool isCovered = false;
-      for (int j = i + 1; j < cards.length; j++) {
-        final upper = cards[j];
-        final upperRect = Rect.fromLTWH(
-          upper.position.x.toDouble(),
-          upper.position.y.toDouble(),
-          cardVirtualSize,
-          cardVirtualSize,
-        );
-        if (upperRect.overlaps(cardRect)) {
-          isCovered = true;
-          break;
+    final List<Offset> centers = List.generate(
+      cardCount,
+      (i) => cardRects[i].center,
+    );
+    final double maxOverlapDistSquared = 2 * cardVirtualSize * cardVirtualSize;
+
+    // 2. 重置所有卡片状态（避免上次状态影响）
+    for (final card in cards) {
+      card.changeEnable(true);
+    }
+
+    // 3. 创建网格分区（网格大小设为卡片大小，减少跨网格检查）
+    final double gridSize = cardVirtualSize;
+    final Map<(int, int), List<int>> grid = {};
+
+    // 4. 所有卡片加入网格
+    for (int k = 0; k < cardCount; k++) {
+      final rect = cardRects[k];
+      // 计算卡片占据的网格范围
+      final int minGridX = (rect.left / gridSize).floor();
+      final int minGridY = (rect.top / gridSize).floor();
+      final int maxGridX = (rect.right / gridSize).floor();
+      final int maxGridY = (rect.bottom / gridSize).floor();
+
+      // 加入所有覆盖的网格
+      for (int gx = minGridX; gx <= maxGridX; gx++) {
+        for (int gy = minGridY; gy <= maxGridY; gy++) {
+          grid.putIfAbsent((gx, gy), () => []).add(k);
         }
       }
-      card.enable = !isCovered;
     }
-    cards.update();
+
+    // 5. 检查重叠（只检查同网格及相邻网格的上层卡片）
+    for (int i = 0; i < cardCount; i++) {
+      final currentCard = cards[i];
+      if (!currentCard.enable) continue; // 已被覆盖的卡片无需再检查
+
+      final currentRect = cardRects[i];
+      final currentCenter = centers[i];
+
+      // 计算当前卡片所在的网格范围
+      final int minGridX = (currentRect.left / gridSize).floor();
+      final int minGridY = (currentRect.top / gridSize).floor();
+      final int maxGridX = (currentRect.right / gridSize).floor();
+      final int maxGridY = (currentRect.bottom / gridSize).floor();
+
+      // 检查当前网格及相邻网格（3x3范围）
+      outerLoop:
+      for (int gx = minGridX - 1; gx <= maxGridX + 1; gx++) {
+        for (int gy = minGridY - 1; gy <= maxGridY + 1; gy++) {
+          final candidates = grid[(gx, gy)];
+          if (candidates == null) continue;
+
+          // 只检查上层卡片（j > i）
+          for (final j in candidates) {
+            if (j <= i) continue;
+
+            // 快速距离过滤
+            final dx = currentCenter.dx - centers[j].dx;
+            final dy = currentCenter.dy - centers[j].dy;
+            if (dx * dx + dy * dy > maxOverlapDistSquared) {
+              continue;
+            }
+
+            // 距离足够近时再检查实际重叠
+            if (currentRect.overlaps(cardRects[j])) {
+              currentCard.changeEnable(false);
+              break outerLoop;
+            }
+          }
+        }
+      }
+    }
   }
 
-  void selectCard(GameCard card) {
+  void selectCard(CardNotifier card) {
     if (_isGameOver || !card.enable) return;
     selectedCards.add(card);
     cards.remove(card);
     _updateCardVisibility();
     _checkForMatches();
+    if (cards.isEmpty) _handleGameOver(true);
     if (selectedCards.value.length >= 7) _handleGameOver(false);
   }
 
   void _checkForMatches() {
     if (selectedCards.value.length < 3) return;
-    final groups = <CardType, List<GameCard>>{};
+    final groups = <CardType, List<CardNotifier>>{};
     for (final c in selectedCards.value) {
       groups.putIfAbsent(c.type, () => []).add(c);
     }
@@ -155,8 +216,6 @@ class ThreeTilesManager {
         for (final c in group.take(3).toList()) {
           selectedCards.remove(c);
         }
-        _updateCardVisibility();
-        _checkVictory();
         return;
       }
     }
@@ -179,47 +238,48 @@ class ThreeTilesManager {
   }
 
   void _removeThreeRandomCards() {
-    final enableCards = cards.value.toList();
-    if (enableCards.length < 3) return;
-    enableCards.shuffle(_random);
-    for (final c in enableCards.take(3)) {
-      cards.remove(c);
+    for (int i = 0; i < 3 && cards.isNotEmpty; i++) {
+      cards.removeLast();
     }
     _updateCardVisibility();
-    _checkVictory();
   }
 
   void _reshuffleCards() {
-    final newPositions = _generateCardPositions(cards.length);
+    final newPositions = _getPositions(cards.length);
     for (int i = 0; i < cards.length; i++) {
-      cards[i].position = newPositions[i];
+      cards[i].changePosition(newPositions[i]);
     }
-    cards.update();
+
     _updateCardVisibility();
   }
 
   void _showHint() {
-    final visible = cards.value.where((c) => c.enable).toList();
-    final groups = <CardType, List<GameCard>>{};
-    for (final c in visible) {
-      groups.putIfAbsent(c.type, () => []).add(c);
-    }
-    final target = groups.values.cast<List<GameCard>?>().firstWhere(
-      (g) => g!.length >= 3,
-      orElse: () => null,
-    );
-    if (target == null) return;
-    for (final c in target.take(3)) {
-      c.hint = true;
-    }
-    cards.update();
-  }
+    if (cards.isEmpty) return;
 
-  void _checkVictory() {
-    if (cards.isEmpty) _handleGameOver(true);
+    // 获取最后一个卡片的类型
+    final targetType = cards.last.type;
+    final List<CardNotifier> matchedCards = [];
+
+    // 从后往前遍历卡片，寻找相同类型的卡片
+    for (int i = cards.length - 1; i >= 0; i--) {
+      final currentCard = cards[i];
+      if (currentCard.type == targetType) {
+        matchedCards.add(currentCard);
+        if (matchedCards.length >= 3) {
+          break;
+        }
+      }
+    }
+
+    // 高亮找到的卡片
+    for (final card in matchedCards) {
+      card.changeHint(true);
+    }
   }
 
   void _handleGameOver(bool victory) {
+    _isGameOver = true;
+    _timer.stop();
     _showGameOverDialog(victory);
   }
 
@@ -230,13 +290,22 @@ class ThreeTilesManager {
 
   void _showGameOverDialog(bool victory) {
     pageNavigator.value = (context) {
-      TemplateDialog.confirmDialog(
+      showDialog(
         context: context,
-        title: victory ? '恭喜通关！' : '游戏结束',
-        content: '用时: ${elapsed.value} 秒',
-        before: () => true,
-        onTap: () {},
-        after: _clearUp,
+        builder: (_) => AlertDialog(
+          title: const Text('游戏结束'),
+          content: Text(
+            victory ? '难度: ${_difficulty.label} 用时: ${elapsed.value} 秒' : '你输了',
+          ),
+          actions: [
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       );
     };
   }
@@ -262,9 +331,7 @@ class ThreeTilesManager {
       groupValue: _difficulty,
       onChanged: (Difficulty? value) {
         if (value == null) return;
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
+        Navigator.pop(context);
         _changeDifficulty(value);
       },
       child: Text(difficulty.label),
@@ -280,9 +347,7 @@ class ThreeTilesManager {
   void leavePage() {
     _clearUp();
     pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      Navigator.pop(context);
     };
   }
 

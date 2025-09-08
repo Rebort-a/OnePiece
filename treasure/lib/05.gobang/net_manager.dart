@@ -67,9 +67,7 @@ class NetManager extends FoundationalManager {
 
   void _navigateToBack() {
     pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      Navigator.pop(context);
     };
   }
 }

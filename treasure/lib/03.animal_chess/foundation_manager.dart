@@ -276,27 +276,21 @@ abstract class FoundationalManager {
       TextButton(
         child: const Text('退出'),
         onPressed: () {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
+          Navigator.pop(context);
           _navigateToBack();
         },
       ),
       TextButton(
         child: const Text('重开'),
         onPressed: () {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
+          Navigator.pop(context);
           _restart();
         },
       ),
       TextButton(
         child: const Text('取消'),
         onPressed: () {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
+          Navigator.pop(context);
         },
       ),
     ];
@@ -312,9 +306,7 @@ abstract class FoundationalManager {
 
   void _navigateToBack() {
     pageNavigator.value = (context) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      Navigator.pop(context);
     };
   }
 }

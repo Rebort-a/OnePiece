@@ -57,9 +57,7 @@ class TemplateDialog {
               TextButton(
                 child: const Text('关闭'),
                 onPressed: () {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.pop(context);
                 },
               ),
             ],
@@ -89,18 +87,14 @@ class TemplateDialog {
             actions: <Widget>[
               TextButton(
                 onPressed: () {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.pop(context);
                   onTap();
                 },
                 child: const Text('确认'),
               ),
               TextButton(
                 onPressed: () {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.pop(context);
                 },
                 child: const Text('取消'),
               ),
@@ -137,9 +131,7 @@ class TemplateDialog {
               child: Text(confirmButtonText),
               onPressed: () {
                 if (input.isNotEmpty) {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.pop(context);
                   onConfirm(input);
                 }
               },
@@ -147,9 +139,7 @@ class TemplateDialog {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
+                Navigator.pop(context);
               },
             ),
           ],
@@ -179,7 +169,7 @@ class TemplateDialog {
             children: [
               // 通用下拉框
               DropdownButtonFormField<T>(
-                value: selectedOption,
+                initialValue: selectedOption,
                 onChanged: (T? newValue) {
                   if (newValue != null) {
                     selectedOption = newValue;
@@ -208,9 +198,7 @@ class TemplateDialog {
               child: Text(confirmButtonText),
               onPressed: () {
                 if (input.isNotEmpty) {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.pop(context);
                   onConfirm(input, selectedOption);
                 }
               },
@@ -218,9 +206,7 @@ class TemplateDialog {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
+                Navigator.pop(context);
               },
             ),
           ],
@@ -267,9 +253,7 @@ class TemplateDialog {
               child: Text("确定"),
               onPressed: () {
                 onConfirm(sliderData.value);
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
+                Navigator.pop(context);
               },
             ),
 
@@ -318,9 +302,7 @@ class TemplateDialog {
               child: Text("确定"),
               onPressed: () {
                 onConfirm(sliderData.value);
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
+                Navigator.pop(context);
               },
             ),
 
