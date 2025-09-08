@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'elemental.dart';
-import '../foundation/energy.dart';
-import '../foundation/skill.dart';
+import '../base/energy.dart';
+import '../base/skill.dart';
 
 class ElementalDialog {
   static void showSelectEnergyDialog({

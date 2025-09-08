@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:treasure/04.elemental_battle/foundation/energy.dart';
+import 'package:treasure/04.elemental_battle/base/energy.dart';
 
 import '../../00.common/component/template_dialog.dart';
-import '../middleware/player.dart';
-import '../foundation/skill.dart';
+import '../middle/player.dart';
+import '../base/skill.dart';
 
 class SkillsPage extends StatefulWidget {
   final NormalPlayer player;

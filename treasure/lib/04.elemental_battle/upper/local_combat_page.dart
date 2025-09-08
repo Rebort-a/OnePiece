@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../00.common/game/gamer.dart';
 import '../../00.common/component/notifier_navigator.dart';
-import '../middleware/foundation_combat_widget.dart';
-import '../middleware/elemental.dart';
+import '../middle/foundation_combat_widget.dart';
+import '../middle/elemental.dart';
 import 'local_combat_manager.dart';
 
 class LocalCombatPage extends StatelessWidget {

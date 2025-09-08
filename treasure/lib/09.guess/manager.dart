@@ -6,37 +6,38 @@ import '../00.common/tool/timer_counter.dart';
 import 'base.dart';
 
 class GuessManager {
-  final TimerCounter _timerCounter = TimerCounter(
-    const Duration(seconds: 1),
-    (_) {},
-  );
-  int _itemCount = 6;
+  late final TimerCounter _timer; // 计时器
 
-  late bool _isGameOver;
+  int _difficulty = 6;
+  bool _isGameOver = false;
+
   final ListNotifier<String> correctItems = ListNotifier([]);
   final ListNotifier<String> guessItems = ListNotifier([]);
   final ListNotifier<String> markItems = ListNotifier([]);
   final ValueNotifier<int> selectedItem = ValueNotifier(-1);
-  final ValueNotifier<String> display = ValueNotifier('');
+  final ValueNotifier<String> displayInfo = ValueNotifier('');
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
 
   GuessManager() {
+    _initTimer();
     _initGame();
   }
 
-  int get itemCount => _itemCount;
+  void _initTimer() {
+    _timer = TimerCounter(const Duration(seconds: 1), (_) {});
+  }
 
   void _initGame() {
     correctItems.value = (List<String>.from(
       guessItem,
-    )..shuffle()).take(_itemCount).toList();
+    )..shuffle()).take(_difficulty).toList();
     guessItems.value = List.from(correctItems.value)..shuffle();
-    markItems.value = List.filled(_itemCount, MarkType.unknown.emoji);
+    markItems.value = List.filled(_difficulty, MarkType.unknown.emoji);
+    displayInfo.value = _displayText;
+    _timer.start();
     _isGameOver = false;
-    display.value = _displayText;
-    _timerCounter.start();
   }
 
   void resetGame() {
@@ -44,8 +45,8 @@ class GuessManager {
   }
 
   void _changeDifficulty(int value) {
-    if (value != _itemCount) {
-      _itemCount = value;
+    if (value != _difficulty) {
+      _difficulty = value;
       resetGame();
     }
   }
@@ -58,7 +59,7 @@ class GuessManager {
       sliderData: IntSliderData(
         start: 4,
         end: guessItem.length,
-        value: _itemCount,
+        value: _difficulty,
         step: 1,
       ),
       onConfirm: _changeDifficulty,
@@ -82,22 +83,22 @@ class GuessManager {
     guessItems[i] = guessItems[j];
     guessItems[j] = temp;
     selectedItem.value = -1;
-    if (_correctCount == _itemCount) {
+    if (_correctCount == _difficulty) {
       _handleGameOver();
     } else {
-      display.value = _displayText;
+      displayInfo.value = _displayText;
     }
   }
 
   void _handleGameOver() {
+    _timer.stop();
     _isGameOver = true;
-    display.value = _displayText;
+    displayInfo.value = _displayText;
     markItems.value = List.from(guessItems.value);
-    _timerCounter.stop();
   }
 
   String get _displayText => _isGameOver
-      ? 'Time Taken: ${_timerCounter.tick} seconds'
+      ? 'Time Taken: ${_timer.tick} seconds'
       : 'Correct Count: $_correctCount';
 
   int get _correctCount {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:treasure/04.elemental_battle/foundation/energy.dart';
+import 'package:treasure/04.elemental_battle/base/energy.dart';
 
-import '../foundation/effect.dart';
-import '../middleware/elemental.dart';
-import '../middleware/player.dart';
+import '../base/effect.dart';
+import '../middle/elemental.dart';
+import '../middle/player.dart';
 
 class StatusPage extends StatefulWidget {
   final Elemental elemental;

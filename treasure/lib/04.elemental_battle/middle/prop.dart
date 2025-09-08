@@ -4,7 +4,7 @@ import '../../00.common/image/entity.dart';
 
 import 'elemental.dart';
 import 'dialog.dart';
-import '../foundation/energy.dart';
+import '../base/energy.dart';
 
 class MapProp {
   final EntityType id;

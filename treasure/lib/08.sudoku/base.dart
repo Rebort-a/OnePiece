@@ -7,64 +7,94 @@ enum CellType {
   editable, // 可更改，可以填入多个数字
 }
 
-// 数独格子数据模型
+// 数独格子数据模型（属性全部私有）
 class SudokuCell {
-  final int row;
-  final int col;
-  CellType type;
-  int fixedDigit;
-  final List<int> spareDigits = [];
+  final int _row;
+  final int _col;
+  CellType _type;
+  int _fixedDigit;
+  final List<int> _spareDigits = [];
+  bool _hint;
 
   SudokuCell({
-    required this.row,
-    required this.col,
-    required this.type,
-    this.fixedDigit = 0,
-  });
+    required int row,
+    required int col,
+    required CellType type,
+    int fixedDigit = 0,
+    bool hint = false,
+  }) : _row = row,
+       _col = col,
+       _type = type,
+       _fixedDigit = fixedDigit,
+       _hint = hint;
 }
 
-// 单元格状态管理类（统一管理所有类型的单元格）
+// 单元格状态管理类（提供所有操作接口）
 class CellNotifier extends ValueNotifier<SudokuCell> {
   CellNotifier(super.value);
 
+  // 提供属性访问接口
+  int get row => value._row;
+  int get col => value._col;
+  CellType get type => value._type;
+  int get fixedDigit => value._fixedDigit;
+  List<int> get spareDigits => List.unmodifiable(value._spareDigits);
+  bool get hint => value._hint;
+
   void addDigit(int digit) {
-    if (value.type == CellType.editable) {
-      if (!value.spareDigits.contains(digit)) {
-        value.spareDigits.add(digit);
-        value.spareDigits.sort(); // 排序
+    if (value._type == CellType.editable && digit >= 1 && digit <= 9) {
+      if (!value._spareDigits.contains(digit)) {
+        value._spareDigits.add(digit);
+        value._spareDigits.sort();
         notifyListeners();
       }
     }
   }
 
   void removeDigit(int digit) {
-    if (value.type == CellType.editable) {
-      if (value.spareDigits.contains(digit)) {
-        value.spareDigits.remove(digit);
+    if (value._type == CellType.editable) {
+      if (value._spareDigits.contains(digit)) {
+        value._spareDigits.remove(digit);
         notifyListeners();
       }
     }
   }
 
   void clearDigits() {
-    if (value.type == CellType.editable) {
-      value.spareDigits.clear();
+    if (value._type == CellType.editable) {
+      value._spareDigits.clear();
       notifyListeners();
     }
   }
 
   void lock() {
-    if (value.type == CellType.editable && value.spareDigits.length == 1) {
-      value.fixedDigit = value.spareDigits.first;
-      value.type = CellType.locked;
+    if (value._type == CellType.editable && value._spareDigits.length == 1) {
+      value._fixedDigit = value._spareDigits.first;
+      value._type = CellType.locked;
       notifyListeners();
     }
   }
 
   void unlock() {
-    if (value.type == CellType.locked) {
-      value.fixedDigit = 0;
-      value.type = CellType.editable;
+    if (value._type == CellType.locked) {
+      value._spareDigits.add(value._fixedDigit);
+      value._fixedDigit = 0;
+      value._type = CellType.editable;
+      notifyListeners();
+    }
+  }
+
+  void changeHint(bool hint) {
+    if (value._hint != hint) {
+      value._hint = hint;
+      notifyListeners();
+    }
+  }
+
+  // 新增：设置固定数字（用于初始化）
+  void setFixedDigit(int digit) {
+    if (value._type == CellType.fixed && digit >= 0 && digit <= 9) {
+      value._fixedDigit = digit;
       notifyListeners();
     }
   }

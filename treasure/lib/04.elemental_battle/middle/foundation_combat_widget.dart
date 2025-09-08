@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../foundation/energy.dart';
+import '../base/energy.dart';
 import 'foundation_combat_manager.dart';
 
-import '../middleware/elemental.dart';
+import 'elemental.dart';
 import 'common.dart';
 
 class FoundationalCombatWidget {

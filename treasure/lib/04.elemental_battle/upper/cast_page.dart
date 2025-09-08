@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../foundation/energy.dart';
-import '../foundation/skill.dart';
-import '../middleware/elemental.dart';
+import '../base/energy.dart';
+import '../base/skill.dart';
+import '../middle/elemental.dart';
 
 class CastPage extends StatefulWidget {
   final int totalPoints;

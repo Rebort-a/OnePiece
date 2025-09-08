@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:treasure/00.common/game/gamer.dart';
 
-import '../middleware/foundation_combat_manager.dart';
-import '../middleware/common.dart';
-import '../middleware/elemental.dart';
-import '../foundation/skill.dart';
+import '../middle/foundation_combat_manager.dart';
+import '../middle/common.dart';
+import '../middle/elemental.dart';
+import '../base/skill.dart';
 
 class LocalCombatManager extends FoundationalCombatManager {
   final _random = Random();

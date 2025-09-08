@@ -8,12 +8,12 @@ import '../../00.common/game/step.dart';
 import '../../00.common/network/network_message.dart';
 import '../../00.common/network/network_room.dart';
 
-import '../middleware/foundation_combat_manager.dart';
-import '../middleware/elemental.dart';
-import '../foundation/energy.dart';
+import '../middle/foundation_combat_manager.dart';
+import '../middle/elemental.dart';
+import '../base/energy.dart';
 
-import '../middleware/common.dart';
-import '../foundation/skill.dart';
+import '../middle/common.dart';
+import '../base/skill.dart';
 
 import '../upper/cast_page.dart';
 import '../upper/status_page.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../middleware/prop.dart';
-import '../middleware/player.dart';
+import '../middle/prop.dart';
+import '../middle/player.dart';
 
 class PackagePage extends StatefulWidget {
   final NormalPlayer player;

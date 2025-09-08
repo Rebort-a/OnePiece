@@ -48,7 +48,7 @@ class GuessPage extends StatelessWidget {
       children: [
         NotifierNavigator(navigatorHandler: _manager.pageNavigator),
         _buildDisplayArea(),
-        _buildGuessArea(),
+        _buildBoardArea(),
       ],
     );
   }
@@ -56,7 +56,7 @@ class GuessPage extends StatelessWidget {
   /// 1. 文本显示区
   Widget _buildDisplayArea() {
     return ValueListenableBuilder<String>(
-      valueListenable: _manager.display,
+      valueListenable: _manager.displayInfo,
       builder: (_, value, __) => Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
@@ -67,22 +67,20 @@ class GuessPage extends StatelessWidget {
     );
   }
 
-  /// 2. 猜物品区
-  Widget _buildGuessArea() {
+  /// 2. 棋牌区
+  Widget _buildBoardArea() {
     return Expanded(
-      // ① 占满剩余空间
       child: Center(
-        // ② 让整个内容在主轴+交叉轴都居中
         child: SingleChildScrollView(
           child: ValueListenableBuilder<List<String>>(
             valueListenable: _manager.correctItems,
             builder: (_, correctItems, __) => Wrap(
               spacing: 24,
               runSpacing: 24,
-              alignment: WrapAlignment.center, // ③ 行内居中
+              alignment: WrapAlignment.center,
               children: List.generate(
                 correctItems.length,
-                (index) => _buildOnePair(index), // ④ 抽出来
+                (index) => _buildOnePair(index),
               ),
             ),
           ),
@@ -116,16 +114,14 @@ class GuessPage extends StatelessWidget {
       valueListenable: _manager.selectedItem,
       builder: (_, selectedIndices, __) {
         final isSelected = index == selectedIndices;
-        return
-        // 可点击的卡片（带动画）
-        GestureDetector(
+        return GestureDetector(
           onTap: () => _manager.guessSelect(index),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             transitionBuilder: (child, animation) =>
                 FadeTransition(opacity: animation, child: child),
             child: Card(
-              key: ValueKey('$index-$emoji'),
+              key: ValueKey(emoji),
               elevation: 4,
               color: isSelected ? Colors.blue[200] : Colors.grey[200],
               child: Padding(
@@ -143,7 +139,6 @@ class GuessPage extends StatelessWidget {
   }
 
   Widget _buildMarkCard(int index, String emoji) {
-    // 可点击的卡
     return GestureDetector(
       onTap: () => _manager.markSelect(index),
       child: Card(

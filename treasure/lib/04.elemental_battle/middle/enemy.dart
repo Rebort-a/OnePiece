@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import '../../00.common/image/entity.dart';
-import '../foundation/energy.dart';
+import '../base/energy.dart';
 import 'elemental.dart';
 
 class RandomEnemy extends ElementalEntity {

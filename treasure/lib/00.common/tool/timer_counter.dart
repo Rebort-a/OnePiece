@@ -39,4 +39,16 @@ class TimerCounter {
 
   /// 释放资源
   void dispose() => stop();
+
+  static String formatDuration(int totalSeconds) {
+    int hours = totalSeconds ~/ 3600;
+    int remainingSeconds = totalSeconds % 3600;
+    int minutes = remainingSeconds ~/ 60;
+    int seconds = remainingSeconds % 60;
+
+    // 格式化确保两位数显示
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
 }

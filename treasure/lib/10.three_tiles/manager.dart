@@ -283,11 +283,6 @@ class Manager {
     _showGameOverDialog(victory);
   }
 
-  void restartGame() {
-    _clearUp();
-    _initGame();
-  }
-
   void _showGameOverDialog(bool victory) {
     pageNavigator.value = (context) {
       showDialog(
@@ -339,8 +334,14 @@ class Manager {
   }
 
   void _changeDifficulty(Difficulty d) {
+    if (d != _difficulty) {
+      _difficulty = d;
+      restartGame();
+    }
+  }
+
+  void restartGame() {
     _clearUp();
-    _difficulty = d;
     _initGame();
   }
 

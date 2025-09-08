@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 
 import '../../00.common/game/map.dart';
 import '../../00.common/image/entity.dart';
-import '../foundation/effect.dart';
-import '../foundation/energy.dart';
-import '../foundation/skill.dart';
+import '../base/effect.dart';
+import '../base/energy.dart';
+import '../base/skill.dart';
 
 mixin EnergyConfigMixin {
   bool aptitude = true;

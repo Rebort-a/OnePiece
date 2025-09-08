@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../00.common/component/template_dialog.dart';
-import '../middleware/prop.dart';
-import '../middleware/player.dart';
+import '../middle/prop.dart';
+import '../middle/player.dart';
 
 class StorePage extends StatefulWidget {
   final NormalPlayer player;

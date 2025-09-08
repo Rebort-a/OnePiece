@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../00.common/component/notifier_navigator.dart';
 import 'base.dart';
-import 'local_manager.dart';
+import 'manager.dart';
 
 class SudokuPage extends StatelessWidget {
-  final SudokuManager manager = SudokuManager();
+  final Manager _manager = Manager();
 
   SudokuPage({super.key});
 
@@ -13,7 +13,7 @@ class SudokuPage extends StatelessWidget {
   Widget build(BuildContext context) => PopScope(
     canPop: false,
     onPopInvokedWithResult: (bool didPop, Object? result) {
-      manager.leavePage();
+      _manager.leavePage();
     },
     child: _buildPage(),
   );
@@ -27,17 +27,17 @@ class SudokuPage extends StatelessWidget {
       title: const Text('Sudoku'),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
-        onPressed: manager.leavePage,
+        onPressed: _manager.leavePage,
       ),
       centerTitle: true,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
-          onPressed: manager.resetGame,
+          onPressed: _manager.resetGame,
         ),
         IconButton(
           icon: const Icon(Icons.tune),
-          onPressed: manager.showSelector,
+          onPressed: _manager.showSelector,
         ),
       ],
     );
@@ -46,104 +46,57 @@ class SudokuPage extends StatelessWidget {
   Widget _buildBody() {
     return Column(
       children: [
-        NotifierNavigator(navigatorHandler: manager.pageNavigator),
-        Expanded(flex: 1, child: _buildTimer()),
-        Expanded(flex: 8, child: _buildBoard()),
+        NotifierNavigator(navigatorHandler: _manager.pageNavigator),
+        Expanded(flex: 1, child: _buildDisplayArea()),
+        Expanded(flex: 8, child: _buildBoardArea()),
         Expanded(flex: 4, child: _buildInputArea()),
       ],
     );
   }
 
   /// 构建计时器组件
-  Widget _buildTimer() {
+  Widget _buildDisplayArea() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: AnimatedBuilder(
-        animation: manager,
-        builder: (context, _) => Center(
-          child: Text(
-            manager.displayString,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+      child: ValueListenableBuilder<String>(
+        valueListenable: _manager.displayInfo,
+        builder: (_, info, __) => Text(
+          info,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
-  Widget _buildBoard() {
-    return AnimatedBuilder(
-      animation: manager,
-      builder: (_, _) => SudokuBoardView(manager: manager),
-    );
-  }
-
-  /// 构建数字输入区域
-  Widget _buildInputArea() {
-    return AnimatedBuilder(
-      animation: manager,
-      builder: (context, _) {
-        final selectedCell = manager.selectedCell;
-        if (selectedCell == null || selectedCell.value.type == CellType.fixed) {
-          return const SizedBox.shrink();
-        }
-
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Expanded(flex: 3, child: NumberCards(manager: manager)),
-              Expanded(flex: 4, child: NumberKeyboard(manager: manager)),
-              Spacer(flex: 1),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 数独棋盘视图
-class SudokuBoardView extends StatelessWidget {
-  final SudokuManager manager;
-
-  const SudokuBoardView({super.key, required this.manager});
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.0,
-      child: Center(
+  Widget _buildBoardArea() {
+    return Center(
+      child: AspectRatio(
+        aspectRatio: 1.0,
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.black, width: 2),
           ),
           child: ValueListenableBuilder(
-            valueListenable: manager.cells,
-            builder: (_, value, __) => LayoutBuilder(
+            valueListenable: _manager.cells,
+            builder: (_, cells, __) => LayoutBuilder(
               builder: (context, constraints) {
                 final size = _calculateBoardSize(constraints.maxWidth);
                 return SizedBox(
                   width: size,
                   height: size,
                   child: GridView.count(
-                    crossAxisCount: manager.boardSize,
+                    crossAxisCount: _manager.boardSize,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
                     children: List.generate(
-                      manager.boardSize * manager.boardSize,
-                      (index) => _buildCell(value[index]),
+                      _manager.boardSize * _manager.boardSize,
+                      (index) => CellWidget(
+                        cell: cells[index],
+                        boardLevel: _manager.boardLevel,
+                        onTap: () {
+                          _manager.selectCell(index);
+                        },
+                      ),
                     ),
                   ),
                 );
@@ -157,15 +110,53 @@ class SudokuBoardView extends StatelessWidget {
 
   /// 计算棋盘尺寸
   double _calculateBoardSize(double maxWidth) =>
-      (maxWidth ~/ manager.boardSize) * manager.boardSize.toDouble();
+      (maxWidth ~/ _manager.boardSize) * _manager.boardSize.toDouble();
 
-  /// 构建单元格组件
-  Widget _buildCell(CellNotifier cell) {
-    return CellWidget(
-      cell: cell,
-      boardLevel: manager.boardLevel,
-      isSelected: manager.selectedCell == cell,
-      onTap: () => manager.selectCell(cell),
+  /// 构建数字输入区域
+  Widget _buildInputArea() {
+    return ValueListenableBuilder<int>(
+      valueListenable: _manager.selectedCellIndex,
+      builder: (context, index, _) {
+        if (index == -1) return const SizedBox.shrink();
+
+        if (_manager.selectedCell.type == CellType.fixed) {
+          return const SizedBox.shrink();
+        } else {
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: NumberCards(
+                    cell: _manager.selectedCell,
+                    onLock: _manager.checkCompleted,
+                  ),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: NumberKeyboard(cell: _manager.selectedCell),
+                ),
+                Spacer(flex: 1),
+              ],
+            ),
+          );
+        }
+      },
     );
   }
 }
@@ -174,14 +165,12 @@ class SudokuBoardView extends StatelessWidget {
 class CellWidget extends StatelessWidget {
   final CellNotifier cell;
   final int boardLevel;
-  final bool isSelected;
   final VoidCallback onTap;
 
   const CellWidget({
     super.key,
     required this.cell,
     required this.boardLevel,
-    required this.isSelected,
     required this.onTap,
   });
 
@@ -191,10 +180,10 @@ class CellWidget extends StatelessWidget {
       valueListenable: cell,
       builder: (_, value, __) => Container(
         decoration: BoxDecoration(
-          border: _buildCellBorder(value.row, value.col),
-          color: _getCellBgColor(value.row, value.col),
+          border: _buildCellBorder(cell.row, cell.col),
+          color: _getCellBgColor(cell.row, cell.col),
         ),
-        child: InkWell(onTap: onTap, child: _buildCellContent(value)),
+        child: InkWell(onTap: onTap, child: _buildCellContent(cell)),
       ),
     );
   }
@@ -222,14 +211,14 @@ class CellWidget extends StatelessWidget {
 
   /// 获取单元格背景色
   Color _getCellBgColor(int row, int col) {
-    if (isSelected) return Colors.blue[50]!;
+    if (cell.hint) return Colors.blue[50]!;
     final blockRow = row ~/ boardLevel;
     final blockCol = col ~/ boardLevel;
     return (blockRow + blockCol) % 2 == 0 ? Colors.grey[100]! : Colors.white;
   }
 
   /// 构建单元格内容
-  Widget _buildCellContent(SudokuCell cellData) {
+  Widget _buildCellContent(CellNotifier cellData) {
     switch (cellData.type) {
       case CellType.fixed:
         return _buildFixedCell(cellData.fixedDigit);
@@ -304,42 +293,48 @@ class CellWidget extends StatelessWidget {
 
 /// 已选数字卡片区域
 class NumberCards extends StatelessWidget {
-  final SudokuManager manager;
+  final CellNotifier cell;
+  final VoidCallback onLock;
 
-  const NumberCards({super.key, required this.manager});
+  const NumberCards({super.key, required this.cell, required this.onLock});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ValueListenableBuilder(
-        valueListenable: manager.selectedCell!,
-        builder: (_, value, _) => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 锁定/解锁按钮
-              if (value.type == CellType.editable &&
-                  value.spareDigits.length == 1)
-                IconButton(
-                  icon: const Icon(Icons.lock_open),
-                  onPressed: manager.lock,
-                ),
-              if (value.type == CellType.locked)
-                IconButton(
-                  icon: const Icon(Icons.lock),
-                  onPressed: manager.unlock,
-                ),
+    return ValueListenableBuilder<SudokuCell>(
+      valueListenable: cell,
+      builder: (_, value, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 锁定/解锁按钮
+                if (cell.type == CellType.editable &&
+                    cell.spareDigits.length == 1)
+                  IconButton(
+                    icon: const Icon(Icons.lock_open),
+                    onPressed: () {
+                      cell.lock();
+                      onLock();
+                    },
+                  ),
+                if (cell.type == CellType.locked)
+                  IconButton(
+                    icon: const Icon(Icons.lock),
+                    onPressed: cell.unlock,
+                  ),
 
-              // 候选数字标签
-              ...value.spareDigits.map(
-                (int num) => _buildNumberChip(context, num),
-              ),
-            ],
+                // 候选数字标签
+                ...cell.spareDigits.map(
+                  (int num) => _buildNumberChip(context, num),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -348,7 +343,7 @@ class NumberCards extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: GestureDetector(
-        onTap: () => manager.removeDigit(number),
+        onTap: () => cell.removeDigit(number),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -371,9 +366,9 @@ class NumberCards extends StatelessWidget {
 
 /// 数字键盘组件
 class NumberKeyboard extends StatelessWidget {
-  final SudokuManager manager;
+  final CellNotifier cell;
 
-  const NumberKeyboard({super.key, required this.manager});
+  const NumberKeyboard({super.key, required this.cell});
 
   @override
   Widget build(BuildContext context) {
@@ -384,12 +379,12 @@ class NumberKeyboard extends StatelessWidget {
         runSpacing: 8,
         alignment: WrapAlignment.center,
         children: [
-          _buildKeyboardButton("CE", () => manager.clearDigits()),
+          _buildKeyboardButton("CE", () => cell.clearDigits()),
           ...List.generate(
             9,
             (i) => _buildKeyboardButton(
               (i + 1).toString(),
-              () => manager.addDigit(i + 1),
+              () => cell.addDigit(i + 1),
             ),
           ),
         ],
