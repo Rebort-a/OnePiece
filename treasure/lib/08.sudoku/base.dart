@@ -41,6 +41,9 @@ class CellNotifier extends ValueNotifier<SudokuCell> {
   List<int> get spareDigits => List.unmodifiable(value._spareDigits);
   bool get hint => value._hint;
 
+  bool get canLock =>
+      value._type == CellType.editable && value._spareDigits.length == 1;
+
   void addDigit(int digit) {
     if (value._type == CellType.editable && digit >= 1 && digit <= 9) {
       if (!value._spareDigits.contains(digit)) {
@@ -68,7 +71,7 @@ class CellNotifier extends ValueNotifier<SudokuCell> {
   }
 
   void lock() {
-    if (value._type == CellType.editable && value._spareDigits.length == 1) {
+    if (canLock) {
       value._fixedDigit = value._spareDigits.first;
       value._type = CellType.locked;
       notifyListeners();
@@ -77,7 +80,6 @@ class CellNotifier extends ValueNotifier<SudokuCell> {
 
   void unlock() {
     if (value._type == CellType.locked) {
-      value._spareDigits.add(value._fixedDigit);
       value._fixedDigit = 0;
       value._type = CellType.editable;
       notifyListeners();

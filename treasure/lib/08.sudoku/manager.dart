@@ -169,6 +169,7 @@ class Manager {
 
   /// 重置游戏
   void resetGame() {
+    clearSelectedCell();
     _initGame();
   }
 

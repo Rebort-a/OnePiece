@@ -316,8 +316,7 @@ class NumberCards extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // 锁定/解锁按钮
-                if (cell.type == CellType.editable &&
-                    cell.spareDigits.length == 1)
+                if (cell.canLock)
                   IconButton(
                     icon: const Icon(Icons.lock_open),
                     onPressed: () {
