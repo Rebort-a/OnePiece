@@ -89,7 +89,7 @@ class ThreeTilesPage extends StatelessWidget {
                     columnCount: 6,
                     rowCount: 8,
                     lineColor: Colors.grey[300]!,
-                    lineWidth: 4.0,
+                    lineWidth: 2.0,
                   ),
                 ),
 

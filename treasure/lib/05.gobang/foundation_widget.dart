@@ -10,7 +10,7 @@ class FoundationalWidget extends StatelessWidget {
   const FoundationalWidget({super.key, required this.manager});
 
   @override
-  Widget build(BuildContext context) => _buildChessBoard();
+  Widget build(BuildContext context) => Center(child: _buildChessBoard());
 
   Widget _buildChessBoard() => AspectRatio(
     aspectRatio: 1.0,

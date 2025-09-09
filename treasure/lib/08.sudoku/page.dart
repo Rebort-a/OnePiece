@@ -71,35 +71,40 @@ class SudokuPage extends StatelessWidget {
   Widget _buildBoardArea() => Center(
     child: AspectRatio(
       aspectRatio: 1,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.black, width: 2),
-        ),
-        child: ValueListenableBuilder(
-          valueListenable: _manager.cells,
-          builder: (_, cells, __) => LayoutBuilder(
-            builder: (context, constraints) {
-              final size = _calculateBoardSize(constraints, _manager.boardSize);
-              return SizedBox(
-                width: size,
-                height: size,
-                child: GridView.count(
-                  crossAxisCount: _manager.boardSize,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: List.generate(
-                    _manager.boardSize * _manager.boardSize,
-                    (index) => CellWidget(
-                      cell: cells[index],
-                      boardLevel: _manager.boardLevel,
-                      onTap: () {
-                        _manager.selectCell(index);
-                      },
+      child: Center(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 2),
+          ),
+          child: ValueListenableBuilder(
+            valueListenable: _manager.cells,
+            builder: (_, cells, __) => LayoutBuilder(
+              builder: (context, constraints) {
+                final size = _calculateBoardSize(
+                  constraints,
+                  _manager.boardSize,
+                );
+                return SizedBox(
+                  width: size,
+                  height: size,
+                  child: GridView.count(
+                    crossAxisCount: _manager.boardSize,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: List.generate(
+                      _manager.boardSize * _manager.boardSize,
+                      (index) => CellWidget(
+                        cell: cells[index],
+                        boardLevel: _manager.boardLevel,
+                        onTap: () {
+                          _manager.selectCell(index);
+                        },
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
