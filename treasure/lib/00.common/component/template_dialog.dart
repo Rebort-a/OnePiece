@@ -244,11 +244,6 @@ class TemplateDialog {
                             .clamp(sliderData.start, sliderData.end);
                       });
                     },
-                    style: ElevatedButton.styleFrom(
-                      shape: CircleBorder(),
-                      padding: EdgeInsets.all(10),
-                      minimumSize: Size(40, 40),
-                    ),
                     icon: const Icon(Icons.remove_circle),
                   ),
 
@@ -276,11 +271,6 @@ class TemplateDialog {
                             .clamp(sliderData.start, sliderData.end);
                       });
                     },
-                    style: ElevatedButton.styleFrom(
-                      shape: CircleBorder(),
-                      padding: EdgeInsets.all(10),
-                      minimumSize: Size(40, 40),
-                    ),
                     icon: const Icon(Icons.add_circle),
                   ),
                 ],
@@ -331,11 +321,6 @@ class TemplateDialog {
                             .clamp(sliderData.start, sliderData.end);
                       });
                     },
-                    style: ElevatedButton.styleFrom(
-                      shape: CircleBorder(),
-                      padding: EdgeInsets.all(10),
-                      minimumSize: Size(40, 40),
-                    ),
                     icon: const Icon(Icons.remove),
                   ),
 
@@ -363,11 +348,6 @@ class TemplateDialog {
                             .clamp(sliderData.start, sliderData.end);
                       });
                     },
-                    style: ElevatedButton.styleFrom(
-                      shape: CircleBorder(),
-                      padding: EdgeInsets.all(10),
-                      minimumSize: Size(40, 40),
-                    ),
                     // icon: const Icon(Icons.add_circle),
                     icon: const Icon(Icons.add),
                   ),
