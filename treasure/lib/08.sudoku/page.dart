@@ -68,49 +68,49 @@ class SudokuPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBoardArea() {
-    return Center(
-      child: AspectRatio(
-        aspectRatio: 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black, width: 2),
-          ),
-          child: ValueListenableBuilder(
-            valueListenable: _manager.cells,
-            builder: (_, cells, __) => LayoutBuilder(
-              builder: (context, constraints) {
-                final size = _calculateBoardSize(constraints.maxWidth);
-                return SizedBox(
-                  width: size,
-                  height: size,
-                  child: GridView.count(
-                    crossAxisCount: _manager.boardSize,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    children: List.generate(
-                      _manager.boardSize * _manager.boardSize,
-                      (index) => CellWidget(
-                        cell: cells[index],
-                        boardLevel: _manager.boardLevel,
-                        onTap: () {
-                          _manager.selectCell(index);
-                        },
-                      ),
+  Widget _buildBoardArea() => Center(
+    child: AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black, width: 2),
+        ),
+        child: ValueListenableBuilder(
+          valueListenable: _manager.cells,
+          builder: (_, cells, __) => LayoutBuilder(
+            builder: (context, constraints) {
+              final size = _calculateBoardSize(constraints, _manager.boardSize);
+              return SizedBox(
+                width: size,
+                height: size,
+                child: GridView.count(
+                  crossAxisCount: _manager.boardSize,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: List.generate(
+                    _manager.boardSize * _manager.boardSize,
+                    (index) => CellWidget(
+                      cell: cells[index],
+                      boardLevel: _manager.boardLevel,
+                      onTap: () {
+                        _manager.selectCell(index);
+                      },
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 
   /// 计算棋盘尺寸
-  double _calculateBoardSize(double maxWidth) =>
-      (maxWidth ~/ _manager.boardSize) * _manager.boardSize.toDouble();
+  double _calculateBoardSize(BoxConstraints constraints, int boardSize) {
+    final double maxSize = constraints.maxWidth;
+    return (maxSize ~/ boardSize) * boardSize.toDouble();
+  }
 
   /// 构建数字输入区域
   Widget _buildInputArea() {
@@ -151,7 +151,7 @@ class SudokuPage extends StatelessWidget {
                   flex: 4,
                   child: NumberKeyboard(cell: _manager.selectedCell),
                 ),
-                Spacer(flex: 1),
+                const Spacer(flex: 1),
               ],
             ),
           );

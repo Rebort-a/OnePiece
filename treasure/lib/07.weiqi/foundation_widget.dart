@@ -12,46 +12,45 @@ class GoFoundationWidget extends StatelessWidget {
 
   Widget _buildBoard() => AspectRatio(
     aspectRatio: 1.0,
-    child: Center(
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFE6B87D),
-          border: Border.all(color: const Color(0xFF8B4513), width: 2),
-        ),
-        child: ValueListenableBuilder(
-          valueListenable: manager.board.grids,
-          builder: (context, grids, _) {
-            if (grids.isEmpty) {
-              return const Text('棋盘数据为空');
-            }
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                // 棋盘配置参数
-                final int size = manager.board.size;
-                final double boardSize = constraints.biggest.shortestSide;
-                final double cellSize = boardSize / size;
-                final double offset = cellSize / 2;
-                final double stoneRadius = cellSize * 0.45;
+    child: Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6B87D),
+        border: Border.all(color: const Color(0xFF8B4513), width: 2),
+      ),
+      child: ValueListenableBuilder(
+        valueListenable: manager.board.grids,
+        builder: (context, grids, _) {
+          if (grids.isEmpty) {
+            return const Text('棋盘数据为空');
+          }
 
-                // 构建棋盘元素
-                return Stack(
-                  children: [
-                    ..._buildGridLines(size, cellSize, offset),
-                    ..._buildStarPoints(size, cellSize, offset),
-                    ..._buildAllStones(
-                      grids,
-                      size,
-                      cellSize,
-                      offset,
-                      stoneRadius,
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // 棋盘配置参数
+              final int size = manager.board.size;
+              final double boardSize = constraints.biggest.shortestSide;
+              final double cellSize = boardSize / size;
+              final double offset = cellSize / 2;
+              final double stoneRadius = cellSize * 0.45;
+
+              // 构建棋盘元素
+              return Stack(
+                children: [
+                  ..._buildGridLines(size, cellSize, offset),
+                  ..._buildStarPoints(size, cellSize, offset),
+                  ..._buildAllStones(
+                    grids,
+                    size,
+                    cellSize,
+                    offset,
+                    stoneRadius,
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
     ),
   );
