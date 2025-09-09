@@ -234,17 +234,56 @@ class TemplateDialog {
                 style: TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 20),
-              Slider(
-                value: sliderData.value,
-                min: sliderData.start,
-                max: sliderData.end,
-                divisions: sliderData.divisions,
-                label: sliderData.value.toStringAsFixed(2),
-                onChanged: (value) {
-                  setState(() {
-                    sliderData.value = value;
-                  });
-                },
+              Row(
+                children: [
+                  // 减号按钮
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        sliderData.value = (sliderData.value - sliderData.step)
+                            .clamp(sliderData.start, sliderData.end);
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(10),
+                      minimumSize: Size(40, 40),
+                    ),
+                    icon: const Icon(Icons.remove_circle),
+                  ),
+
+                  // 滑块
+                  Expanded(
+                    child: Slider(
+                      value: sliderData.value,
+                      min: sliderData.start,
+                      max: sliderData.end,
+                      divisions: sliderData.divisions,
+                      label: sliderData.value.toStringAsFixed(2),
+                      onChanged: (value) {
+                        setState(() {
+                          sliderData.value = value;
+                        });
+                      },
+                    ),
+                  ),
+
+                  // 加号按钮
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        sliderData.value = (sliderData.value + sliderData.step)
+                            .clamp(sliderData.start, sliderData.end);
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(10),
+                      minimumSize: Size(40, 40),
+                    ),
+                    icon: const Icon(Icons.add_circle),
+                  ),
+                ],
               ),
             ],
           ),
@@ -256,7 +295,6 @@ class TemplateDialog {
                 Navigator.pop(context);
               },
             ),
-
             TextButton(
               child: Text("取消"),
               onPressed: () => Navigator.pop(context),
@@ -283,17 +321,57 @@ class TemplateDialog {
             children: [
               Text('当前值: ${sliderData.value}', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 20),
-              IntSlider(
-                value: sliderData.value,
-                min: sliderData.start,
-                max: sliderData.end,
-                divisions: sliderData.divisions,
-                label: "${sliderData.value}",
-                onChanged: (value) {
-                  setState(() {
-                    sliderData.value = value;
-                  });
-                },
+              Row(
+                children: [
+                  // 减号按钮
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        sliderData.value = (sliderData.value - sliderData.step)
+                            .clamp(sliderData.start, sliderData.end);
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(10),
+                      minimumSize: Size(40, 40),
+                    ),
+                    icon: const Icon(Icons.remove),
+                  ),
+
+                  // 整数滑块
+                  Expanded(
+                    child: IntSlider(
+                      value: sliderData.value,
+                      min: sliderData.start,
+                      max: sliderData.end,
+                      divisions: sliderData.divisions,
+                      label: "${sliderData.value}",
+                      onChanged: (value) {
+                        setState(() {
+                          sliderData.value = value;
+                        });
+                      },
+                    ),
+                  ),
+
+                  // 加号按钮
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        sliderData.value = (sliderData.value + sliderData.step)
+                            .clamp(sliderData.start, sliderData.end);
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(10),
+                      minimumSize: Size(40, 40),
+                    ),
+                    // icon: const Icon(Icons.add_circle),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
               ),
             ],
           ),
@@ -305,7 +383,6 @@ class TemplateDialog {
                 Navigator.pop(context);
               },
             ),
-
             TextButton(
               child: Text("取消"),
               onPressed: () => Navigator.pop(context),
