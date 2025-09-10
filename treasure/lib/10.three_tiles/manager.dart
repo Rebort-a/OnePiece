@@ -46,7 +46,7 @@ class Manager {
     _generateCards((_difficulty.index + 1) * 30);
 
     // 启动计时器
-    _timer.start();
+    _timer.restart();
 
     // 更新进展
     _isGameOver = false;
@@ -278,8 +278,8 @@ class Manager {
   }
 
   void _handleGameOver(bool victory) {
-    _isGameOver = true;
     _timer.stop();
+    _isGameOver = true;
     _showGameOverDialog(victory);
   }
 

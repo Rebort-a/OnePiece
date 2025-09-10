@@ -35,7 +35,7 @@ class GuessManager {
     )..shuffle()).take(_difficulty).toList();
     guessItems.value = List.from(correctItems.value)..shuffle();
     markItems.value = List.filled(_difficulty, MarkType.unknown.emoji);
-    _timer.start();
+    _timer.restart();
     _isGameOver = false;
     displayInfo.value = _displayText;
   }

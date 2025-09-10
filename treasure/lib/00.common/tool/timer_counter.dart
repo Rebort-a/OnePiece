@@ -25,16 +25,15 @@ class TimerCounter {
     });
   }
 
-  /// 暂停计时
-  void pause() {
-    _timer?.cancel();
-    _timer = null;
+  void restart() {
+    _tick = 0; // 归零 tick
+    start();
   }
 
-  /// 归零 tick
+  /// 停止计时
   void stop() {
-    pause();
-    _tick = 0;
+    _timer?.cancel();
+    _timer = null;
   }
 
   /// 释放资源

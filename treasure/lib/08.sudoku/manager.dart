@@ -40,7 +40,7 @@ class Manager {
   /// 初始化游戏
   void _initGame() {
     _initCells();
-    _timer.start();
+    _timer.restart();
     _isGameOver = false;
   }
 
@@ -130,11 +130,11 @@ class Manager {
 
   /// 游戏完成处理
   void _handleGameOver() {
+    _timer.stop();
+    _isGameOver = true;
     clearSelectedCell();
     displayInfo.value =
         '恭喜完成！难度: $_difficulty 用时: ${TimerCounter.formatDuration(_timer.tick)}';
-    _timer.stop();
-    _isGameOver = true;
   }
 
   /// 显示难度设置对话框
