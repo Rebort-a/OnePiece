@@ -14,19 +14,17 @@ class SudokuCell {
   CellType _type;
   int _fixedDigit;
   final List<int> _spareDigits = [];
-  bool _hint;
+  bool _hint = false;
 
   SudokuCell({
     required int row,
     required int col,
     required CellType type,
     int fixedDigit = 0,
-    bool hint = false,
   }) : _row = row,
        _col = col,
        _type = type,
-       _fixedDigit = fixedDigit,
-       _hint = hint;
+       _fixedDigit = fixedDigit;
 }
 
 // 单元格状态管理类（提供所有操作接口）
@@ -43,6 +41,13 @@ class CellNotifier extends ValueNotifier<SudokuCell> {
 
   bool get canLock =>
       value._type == CellType.editable && value._spareDigits.length == 1;
+
+  set hint(bool arg) {
+    if (value._hint != arg) {
+      value._hint = arg;
+      notifyListeners();
+    }
+  }
 
   void addDigit(int digit) {
     if (value._type == CellType.editable && digit >= 1 && digit <= 9) {
@@ -82,13 +87,6 @@ class CellNotifier extends ValueNotifier<SudokuCell> {
     if (value._type == CellType.locked) {
       value._fixedDigit = 0;
       value._type = CellType.editable;
-      notifyListeners();
-    }
-  }
-
-  void changeHint(bool hint) {
-    if (value._hint != hint) {
-      value._hint = hint;
       notifyListeners();
     }
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../00.common/component/magic_celebration.dart';
+import '../00.common/style/theme.dart';
 import '../00.common/tool/notifier.dart';
 import '../00.common/component/template_dialog.dart';
 import '../00.common/tool/timer_counter.dart';
@@ -14,11 +16,11 @@ class Manager {
   late int _difficulty; // 移除的数字数量（9-64）
 
   late List<List<int>> _solution; // 存储数独的解
-  bool _isGameOver = false;
 
+  final ValueNotifier<bool> isGameOver = ValueNotifier(false);
+  final ValueNotifier<bool> nightTheme = ValueNotifier(false);
   final ListNotifier<CellNotifier> cells = ListNotifier([]);
   final ValueNotifier<int> selectedCellIndex = ValueNotifier(-1);
-  final ValueNotifier<String> displayInfo = ValueNotifier('');
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
       AlwaysNotifier((_) {});
@@ -41,7 +43,7 @@ class Manager {
   void _initGame() {
     _initCells();
     _timer.restart();
-    _isGameOver = false;
+    isGameOver.value = false;
   }
 
   /// 生成数独谜题（保证唯一解）
@@ -90,21 +92,21 @@ class Manager {
 
   /// 选择单元格
   void selectCell(int index) {
-    if (_isGameOver) return;
+    if (isGameOver.value) return;
 
     if (selectedCellIndex.value == index) {
-      selectedCell.changeHint(false);
+      selectedCell.hint = false;
       selectedCellIndex.value = -1;
     } else {
-      clearSelectedCell();
+      _clearSelectedCell();
       selectedCellIndex.value = index;
-      selectedCell.changeHint(true);
+      selectedCell.hint = true;
     }
   }
 
-  void clearSelectedCell() {
+  void _clearSelectedCell() {
     if (selectedCellIndex.value != -1) {
-      selectedCell.changeHint(false);
+      selectedCell.hint = false;
       selectedCellIndex.value = -1;
     }
   }
@@ -131,10 +133,10 @@ class Manager {
   /// 游戏完成处理
   void _handleGameOver() {
     _timer.stop();
-    _isGameOver = true;
-    clearSelectedCell();
-    displayInfo.value =
-        '恭喜完成！难度: $_difficulty 用时: ${TimerCounter.formatDuration(_timer.tick)}';
+    _clearSelectedCell();
+
+    isGameOver.value = true;
+    _showCompletionDialog();
   }
 
   /// 显示难度设置对话框
@@ -167,9 +169,15 @@ class Manager {
     }
   }
 
+  void setNightTheme(bool value) {
+    if (nightTheme.value != value) {
+      nightTheme.value = value;
+    }
+  }
+
   /// 重置游戏
   void resetGame() {
-    clearSelectedCell();
+    _clearSelectedCell();
     _initGame();
   }
 
@@ -187,6 +195,58 @@ class Manager {
       before: () => true,
       onTap: _navigateToBack,
       after: () {},
+    );
+  }
+
+  void _showCompletionDialog() {
+    pageNavigator.value = (context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return _buildCongratulations(context);
+        },
+      );
+    };
+  }
+
+  // 完成庆祝对话框
+  Widget _buildCongratulations(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: nightTheme.value
+          ? MagicTheme.magicBackground
+          : BaseTheme.backgroundColor,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '恭喜完成！',
+            style: nightTheme.value
+                ? MagicTheme.titleStyle
+                : BaseTheme.titleStyle,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '难度: $_difficulty 用时: ${TimerCounter.formatDuration(_timer.tick)}',
+            style: nightTheme.value
+                ? MagicTheme.bodyStyle
+                : BaseTheme.bodyStyle,
+          ),
+          const SizedBox(height: 16),
+          // 魔法庆祝动画
+          const MagicCelebrationAnimation(),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            style: nightTheme.value
+                ? MagicTheme.crystalButtonStyle(false)
+                : null,
+            onPressed: () {
+              Navigator.pop(context);
+              resetGame();
+            },
+            child: const Text('开始新游戏'),
+          ),
+        ],
+      ),
     );
   }
 
