@@ -2,8 +2,8 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:treasure/00.common/game/gamer.dart';
 
+import '../../00.common/game/gamer.dart';
 import '../../00.common/component/template_dialog.dart';
 import '../../00.common/tool/notifier.dart';
 import '../../00.common/image/entity.dart';

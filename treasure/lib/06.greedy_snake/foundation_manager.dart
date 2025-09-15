@@ -5,7 +5,8 @@ import 'package:flutter/scheduler.dart';
 import '../00.common/tool/notifier.dart';
 import 'base.dart';
 
-abstract class FoundationalManager extends ChangeNotifier {
+abstract class FoundationalManager extends ChangeNotifier
+    implements TickerProvider {
   static const int initialLength = 100;
   final Random _random = Random();
 
@@ -60,8 +61,11 @@ abstract class FoundationalManager extends ChangeNotifier {
   }
 
   void initTicker() {
-    _ticker = Ticker(_gameLoop);
+    _ticker = createTicker(_gameLoop);
   }
+
+  @override
+  Ticker createTicker(TickerCallback onTick) => Ticker(onTick);
 
   void resumeGame() {
     gameState.value = true;
