@@ -1,9 +1,10 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 
+/// 游戏状态枚举
 enum GameState { start, playing, paused, gameOver, levelUp }
 
+/// 游戏对象基类
 abstract class GameObject {
   Offset position;
   Size size;
@@ -13,16 +14,17 @@ abstract class GameObject {
   Rect get rect => position & size;
 }
 
+/// 玩家类
 class Player extends GameObject {
   Color color;
   bool invincible;
   int invincibleTimer;
-  bool shield; // 护盾
-  bool tripleShot; // 三向子弹
+  bool shield;
+  bool tripleShot;
   int tripleShotTimer;
-  bool flameBullet; // 火焰子弹
+  bool flameBullet;
   int flameBulletTimer;
-  bool bigBullet; // 大子弹
+  bool bigBullet;
   int bigBulletTimer;
 
   Player({
@@ -41,17 +43,19 @@ class Player extends GameObject {
   });
 }
 
+/// 敌人类型枚举
 enum EnemyType { basic, fast, heavy, boss }
 
+/// 敌人类
 class Enemy extends GameObject {
   EnemyType type;
   double speed;
   double health;
   Color color;
   int points;
-  double? dx;
-  bool isMovingDown; // 是否正在向下移动（仅BOSS使用）
-  int minionSpawnTimer; // 生成小敌人的计时器（仅BOSS使用）
+  double dx;
+  bool isMovingDown;
+  int minionSpawnTimer;
 
   Enemy({
     required this.type,
@@ -61,33 +65,42 @@ class Enemy extends GameObject {
     required this.health,
     required this.color,
     required this.points,
-    this.dx,
-    // BOSS默认属性
+    required this.dx,
     this.isMovingDown = true,
     this.minionSpawnTimer = 0,
   });
 }
 
-class Bullet extends GameObject {
+/// 子弹属性
+class BulletConfig {
   final bool isBig;
   final bool isFlame;
   final double damage;
   final Color color;
-  final double angle;
 
-  Bullet({
+  final Size size;
+
+  BulletConfig({
     required this.isBig,
     required this.isFlame,
     required this.damage,
-    required super.position,
-    required super.size,
     required this.color,
-    required this.angle,
+    required this.size,
   });
 }
 
+/// 子弹类
+class Bullet extends GameObject {
+  final double angle;
+  BulletConfig config;
+  Bullet({required super.position, required this.angle, required this.config})
+    : super(size: config.size);
+}
+
+/// 道具类型枚举
 enum PropType { tripleShot, shield, flame, bigBullet }
 
+/// 道具类
 class GameProp extends GameObject {
   PropType type;
   double speed;
@@ -102,6 +115,7 @@ class GameProp extends GameObject {
   });
 }
 
+/// 爆炸粒子类
 class ExplosionParticle {
   Offset position;
   double radius;
@@ -118,6 +132,7 @@ class ExplosionParticle {
   });
 }
 
+/// 爆炸效果类
 class Explosion {
   Offset position;
   double size;
@@ -132,27 +147,30 @@ class Explosion {
     _init();
   }
 
+  /// 初始化爆炸粒子
   void _init() {
+    final random = Random();
     for (int i = 0; i < size.toInt(); i++) {
-      final angle = Random().nextDouble() * 2 * 3.1415;
-      final speed = Random().nextDouble() * 3 + 1;
+      final angle = random.nextDouble() * 2 * pi;
+      final speed = random.nextDouble() * 3 + 1;
       particles.add(
         ExplosionParticle(
           position: position,
-          radius: Random().nextDouble() * 3 + 1,
+          radius: random.nextDouble() * 3 + 1,
           color: Color.fromRGBO(
             255,
-            (Random().nextDouble() * 100).toInt() + 100,
+            (random.nextDouble() * 100).toInt() + 100,
             0,
             1,
           ),
           velocity: Offset(cos(angle) * speed, sin(angle) * speed),
-          life: (Random().nextDouble() * 30 + 20).toInt(),
+          life: (random.nextDouble() * 30 + 20).toInt(),
         ),
       );
     }
   }
 
+  /// 更新爆炸状态
   void update() {
     alpha -= 0.05;
     bool active = false;
@@ -169,6 +187,7 @@ class Explosion {
   }
 }
 
+/// 星星背景类
 class Star extends GameObject {
   double opacity;
   double speed;
@@ -181,10 +200,10 @@ class Star extends GameObject {
   });
 }
 
-// 添加警报类型枚举
+/// 警报类型枚举
 enum AlertType { enemyEscaped, warning, info }
 
-// 警报类
+/// 游戏警报类
 class GameAlert {
   String text;
   Color color;
@@ -192,6 +211,7 @@ class GameAlert {
   double opacity;
   int timer;
   AlertType type;
+
   GameAlert({
     required this.text,
     required this.color,
