@@ -476,6 +476,7 @@ class Manager with ChangeNotifier implements TickerProvider {
     _disableKeyState();
     _gameState = GameState.levelUp;
     _enemies.clear();
+    _boss = null;
     notifyListeners();
     Future.delayed(const Duration(seconds: 3), () {
       _disableKeyState();
@@ -629,6 +630,7 @@ class Manager with ChangeNotifier implements TickerProvider {
     _lives = 3;
     _level = 1;
     _enemiesDestroyed = 0;
+    _boss = null;
     _bullets.clear();
     _enemies.clear();
     _gameProps.clear();
