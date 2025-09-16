@@ -41,15 +41,17 @@ class Player extends GameObject {
   });
 }
 
-enum EnemyType { basic, fast, heavy }
+enum EnemyType { basic, fast, heavy, boss }
 
 class Enemy extends GameObject {
   EnemyType type;
   double speed;
-  int health;
+  double health;
   Color color;
   int points;
   double? dx;
+  bool isMovingDown; // 是否正在向下移动（仅BOSS使用）
+  int minionSpawnTimer; // 生成小敌人的计时器（仅BOSS使用）
 
   Enemy({
     required this.type,
@@ -60,18 +62,23 @@ class Enemy extends GameObject {
     required this.color,
     required this.points,
     this.dx,
+    // BOSS默认属性
+    this.isMovingDown = true,
+    this.minionSpawnTimer = 0,
   });
 }
 
-enum BulletType { normal, flame, big }
-
 class Bullet extends GameObject {
-  BulletType type;
-  Color color;
-  double angle;
+  final bool isBig;
+  final bool isFlame;
+  final double damage;
+  final Color color;
+  final double angle;
 
   Bullet({
-    this.type = BulletType.normal,
+    required this.isBig,
+    required this.isFlame,
+    required this.damage,
     required super.position,
     required super.size,
     required this.color,

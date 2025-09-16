@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'base.dart';
@@ -21,26 +23,27 @@ class SpaceShipPage extends StatelessWidget {
 
           return AnimatedBuilder(
             animation: _manager,
-            builder: (_, __) {
+            builder: (_, _) {
               return Stack(
                 children: [
                   CustomPaint(
                     size: Size.infinite,
                     painter: GamePainter(_manager),
                   ),
+
+                  ..._buildAlerts(),
+
                   GestureDetector(
                     onPanUpdate: (details) =>
                         _manager.handleDrag(details.delta),
                     onTapDown: (_) => _manager.shoot(),
                   ),
+
                   KeyboardListener(
                     focusNode: _manager.focusNode,
                     onKeyEvent: _manager.handleKeyEvent,
                     child: const SizedBox.expand(),
                   ),
-
-                  // 添加警报显示
-                  ..._buildAlerts(),
 
                   if (_manager.gameState == GameState.start)
                     Center(
@@ -49,6 +52,15 @@ class SpaceShipPage extends StatelessWidget {
                         child: const Text('开始游戏'),
                       ),
                     ),
+
+                  if (_manager.gameState == GameState.paused)
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _manager.resumeGame,
+                        child: const Text('继续游戏'),
+                      ),
+                    ),
+
                   if (_manager.gameState == GameState.levelUp)
                     Center(
                       child: Column(
@@ -89,17 +101,47 @@ class SpaceShipPage extends StatelessWidget {
                         ],
                       ),
                     ),
+
                   if (_manager.gameState == GameState.gameOver)
                     Center(
-                      child: ElevatedButton(
-                        onPressed: _manager.startGame,
-                        child: const Text('再来一局'),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            '游戏结束',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black54,
+                                  offset: Offset(2, 2),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            '当前等级: ${_manager.level}',
+                            style: const TextStyle(
+                              color: Colors.cyan,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          ElevatedButton(
+                            onPressed: _manager.startGame,
+                            child: const Text('再来一局'),
+                          ),
+                        ],
                       ),
                     ),
 
-                  // 1. 返回按钮
                   Positioned(
-                    top: 10,
+                    top: 20,
                     left: 10,
                     child: _buildIconButton(
                       icon: Icons.arrow_back,
@@ -109,9 +151,8 @@ class SpaceShipPage extends StatelessWidget {
                     ),
                   ),
 
-                  // 2.生命 + 分数文本
                   Positioned(
-                    top: 70,
+                    top: 80,
                     right: 10,
                     child: Column(
                       crossAxisAlignment:
@@ -154,9 +195,8 @@ class SpaceShipPage extends StatelessWidget {
                     ),
                   ),
 
-                  // 3. 暂停/继续按钮
                   Positioned(
-                    top: 10,
+                    top: 20,
                     right: 10,
                     child: _buildIconButton(
                       icon: _manager.gameState == GameState.playing
@@ -203,7 +243,7 @@ class SpaceShipPage extends StatelessWidget {
 
     return [
       Positioned(
-        top: 10,
+        top: 20,
         left: 0,
         right: 0,
         child: Center(
@@ -286,7 +326,7 @@ class GamePainter extends CustomPainter {
         ..style = PaintingStyle.fill;
 
       // 火焰子弹添加特殊效果
-      if (bullet.type == BulletType.flame) {
+      if (bullet.isFlame) {
         // 绘制主子弹
         canvas.drawRect(bullet.rect, paint);
 
@@ -324,17 +364,20 @@ class GamePainter extends CustomPainter {
           path.close();
           canvas.drawPath(path, paint);
 
-          // 绘制三角形发光效果
-          final glowPaint = Paint()
-            ..color = enemy.color.withValues(alpha: 0.3)
-            ..style = PaintingStyle.fill;
+          // 仅当血量为2滴（满状态）时显示发光效果
+          if (enemy.health > 1.0) {
+            // 绘制三角形发光效果
+            final glowPaint = Paint()
+              ..color = enemy.color.withValues(alpha: 0.3)
+              ..style = PaintingStyle.fill;
 
-          final glowPath = Path();
-          glowPath.moveTo(enemy.rect.center.dx, enemy.rect.top - 5);
-          glowPath.lineTo(enemy.rect.left - 5, enemy.rect.bottom);
-          glowPath.lineTo(enemy.rect.right + 5, enemy.rect.bottom);
-          glowPath.close();
-          canvas.drawPath(glowPath, glowPaint);
+            final glowPath = Path();
+            glowPath.moveTo(enemy.rect.center.dx, enemy.rect.top - 5);
+            glowPath.lineTo(enemy.rect.left - 5, enemy.rect.bottom);
+            glowPath.lineTo(enemy.rect.right + 5, enemy.rect.bottom);
+            glowPath.close();
+            canvas.drawPath(glowPath, glowPaint);
+          }
           break;
 
         case EnemyType.fast:
@@ -393,6 +436,70 @@ class GamePainter extends CustomPainter {
               enemy.rect.height + 6,
             ),
             glowPaint,
+          );
+          break;
+        case EnemyType.boss:
+          // 绘制BOSS主体（大型六边形）
+          final path = Path();
+          final centerX = enemy.rect.center.dx;
+          final centerY = enemy.rect.center.dy;
+          final radius = enemy.size.width / 2;
+
+          // 绘制六边形
+          for (int i = 0; i < 6; i++) {
+            final angle = 2 * pi * i / 6;
+            final x = centerX + radius * cos(angle);
+            final y = centerY + radius * sin(angle);
+            if (i == 0) {
+              path.moveTo(x, y);
+            } else {
+              path.lineTo(x, y);
+            }
+          }
+          path.close();
+          canvas.drawPath(path, paint);
+
+          // 绘制BOSS中心核心
+          final corePaint = Paint()
+            ..color = Colors.yellow
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(Offset(centerX, centerY), radius / 3, corePaint);
+
+          // 绘制BOSS护盾效果
+          final shieldPaint = Paint()
+            ..color = enemy.color.withAlpha(80)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 4;
+          canvas.drawCircle(Offset(centerX, centerY), radius + 10, shieldPaint);
+
+          // 绘制BOSS生命值条
+          final healthBarWidth = enemy.size.width * 0.8;
+          final healthPercent = enemy.health / (9 + (manager.level - 1) * 3);
+          final healthBarPaint = Paint()
+            ..color = Color.lerp(Colors.red, Colors.green, healthPercent)!
+            ..style = PaintingStyle.fill;
+          canvas.drawRect(
+            Rect.fromLTWH(
+              centerX - healthBarWidth / 2,
+              enemy.rect.top - 15,
+              healthBarWidth * healthPercent,
+              8,
+            ),
+            healthBarPaint,
+          );
+          // 生命值条边框
+          final borderPaint = Paint()
+            ..color = Colors.white30
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1;
+          canvas.drawRect(
+            Rect.fromLTWH(
+              centerX - healthBarWidth / 2,
+              enemy.rect.top - 15,
+              healthBarWidth,
+              8,
+            ),
+            borderPaint,
           );
           break;
       }

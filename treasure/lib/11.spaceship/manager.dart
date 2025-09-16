@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'base.dart';
 
 class Manager with ChangeNotifier implements TickerProvider {
+  final Random _random = Random();
   late Ticker _ticker;
   Size _screenSize = Size.zero;
   GameState _gameState = GameState.start;
@@ -24,6 +25,8 @@ class Manager with ChangeNotifier implements TickerProvider {
   int _enemiesDestroyed = 0;
   int _spawnTimer = 0;
   int _cooldown = 0;
+
+  Enemy? _boss;
 
   final List<GameAlert> _alerts = [];
 
@@ -50,13 +53,18 @@ class Manager with ChangeNotifier implements TickerProvider {
     _createStars();
   }
 
+  // 修改_update方法，添加BOSS更新逻辑
   void _update() {
     if (_gameState == GameState.playing) {
       _updateStars();
       _handleLongPressActions();
       _updatePlayer();
       _updateBullets();
-      _spawnEnemies();
+      if (hasBoss) {
+        _updateBoss();
+      } else {
+        _spawnEnemies();
+      }
       _updateEnemies();
       _updateGameProps();
       _updateExplosions();
@@ -73,12 +81,12 @@ class Manager with ChangeNotifier implements TickerProvider {
       _stars.add(
         Star(
           position: Offset(
-            Random().nextDouble() * _screenSize.width,
-            Random().nextDouble() * _screenSize.height,
+            _random.nextDouble() * _screenSize.width,
+            _random.nextDouble() * _screenSize.height,
           ),
-          size: Size.square(Random().nextDouble() * 1.5),
-          opacity: Random().nextDouble(),
-          speed: Random().nextDouble() * 0.5 + 0.1,
+          size: Size.square(_random.nextDouble() * 1.5),
+          opacity: _random.nextDouble(),
+          speed: _random.nextDouble() * 0.5 + 0.1,
         ),
       );
     }
@@ -94,7 +102,7 @@ class Manager with ChangeNotifier implements TickerProvider {
     for (var star in _stars) {
       star.position += Offset(0, star.speed);
       if (star.position.dy > _screenSize.height) {
-        star.position = Offset(Random().nextDouble() * _screenSize.width, 0);
+        star.position = Offset(_random.nextDouble() * _screenSize.width, 0);
       }
     }
   }
@@ -156,22 +164,23 @@ class Manager with ChangeNotifier implements TickerProvider {
   }
 
   void _spawnEnemies() {
+    if (hasBoss) return;
     _spawnTimer++;
-    final rate = 60 - (_level - 1) * 5;
+    final rate = 100 - (_level - 1) * 5;
     if (_spawnTimer >= rate) {
       _spawnTimer = 0;
-      final type = Random().nextDouble();
+      final type = _random.nextDouble();
       late Enemy enemy;
       if (type < 0.6) {
         enemy = Enemy(
           type: EnemyType.basic,
           position: Offset(
-            Random().nextDouble() * (_screenSize.width - 30),
+            _random.nextDouble() * (_screenSize.width - 30),
             -30,
           ),
           size: const Size(30, 30),
           speed: 2 + (_level - 1) * 0.3,
-          health: 1,
+          health: 1.5,
           color: Colors.red,
           points: 10,
         );
@@ -179,7 +188,7 @@ class Manager with ChangeNotifier implements TickerProvider {
         enemy = Enemy(
           type: EnemyType.fast,
           position: Offset(
-            Random().nextDouble() * (_screenSize.width - 20),
+            _random.nextDouble() * (_screenSize.width - 20),
             -20,
           ),
           size: const Size(20, 20),
@@ -187,18 +196,18 @@ class Manager with ChangeNotifier implements TickerProvider {
           health: 1,
           color: Colors.yellow,
           points: 5,
-          dx: (Random().nextDouble() - 0.5) * 2,
+          dx: (_random.nextDouble() - 0.5) * 2,
         );
       } else {
         enemy = Enemy(
           type: EnemyType.heavy,
           position: Offset(
-            Random().nextDouble() * (_screenSize.width - 40),
+            _random.nextDouble() * (_screenSize.width - 40),
             -40,
           ),
           size: const Size(40, 40),
           speed: 1 + (_level - 1) * 0.2,
-          health: 3,
+          health: 4,
           color: Colors.purple,
           points: 20,
         );
@@ -209,6 +218,10 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   void _updateEnemies() {
     for (var e in List.of(_enemies)) {
+      if (e.type == EnemyType.boss) {
+        continue;
+      }
+
       e.position += Offset(e.dx ?? 0, e.speed);
       if (e.type == EnemyType.fast && e.dx != null) {
         if (e.position.dx < 0 ||
@@ -218,9 +231,12 @@ class Manager with ChangeNotifier implements TickerProvider {
       }
       if (e.position.dy > _screenSize.height) {
         _enemies.remove(e);
-        _score = (_score - 5).clamp(0, double.infinity).toInt();
-        // 显示敌人逃脱警报
-        showAlert("敌人逃脱！", Colors.red, AlertType.enemyEscaped);
+        // fast类型的敌人当作敌人的子弹处理
+        if (e.type != EnemyType.fast) {
+          _score = (_score - 5).clamp(0, double.infinity).toInt();
+          // 显示敌人逃脱警报
+          showAlert("敌人逃脱!", Colors.red, AlertType.enemyEscaped);
+        }
       }
     }
   }
@@ -250,6 +266,72 @@ class Manager with ChangeNotifier implements TickerProvider {
     }
   }
 
+  // 添加BOSS生成方法
+  void _spawnBoss() {
+    if (hasBoss) return;
+
+    _boss = Enemy(
+      type: EnemyType.boss,
+      position: Offset(
+        _screenSize.width / 2 - 60, // 居中位置
+        -60, // 从屏幕顶部外开始
+      ),
+      size: const Size(60, 60), // 大型尺寸
+      speed: 1.5, // 移动速度
+      health: 9 + (_level - 1) * 3, // 初始9血，每级+3
+      color: Colors.redAccent,
+      points: 20, // 高分值
+      dx: 2.0, // 左右移动速度
+      isMovingDown: true,
+    );
+    _enemies.add(_boss!);
+    showAlert("BOSS出现!", Colors.redAccent, AlertType.warning);
+  }
+
+  // 添加BOSS更新方法
+  void _updateBoss() {
+    if (_boss == null) return;
+
+    // BOSS移动逻辑：先向下到中间，然后左右移动
+    if (_boss!.isMovingDown) {
+      _boss!.position += Offset(0, _boss!.speed);
+      if (_boss!.position.dy >= _screenSize.height / 3) {
+        _boss!.isMovingDown = false;
+      }
+    } else {
+      // 左右移动，碰到边界反弹
+      if (_boss!.dx != null) {
+        _boss!.position += Offset(_boss!.dx!, 0);
+        if (_boss!.position.dx < 0 ||
+            _boss!.position.dx > _screenSize.width - _boss!.size.width) {
+          _boss!.dx = -_boss!.dx!;
+        }
+      }
+    }
+
+    // BOSS生成小敌人（fast类型）
+    _boss!.minionSpawnTimer++;
+    if (_boss!.minionSpawnTimer >= 120) {
+      // 每2秒生成一个
+      _boss!.minionSpawnTimer = 0;
+      _enemies.add(
+        Enemy(
+          type: EnemyType.fast,
+          position: Offset(
+            _boss!.position.dx + _boss!.size.width / 2 - 10,
+            _boss!.position.dy + _boss!.size.height / 2,
+          ),
+          size: const Size(20, 20),
+          speed: 4 + (_level - 1) * 0.5,
+          health: 1,
+          color: Colors.yellow,
+          points: 5,
+          dx: (_random.nextDouble() - 0.5) * 2,
+        ),
+      );
+    }
+  }
+
   void _updateGameProps() {
     for (var p in List.of(_gameProps)) {
       p.position += Offset(0, p.speed);
@@ -266,15 +348,31 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   void _checkCollisions() {
     for (var b in List.of(_bullets)) {
+      if (hasBoss) {
+        if (b.rect.overlaps(_boss!.rect)) {
+          _bullets.remove(b);
+          _boss!.health -= b.damage;
+          if (_boss!.health <= 0) {
+            _score += _boss!.points;
+            _spawnGameProp(_boss!.position, probability: 1);
+            _enemies.remove(_boss!);
+            _boss = null;
+            _levelUp();
+          }
+        }
+      }
+
       for (var e in List.of(_enemies)) {
         if (b.rect.overlaps(e.rect)) {
           _bullets.remove(b);
-          int damage = b.type == BulletType.flame ? 2 : 1;
-          e.health -= damage;
+
+          e.health -= b.damage;
           if (e.health <= 0) {
             _enemies.remove(e);
             _score += e.points;
-            _enemiesDestroyed++;
+            if (!hasBoss) {
+              _enemiesDestroyed++;
+            }
             _explosions.add(
               Explosion(
                 position:
@@ -282,8 +380,9 @@ class Manager with ChangeNotifier implements TickerProvider {
                 size: e.size.width * 1.5,
               ),
             );
+
             _spawnGameProp(e.position);
-            if (_enemiesDestroyed % 10 == 0) _levelUp();
+            if (_enemiesDestroyed % 15 == 0) _spawnBoss();
           }
           break;
         }
@@ -308,9 +407,7 @@ class Manager with ChangeNotifier implements TickerProvider {
             _player.invincible = true;
             _player.invincibleTimer = 120;
             if (_lives <= 0) {
-              _gameState = GameState.gameOver;
-              notifyListeners();
-              return;
+              return _handleGameOver();
             }
           }
         }
@@ -342,10 +439,10 @@ class Manager with ChangeNotifier implements TickerProvider {
     }
   }
 
-  void _spawnGameProp(Offset position) {
-    if (Random().nextDouble() < 0.25) {
+  void _spawnGameProp(Offset position, {double probability = 0.25}) {
+    if (_random.nextDouble() < probability) {
       PropType type;
-      final rand = Random().nextDouble();
+      final rand = _random.nextDouble();
       if (rand < 0.3) {
         type = PropType.tripleShot;
       } else if (rand < 0.5) {
@@ -376,10 +473,12 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   void _levelUp() {
     _level++;
+    _disableKeyState();
     _gameState = GameState.levelUp;
     _enemies.clear();
     notifyListeners();
     Future.delayed(const Duration(seconds: 3), () {
+      _disableKeyState();
       _gameState = GameState.playing;
       notifyListeners();
     });
@@ -388,61 +487,75 @@ class Manager with ChangeNotifier implements TickerProvider {
   void shoot() {
     if (_cooldown <= 0 && _gameState == GameState.playing) {
       // 确定子弹属性
-      BulletType bulletType = BulletType.normal;
+      bool isBig = false;
+      bool isFlame = false;
       Size bulletSize = const Size(4, 12);
       Color bulletColor = Colors.cyan;
+      double damage = 1;
 
       // 应用大子弹效果
       if (_player.bigBullet) {
-        bulletType = BulletType.big;
+        isBig = true;
         bulletSize = const Size(8, 20);
-        bulletColor = Colors.purple;
+        damage *= 1.5;
       }
+
       // 应用火焰子弹效果
-      else if (_player.flameBullet) {
-        bulletType = BulletType.flame;
+      if (_player.flameBullet) {
+        isFlame = true;
         bulletColor = Colors.orange;
+        damage *= 2;
       }
 
       if (_player.tripleShot) {
         _bullets.addAll([
           Bullet(
+            isBig: isBig,
+            isFlame: isFlame,
+            damage: damage,
             position:
                 _player.position +
                 Offset(_player.size.width / 2 - bulletSize.width / 2, 0),
             size: bulletSize,
             color: bulletColor,
-            type: bulletType,
+
             angle: 0,
           ),
           Bullet(
+            isBig: isBig,
+            isFlame: isFlame,
+            damage: damage,
             position:
                 _player.position +
                 Offset(_player.size.width / 2 - bulletSize.width / 2, 0),
             size: bulletSize,
             color: bulletColor,
             angle: -15,
-            type: bulletType,
           ),
           Bullet(
+            isBig: isBig,
+            isFlame: isFlame,
+            damage: damage,
             position:
                 _player.position +
                 Offset(_player.size.width / 2 - bulletSize.width / 2, 0),
             size: bulletSize,
             color: bulletColor,
             angle: 15,
-            type: bulletType,
           ),
         ]);
       } else {
         _bullets.add(
           Bullet(
+            isBig: isBig,
+            isFlame: isFlame,
+            damage: damage,
             position:
                 _player.position +
                 Offset(_player.size.width / 2 - bulletSize.width / 2, 0),
             size: bulletSize,
             color: bulletColor,
-            type: bulletType,
+
             angle: 0,
           ),
         );
@@ -485,6 +598,8 @@ class Manager with ChangeNotifier implements TickerProvider {
           pauseGame();
           break;
       }
+
+      _handleLongPressActions();
     }
 
     // 按键抬起：标记对应状态为 false
@@ -519,12 +634,14 @@ class Manager with ChangeNotifier implements TickerProvider {
     _gameProps.clear();
     _explosions.clear();
     _resetPlayer();
+    _disableKeyState();
     _gameState = GameState.playing;
     notifyListeners();
   }
 
   void pauseGame() {
     if (_gameState == GameState.playing) {
+      _disableKeyState();
       _gameState = GameState.paused;
       notifyListeners();
     }
@@ -532,9 +649,24 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   void resumeGame() {
     if (_gameState == GameState.paused) {
+      _disableKeyState();
       _gameState = GameState.playing;
       notifyListeners();
     }
+  }
+
+  void _handleGameOver() {
+    _disableKeyState();
+    _gameState = GameState.gameOver;
+    notifyListeners();
+  }
+
+  void _disableKeyState() {
+    _isUpPressed = false;
+    _isDownPressed = false;
+    _isLeftPressed = false;
+    _isRightPressed = false;
+    _isSpacePressed = false;
   }
 
   // Getters
@@ -550,4 +682,6 @@ class Manager with ChangeNotifier implements TickerProvider {
   List<GameProp> get gameProps => _gameProps;
   List<Explosion> get explosions => _explosions;
   List<GameAlert> get alerts => _alerts;
+  bool get hasBoss => _boss != null;
+  Enemy? get boss => _boss;
 }
