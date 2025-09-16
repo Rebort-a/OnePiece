@@ -392,7 +392,10 @@ class Manager with ChangeNotifier implements TickerProvider {
               _spawnGameProp(e.position);
             }
 
-            if (_enemiesDestroyed % (10 + 5 * level) == 0) _spawnBoss();
+            if (_enemiesDestroyed >= (10 + 5 * level)) {
+              _enemiesDestroyed = 0;
+              _spawnBoss();
+            }
           }
           break;
         }
