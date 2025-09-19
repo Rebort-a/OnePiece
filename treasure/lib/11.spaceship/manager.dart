@@ -2,7 +2,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+
+import '../00.common/component/template_dialog.dart';
+import '../00.common/tool/notifier.dart';
 import 'base.dart';
+import 'constant.dart';
+
+/// 游戏状态枚举
+enum GameState { start, playing, paused, gameOver, levelUp }
 
 /// 游戏管理器
 class Manager with ChangeNotifier implements TickerProvider {
@@ -10,8 +17,15 @@ class Manager with ChangeNotifier implements TickerProvider {
   late Ticker _ticker;
   Size _screenSize = Size.zero;
   GameState _gameState = GameState.start;
+  Player _player = Player(
+    color: GameConstants.playerColor,
+    health: GameConstants.playHealth,
+    speed: GameConstants.playerMoveSpeed,
+  );
 
-  Player _player = Player();
+  final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
+      AlwaysNotifier((_) {});
+
   final List<Bullet> _bullets = [];
   final List<Enemy> _enemies = [];
   final List<GameProp> _gameProps = [];
@@ -19,15 +33,14 @@ class Manager with ChangeNotifier implements TickerProvider {
   final List<Star> _stars = [];
 
   int _score = 0;
-  int _lives = 3;
-  int _level = 1;
+  int _level = GameConstants.initialLevel;
+  int _consecutiveKills = 0;
   int _enemiesDestroyed = 0;
   int _spawnTimer = 0;
   int _cooldown = 0;
 
-  Enemy? _boss;
-  final List<GameAlert> _alerts = [];
-  final FocusNode focusNode = FocusNode();
+  // 成就相关
+  final Set<AchievementType> _unlockedAchievements = {};
 
   // 按键状态
   bool _isUpPressed = false;
@@ -36,6 +49,26 @@ class Manager with ChangeNotifier implements TickerProvider {
   bool _isRightPressed = false;
   bool _isSpacePressed = false;
 
+  final FocusNode focusNode = FocusNode();
+
+  Enemy? _boss;
+
+  //  getter
+  Size get screenSize => _screenSize;
+  GameState get gameState => _gameState;
+  Player get player => _player;
+  List<Bullet> get bullets => List.unmodifiable(_bullets);
+  List<Enemy> get enemies => List.unmodifiable(_enemies);
+  List<GameProp> get gameProps => List.unmodifiable(_gameProps);
+  List<Explosion> get explosions => List.unmodifiable(_explosions);
+  List<Star> get stars => List.unmodifiable(_stars);
+  int get score => _score;
+  int get lives => _player.health;
+  int get level => _level;
+  bool get hasBoss => _boss != null;
+  Set<AchievementType> get unlockedAchievements =>
+      Set.unmodifiable(_unlockedAchievements);
+
   @override
   Ticker createTicker(TickerCallback onTick) => Ticker(onTick);
 
@@ -43,21 +76,33 @@ class Manager with ChangeNotifier implements TickerProvider {
   void initGame(Size size) {
     changeSize(size);
     _resetPlayer();
+    _initTicker();
+    _initFocusNote();
+  }
+
+  /// 改变屏幕尺寸
+  void changeSize(Size size) {
+    if (_screenSize != size) {
+      _screenSize = size;
+      _createStars();
+      _keepPlayerInBounds();
+    }
+  }
+
+  void _initTicker() {
     _ticker = createTicker((_) => _update());
     _ticker.start();
   }
 
-  /// 更新屏幕尺寸
-  void changeSize(Size size) {
-    _screenSize = size;
-    _createStars();
+  void _initFocusNote() {
+    focusNode.requestFocus();
   }
 
-  /// 创建背景星星
+  /// 创建星空背景
   void _createStars() {
     _stars.clear();
     final count = (_screenSize.width * _screenSize.height / 1000).toInt();
-    for (int i = 0; i < count; i++) {
+    for (int i = _stars.length; i < count; i++) {
       _stars.add(
         Star(
           position: Offset(
@@ -72,49 +117,208 @@ class Manager with ChangeNotifier implements TickerProvider {
     }
   }
 
-  /// 重置玩家状态
+  // bool _isOnScreen(GameObject object) {
+  //   return object.position.dx >= 0 && // 左边界
+  //       object.position.dx + object.size.width <= screenSize.width && // 右边界
+  //       object.position.dy >= 0 && // 上边界
+  //       object.position.dy + object.size.height <= screenSize.height; // 下边界
+  // }
+
+  /// 确保玩家在边界内
+  void _keepPlayerInBounds() {
+    double x = _player.position.dx;
+    double y = _player.position.dy;
+
+    x = x.clamp(0, _screenSize.width - _player.size.width);
+    y = y.clamp(0, _screenSize.height - _player.size.height);
+
+    _player.position = Offset(x, y);
+  }
+
+  /// 重置玩家
   void _resetPlayer() {
     _player = Player(
-      position: Offset(_screenSize.width / 2 - 20, _screenSize.height - 70),
+      position: Offset(
+        _screenSize.width / 2 - GameConstants.playerSize.width / 2,
+        _screenSize.height - GameConstants.playerSize.height - 20,
+      ),
+      size: GameConstants.playerSize,
+      color: GameConstants.playerColor,
+      health: GameConstants.playHealth,
+      speed: GameConstants.playerMoveSpeed,
     );
   }
 
-  /// 主更新循环
-  void _update() {
+  /// 开始游戏
+  void startGame() {
+    _resetGame();
+    resumeGame();
+  }
+
+  /// 重置游戏
+  void _resetGame() {
+    _score = 0;
+    _level = GameConstants.initialLevel;
+    _resetPlayer();
+    _enemiesDestroyed = 0;
+    _consecutiveKills = 0;
+
+    _bullets.clear();
+    _clearEnemies();
+    _gameProps.clear();
+    _explosions.clear();
+    _unlockedAchievements.clear();
+  }
+
+  void _clearEnemies() {
+    _enemies.clear();
+    _boss = null;
+  }
+
+  /// 暂停游戏
+  void pauseGame() {
     if (_gameState == GameState.playing) {
-      _updateStars();
-      _handleLongPressActions();
-      _updatePlayer();
-      _updateBullets();
-
-      if (hasBoss) {
-        _updateBoss();
-      } else {
-        _spawnEnemies();
-      }
-
-      _updateEnemies();
-      _updateGameProps();
-      _updateExplosions();
-      _updateAlerts();
-      _checkCollisions();
+      _gameState = GameState.paused;
       notifyListeners();
     }
   }
 
-  /// 更新星星位置
-  void _updateStars() {
-    for (var star in _stars) {
-      star.position += Offset(0, star.speed);
-      if (star.position.dy > _screenSize.height) {
-        star.position = Offset(_random.nextDouble() * _screenSize.width, 0);
-      }
+  /// 恢复游戏
+  void resumeGame() {
+    _gameState = GameState.playing;
+    notifyListeners();
+  }
+
+  /// 游戏结束
+  void _gameOver() {
+    _gameState = GameState.gameOver;
+    notifyListeners();
+  }
+
+  /// 关卡升级
+  void _levelUp() {
+    _level++;
+    _gameState = GameState.levelUp;
+    notifyListeners();
+
+    // 3秒后继续游戏
+    Future.delayed(
+      const Duration(milliseconds: GameConstants.levelUpDelay),
+      () {
+        resumeGame();
+      },
+    );
+  }
+
+  /// 检测并解锁成就
+  void _checkAchievements() {
+    // 首次击杀
+    if (_enemiesDestroyed >= 1 &&
+        !_unlockedAchievements.contains(AchievementType.firstKill)) {
+      _unlockAchievement(AchievementType.firstKill);
+    }
+
+    // 得分成就
+    if (_score >= 100 &&
+        !_unlockedAchievements.contains(AchievementType.score100)) {
+      _unlockAchievement(AchievementType.score100);
+    }
+    if (_score >= 500 &&
+        !_unlockedAchievements.contains(AchievementType.score500)) {
+      _unlockAchievement(AchievementType.score500);
+    }
+    if (_score >= 1000 &&
+        !_unlockedAchievements.contains(AchievementType.score1000)) {
+      _unlockAchievement(AchievementType.score1000);
+    }
+
+    // 等级成就
+    if (_level >= 5 &&
+        !_unlockedAchievements.contains(AchievementType.level5)) {
+      _unlockAchievement(AchievementType.level5);
+    }
+    if (_level >= 10 &&
+        !_unlockedAchievements.contains(AchievementType.level10)) {
+      _unlockAchievement(AchievementType.level10);
+    }
+
+    // 三连杀
+    if (_consecutiveKills >= 3 &&
+        !_unlockedAchievements.contains(AchievementType.tripleKill)) {
+      _unlockAchievement(AchievementType.tripleKill);
+    }
+  }
+
+  /// 解锁成就
+  void _unlockAchievement(AchievementType type) {
+    if (!_unlockedAchievements.contains(type)) {
+      _unlockedAchievements.add(type);
+      final achievement = Achievements.all.firstWhere((a) => a.type == type);
+
+      pageNavigator.value = (context) {
+        TemplateDialog.achieveBanner(
+          context: context,
+          title: achievement.title,
+          description: achievement.description,
+          duration: GameConstants.achieveDuration,
+        );
+      };
+    }
+  }
+
+  /// 处理拖动
+  void handleDrag(Offset delta) {
+    if (_gameState != GameState.playing) return;
+
+    _player.position += Offset(delta.dx * 0.5, delta.dy * 0.5);
+    _keepPlayerInBounds();
+    notifyListeners();
+  }
+
+  /// 处理键盘事件
+  void handleKeyEvent(KeyEvent event) {
+    if (_gameState == GameState.start || _gameState == GameState.gameOver) {
+      return;
+    }
+
+    final isKeyDown = event is KeyDownEvent;
+
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowUp:
+        _isUpPressed = isKeyDown;
+        break;
+      case LogicalKeyboardKey.arrowDown:
+        _isDownPressed = isKeyDown;
+        break;
+      case LogicalKeyboardKey.arrowLeft:
+        _isLeftPressed = isKeyDown;
+        break;
+      case LogicalKeyboardKey.arrowRight:
+        _isRightPressed = isKeyDown;
+        break;
+      case LogicalKeyboardKey.space:
+        _isSpacePressed = isKeyDown;
+        break;
+      case LogicalKeyboardKey.keyP:
+        if (isKeyDown) {
+          if (_gameState == GameState.playing) {
+            pauseGame();
+          } else {
+            resumeGame();
+          }
+        }
+        break;
+    }
+
+    if (isKeyDown) {
+      _handleLongPressActions();
     }
   }
 
   /// 处理长按操作
   void _handleLongPressActions() {
-    const double moveSpeed = 5.0;
+    if (_gameState != GameState.playing) return;
+    double moveSpeed = _player.speed;
 
     // 方向键移动
     if (_isUpPressed) _player.position += Offset(0, -moveSpeed);
@@ -123,402 +327,12 @@ class Manager with ChangeNotifier implements TickerProvider {
     if (_isRightPressed) _player.position += Offset(moveSpeed, 0);
 
     // 空格键射击
-    if (_isSpacePressed && _cooldown <= 0) shoot();
-  }
-
-  /// 更新玩家状态
-  void _updatePlayer() {
-    // 限制玩家在屏幕内
-    _player.position = Offset(
-      _player.position.dx.clamp(0, _screenSize.width - _player.size.width),
-      _player.position.dy.clamp(0, _screenSize.height - _player.size.height),
-    );
-
-    // 更新冷却和状态计时器
-    if (_cooldown > 0) _cooldown--;
-
-    if (_player.invincible) {
-      _player.invincibleTimer--;
-      if (_player.invincibleTimer <= 0) _player.invincible = false;
-    }
-
-    if (_player.tripleShot) {
-      _player.tripleShotTimer--;
-      if (_player.tripleShotTimer <= 0) _player.tripleShot = false;
-    }
-
-    if (_player.flameBullet) {
-      _player.flameBulletTimer--;
-      if (_player.flameBulletTimer <= 0) _player.flameBullet = false;
-    }
-
-    if (_player.bigBullet) {
-      _player.bigBulletTimer--;
-      if (_player.bigBulletTimer <= 0) _player.bigBullet = false;
-    }
-  }
-
-  /// 更新子弹位置
-  void _updateBullets() {
-    for (var b in List.of(_bullets)) {
-      final rad = b.angle * pi / 180;
-      b.position += Offset(sin(rad) * 7, -cos(rad) * 7);
-      if (b.position.dy < -b.size.height) _bullets.remove(b);
-    }
-  }
-
-  /// 生成敌人
-  void _spawnEnemies() {
-    if (hasBoss) return;
-
-    _spawnTimer++;
-    final rate = 100 - (_level - 1) * 5;
-
-    if (_spawnTimer >= rate) {
-      _spawnTimer = 0;
-      final type = _random.nextDouble();
-      late Enemy enemy;
-
-      if (type < 0.6) {
-        // 基础敌人
-        enemy = Enemy(
-          type: EnemyType.basic,
-          position: Offset(
-            _random.nextDouble() * (_screenSize.width - 30),
-            -30,
-          ),
-          size: const Size(30, 30),
-          speed: 2 + (_level - 1) * 0.3,
-          health: 1.5,
-          color: Colors.red,
-          points: 10,
-          dx: 0,
-        );
-      } else if (type < 0.9) {
-        // 快速敌人
-        enemy = Enemy(
-          type: EnemyType.fast,
-          position: Offset(
-            _random.nextDouble() * (_screenSize.width - 20),
-            -20,
-          ),
-          size: const Size(20, 20),
-          speed: 4 + (_level - 1) * 0.5,
-          health: 1,
-          color: Colors.yellow,
-          points: 5,
-          dx: (_random.nextDouble() - 0.5) * 2,
-        );
-      } else {
-        // 重型敌人
-        enemy = Enemy(
-          type: EnemyType.heavy,
-          position: Offset(
-            _random.nextDouble() * (_screenSize.width - 40),
-            -40,
-          ),
-          size: const Size(40, 40),
-          speed: 1 + (_level - 1) * 0.2,
-          health: 4,
-          color: Colors.purple,
-          points: 15,
-          dx: 0,
-        );
-      }
-
-      _enemies.add(enemy);
-    }
-  }
-
-  /// 更新敌人位置
-  void _updateEnemies() {
-    for (var e in List.of(_enemies)) {
-      if (e.type == EnemyType.boss) continue;
-
-      e.position += Offset(e.dx, e.speed);
-
-      if (e.position.dx < 0 ||
-          e.position.dx > _screenSize.width - e.size.width) {
-        e.dx = -e.dx;
-      }
-
-      // 敌人逃出屏幕
-      if (e.position.dy > _screenSize.height) {
-        _enemies.remove(e);
-        if (e.type != EnemyType.fast) {
-          _score = (_score - 5).clamp(0, double.infinity).toInt();
-          showAlert("敌人逃脱!", Colors.red, AlertType.enemyEscaped);
-        }
-      }
-    }
-  }
-
-  /// 生成BOSS
-  void _spawnBoss() {
-    if (hasBoss) return;
-
-    _boss = Enemy(
-      type: EnemyType.boss,
-      position: Offset(_screenSize.width / 2 - 60, -60),
-      size: const Size(60, 60),
-      speed: 1.5,
-      health: 9 + (_level - 1) * 3,
-      color: Colors.redAccent,
-      points: 20,
-      dx: 2.0,
-      isMovingDown: true,
-    );
-
-    _enemies.add(_boss!);
-    showAlert("BOSS出现!", Colors.redAccent, AlertType.warning);
-  }
-
-  /// 更新BOSS状态
-  void _updateBoss() {
-    if (_boss == null) return;
-
-    // BOSS移动逻辑
-    if (_boss!.isMovingDown) {
-      _boss!.position += Offset(0, _boss!.speed);
-      if (_boss!.position.dy >= _screenSize.height / 3) {
-        _boss!.isMovingDown = false;
-      }
-    } else {
-      // 左右移动，碰到边界反弹
-      _boss!.position += Offset(_boss!.dx, 0);
-      if (_boss!.position.dx < 0 ||
-          _boss!.position.dx > _screenSize.width - _boss!.size.width) {
-        _boss!.dx = -_boss!.dx;
-      }
-    }
-
-    // BOSS生成小敌人
-    _boss!.minionSpawnTimer++;
-    if (_boss!.minionSpawnTimer >= 120) {
-      _boss!.minionSpawnTimer = 0;
-      _enemies.add(
-        Enemy(
-          type: EnemyType.fast,
-          position: Offset(
-            _boss!.position.dx + _boss!.size.width / 2 - 10,
-            _boss!.position.dy + _boss!.size.height / 2,
-          ),
-          size: const Size(20, 20),
-          speed: 4 + (_level - 1) * 0.5,
-          health: 1,
-          color: Colors.yellow,
-          points: 5,
-          dx: (_random.nextDouble() - 0.5) * 2,
-        ),
-      );
-    }
-  }
-
-  /// 更新道具位置
-  void _updateGameProps() {
-    for (var p in List.of(_gameProps)) {
-      p.position += Offset(0, p.speed);
-      if (p.position.dy > _screenSize.height) _gameProps.remove(p);
-    }
-  }
-
-  /// 更新爆炸效果
-  void _updateExplosions() {
-    for (var e in List.of(_explosions)) {
-      e.update();
-      if (e.finished) _explosions.remove(e);
-    }
-  }
-
-  /// 显示警报
-  void showAlert(String text, Color color, AlertType type) {
-    _alerts.add(GameAlert(text: text, color: color, type: type, duration: 90));
-  }
-
-  /// 更新警报状态
-  void _updateAlerts() {
-    for (var alert in List.of(_alerts)) {
-      alert.timer++;
-
-      // 前10帧快速显示
-      if (alert.timer <= 10) {
-        alert.opacity = alert.timer / 10;
-      }
-      // 后30帧开始淡化
-      else if (alert.timer >= alert.duration - 30) {
-        alert.opacity = (alert.duration - alert.timer) / 30;
-      }
-
-      if (alert.timer >= alert.duration) {
-        _alerts.remove(alert);
-      }
-    }
-  }
-
-  /// 检测碰撞
-  void _checkCollisions() {
-    _checkBulletCollisions();
-    _checkPlayerCollisions();
-    _checkPropCollisions();
-  }
-
-  /// 检测子弹碰撞
-  void _checkBulletCollisions() {
-    for (var b in List.of(_bullets)) {
-      // 敌人碰撞检测
-      for (var e in List.of(_enemies)) {
-        if (b.rect.overlaps(e.rect)) {
-          _bullets.remove(b);
-          e.health -= b.config.damage;
-
-          if (e.health <= 0) {
-            _enemies.remove(e);
-            _score += e.points;
-            _enemiesDestroyed++;
-
-            _explosions.add(
-              Explosion(
-                position:
-                    e.position + Offset(e.size.width / 2, e.size.height / 2),
-                size: e.size.width * 1.5,
-              ),
-            );
-
-            if (e.type == EnemyType.boss) {
-              _spawnGameProp(_boss!.position, probability: 1);
-              _boss = null;
-              _levelUp();
-            } else {
-              _spawnGameProp(e.position);
-            }
-
-            if (_enemiesDestroyed >= (10 + 5 * level)) {
-              _enemiesDestroyed = 0;
-              _spawnBoss();
-            }
-          }
-          break;
-        }
-      }
-    }
-  }
-
-  /// 检测玩家碰撞
-  void _checkPlayerCollisions() {
-    if (_player.invincible) return;
-
-    for (var e in List.of(_enemies)) {
-      if (_player.rect.overlaps(e.rect)) {
-        if (e.type != EnemyType.boss) {
-          _enemies.remove(e);
-          _explosions.add(
-            Explosion(
-              position:
-                  e.position + Offset(e.size.width / 2, e.size.height / 2),
-              size: e.size.width * 1.5,
-            ),
-          );
-        }
-        if (_player.shield) {
-          _player.shield = false;
-        } else {
-          _lives--;
-          if (_lives <= 0) return _handleGameOver();
-          _player.invincible = true;
-          _player.invincibleTimer = 120;
-        }
-      }
-    }
-  }
-
-  /// 检测道具碰撞
-  void _checkPropCollisions() {
-    for (var p in List.of(_gameProps)) {
-      if (_player.rect.overlaps(p.rect)) {
-        _gameProps.remove(p);
-
-        switch (p.type) {
-          case PropType.tripleShot:
-            _player.tripleShot = true;
-            _player.tripleShotTimer = 300;
-            break;
-          case PropType.shield:
-            _player.shield = true;
-            break;
-          case PropType.flame:
-            _player.flameBullet = true;
-            _player.flameBulletTimer = 300;
-            break;
-          case PropType.bigBullet:
-            _player.bigBullet = true;
-            _player.bigBulletTimer = 300;
-            break;
-        }
-      }
-    }
-  }
-
-  /// 生成道具
-  void _spawnGameProp(Offset position, {double probability = 0.25}) {
-    if (_random.nextDouble() < probability) {
-      PropType type;
-      final rand = _random.nextDouble();
-
-      if (rand < 0.3) {
-        type = PropType.tripleShot;
-      } else if (rand < 0.5) {
-        type = PropType.shield;
-      } else if (rand < 0.75) {
-        type = PropType.flame;
-      } else {
-        type = PropType.bigBullet;
-      }
-
-      _gameProps.add(
-        GameProp(
-          position: position,
-          size: const Size(25, 25),
-          speed: 2,
-          type: type,
-          color: _getPropColor(type),
-        ),
-      );
-    }
-  }
-
-  /// 获取道具颜色
-  Color _getPropColor(PropType type) {
-    switch (type) {
-      case PropType.tripleShot:
-        return Colors.cyan;
-      case PropType.shield:
-        return Colors.green;
-      case PropType.flame:
-        return Colors.orange;
-      case PropType.bigBullet:
-        return Colors.purple;
-    }
-  }
-
-  /// 升级处理
-  void _levelUp() {
-    _level++;
-    _disableKeyState();
-    _gameState = GameState.levelUp;
-    _enemies.clear();
-    _boss = null;
-    notifyListeners();
-
-    Future.delayed(const Duration(seconds: 3), () {
-      _disableKeyState();
-      _gameState = GameState.playing;
-      notifyListeners();
-    });
+    if (_isSpacePressed) shoot();
   }
 
   /// 射击
   void shoot() {
-    if (_cooldown <= 0 && _gameState == GameState.playing) {
+    if (_cooldown <= 0) {
       // 确定子弹属性
       final bulletConfig = _getBulletConfig();
 
@@ -543,12 +357,12 @@ class Manager with ChangeNotifier implements TickerProvider {
     bool isFlame = false;
     Size bulletSize = const Size(4, 12);
     Color bulletColor = Colors.cyan;
-    double damage = 1;
+    int damage = 10;
 
     if (_player.bigBullet) {
       isBig = true;
       bulletSize = const Size(8, 20);
-      damage *= 1.5;
+      damage = (damage * 1.5).round();
     }
 
     if (_player.flameBullet) {
@@ -577,130 +391,430 @@ class Manager with ChangeNotifier implements TickerProvider {
     );
   }
 
-  /// 处理拖拽移动
-  void handleDrag(Offset delta) {
-    if (_gameState == GameState.playing) {
-      _player.position += delta;
-      notifyListeners();
+  /// 生成道具
+  void _spawnGameProp(Offset position, double probability) {
+    if (probability <= 0) return;
+
+    if (_random.nextDouble() < probability) {
+      PropType type;
+      final rand = _random.nextDouble();
+
+      if (rand < 0.3) {
+        type = PropType.tripleShot;
+      } else if (rand < 0.5) {
+        type = PropType.shield;
+      } else if (rand < 0.75) {
+        type = PropType.flame;
+      } else {
+        type = PropType.bigBullet;
+      }
+
+      _gameProps.add(
+        GameProp(
+          position: position,
+          size: GameConstants.propSize,
+          speed: 2,
+          type: type,
+        ),
+      );
     }
   }
 
-  /// 处理键盘事件
-  void handleKeyEvent(KeyEvent event) {
+  /// 生成敌人
+  void _spawnEnemies() {
+    _spawnTimer++;
+    final rate = 100 - (_level - 1) * 5;
+
+    if (_spawnTimer >= rate) {
+      _spawnTimer = 0;
+      final type = _random.nextDouble();
+      late Enemy enemy;
+
+      if (type < 0.6) {
+        // 基础敌人
+        enemy = Enemy(
+          position: Offset(
+            _random.nextDouble() *
+                (_screenSize.width - GameConstants.enemyBasicSize.width),
+            -GameConstants.enemyBasicSize.height,
+          ),
+          size: GameConstants.enemyBasicSize,
+          type: EnemyType.basic,
+          color: GameConstants.enemyBasicColor,
+          health: 5 + _random.nextInt(10),
+          speed: 2 + (_level - 1) * 0.3,
+          dx: 0,
+          points: 10,
+          probability: 0.25,
+        );
+      } else if (type < 0.9) {
+        // 快速敌人
+        enemy = Enemy(
+          position: Offset(
+            _random.nextDouble() *
+                (_screenSize.width - GameConstants.enemyFastSize.width),
+            -GameConstants.enemyFastSize.height,
+          ),
+          size: GameConstants.enemyFastSize,
+          type: EnemyType.fast,
+          color: GameConstants.enemyFastColor,
+          health: 5,
+          speed: 4 + (_level - 1) * 0.5,
+          dx: (_random.nextDouble() - 0.5) * 2,
+          points: 5,
+          probability: 0,
+        );
+      } else {
+        // 重型敌人
+        enemy = Enemy(
+          position: Offset(
+            _random.nextDouble() *
+                (_screenSize.width - GameConstants.enemyHeavySize.width),
+            -GameConstants.enemyHeavySize.height,
+          ),
+          size: GameConstants.enemyHeavySize,
+          type: EnemyType.heavy,
+          color: GameConstants.enemyHeavyColor,
+          health: 30,
+          speed: 1 + (_level - 1) * 0.2,
+          dx: 0,
+          points: 15,
+          probability: 0.5,
+        );
+      }
+
+      _enemies.add(enemy);
+    }
+  }
+
+  /// 更新敌人位置
+  void _updateEnemies() {
+    for (var e in List.of(_enemies)) {
+      if (e.type == EnemyType.boss) continue;
+      e.position += Offset(e.dx, e.speed);
+
+      if (e.type == EnemyType.fast) {
+        if (e.position.dx < 0 ||
+            e.position.dx > _screenSize.width - e.size.width) {
+          e.dx = -e.dx;
+        }
+      }
+
+      // 敌人逃出屏幕
+      if (e.position.dy > _screenSize.height) {
+        _enemies.remove(e);
+        if (e.type != EnemyType.fast) {
+          _score = (_score - GameConstants.enemyEscapePenalty)
+              .clamp(0, double.infinity)
+              .toInt();
+          _consecutiveKills = 0;
+          // 显示敌人逃脱信息
+          pageNavigator.value = (context) {
+            TemplateDialog.textBanner(
+              context: context,
+              text: "敌人逃脱！",
+              duration: GameConstants.textDuration,
+            );
+          };
+        }
+      }
+    }
+  }
+
+  /// 生成BOSS
+  void _spawnBoss() {
+    if (hasBoss) return;
+
+    // 使用AlertBanner显示BOSS出现信息
+    pageNavigator.value = (context) {
+      TemplateDialog.alertBanner(
+        context: context,
+        text: "Boss出现！",
+        duration: GameConstants.alertDuration,
+      );
+    };
+    _boss = Enemy(
+      position: Offset(
+        _screenSize.width / 2 - GameConstants.enemyBossSize.width / 2,
+        -GameConstants.enemyBossSize.height,
+      ),
+      size: GameConstants.enemyBossSize,
+      type: EnemyType.boss,
+      color: GameConstants.enemyBossColor,
+      health: 100 + (_level - 1) * 20,
+      speed: 1.5,
+      dx: _random.nextBool()
+          ? _random.nextDouble() * 2 + 1
+          : _random.nextDouble() * 2 - 3,
+      points: 20,
+      probability: 1,
+    );
+
+    _enemies.add(_boss!);
+  }
+
+  /// 更新BOSS状态
+  void _updateBoss() {
+    // BOSS移动逻辑
+    if (_boss!.position.dy < _screenSize.height / 3) {
+      // 如果未达到屏幕高度的1/3，则向下移动
+      _boss!.position += Offset(0, _boss!.speed);
+    } else {
+      // 左右移动，碰到边界反弹
+      _boss!.position += Offset(_boss!.dx, 0);
+      if (_boss!.position.dx < 0 ||
+          _boss!.position.dx > _screenSize.width - _boss!.size.width) {
+        _boss!.dx = -_boss!.dx;
+      }
+    }
+
+    // BOSS生成小敌人
+    _spawnTimer++;
+    final rate = 120 - (_level - 1) * 5;
+    if (_spawnTimer >= rate) {
+      _spawnTimer = 0;
+      _enemies.add(
+        Enemy(
+          position: Offset(
+            _boss!.position.dx + _boss!.size.width / 2 - 10,
+            _boss!.position.dy + _boss!.size.height / 2,
+          ),
+          size: const Size(20, 20),
+          type: EnemyType.fast,
+          color: Colors.yellow,
+          health: 5,
+          speed: 4 + (_level - 1) * 0.5,
+          dx: (_random.nextDouble() - 0.5) * 2,
+          points: 5,
+          probability: 0,
+        ),
+      );
+    }
+  }
+
+  /// 更新子弹位置
+  void _updateBullets() {
     if (_gameState != GameState.playing) return;
 
-    // 按键按下
-    if (event is KeyDownEvent) {
-      switch (event.logicalKey) {
-        case LogicalKeyboardKey.arrowUp:
-          _isUpPressed = true;
-          break;
-        case LogicalKeyboardKey.arrowDown:
-          _isDownPressed = true;
-          break;
-        case LogicalKeyboardKey.arrowLeft:
-          _isLeftPressed = true;
-          break;
-        case LogicalKeyboardKey.arrowRight:
-          _isRightPressed = true;
-          break;
-        case LogicalKeyboardKey.space:
-          _isSpacePressed = true;
-          break;
-        case LogicalKeyboardKey.keyP:
-          pauseGame();
-          break;
-      }
+    for (var b in List.of(_bullets)) {
+      final rad = b.angle * pi / 180;
+      b.position += Offset(sin(rad) * 7, -cos(rad) * 7);
 
-      _handleLongPressActions();
+      // 移除超出屏幕的子弹
+      if (b.position.dy < -b.config.size.height) {
+        _bullets.remove(b);
+      }
     }
 
-    // 按键抬起
-    if (event is KeyUpEvent) {
-      switch (event.logicalKey) {
-        case LogicalKeyboardKey.arrowUp:
-          _isUpPressed = false;
-          break;
-        case LogicalKeyboardKey.arrowDown:
-          _isDownPressed = false;
-          break;
-        case LogicalKeyboardKey.arrowLeft:
-          _isLeftPressed = false;
-          break;
-        case LogicalKeyboardKey.arrowRight:
-          _isRightPressed = false;
-          break;
-        case LogicalKeyboardKey.space:
-          _isSpacePressed = false;
-          break;
+    // 更新冷却时间
+    if (_cooldown > 0) {
+      _cooldown--;
+    }
+  }
+
+  /// 更新星空
+  void _updateStars() {
+    for (var star in _stars) {
+      star.position += Offset(0, star.speed);
+      if (star.position.dy > _screenSize.height) {
+        star.position = Offset(_random.nextDouble() * _screenSize.width, 0);
       }
     }
   }
 
-  /// 开始游戏
-  void startGame() {
-    _score = 0;
-    _lives = 3;
-    _level = 1;
-    _enemiesDestroyed = 0;
-    _boss = null;
-    _bullets.clear();
-    _enemies.clear();
-    _gameProps.clear();
-    _explosions.clear();
-    _resetPlayer();
-    _disableKeyState();
-    _gameState = GameState.playing;
-    notifyListeners();
+  /// 更新道具
+  void _updateProps() {
+    if (_gameState != GameState.playing) return;
+
+    for (var p in List.of(_gameProps)) {
+      p.position += Offset(0, p.speed);
+
+      if (p.position.dy > _screenSize.height) {
+        _gameProps.remove(p);
+      }
+    }
   }
 
-  /// 暂停游戏
-  void pauseGame() {
+  /// 更新爆炸效果
+  void _updateExplosions() {
+    for (var e in List.of(_explosions)) {
+      e.update();
+      if (e.finished) {
+        _explosions.remove(e);
+      }
+    }
+  }
+
+  /// 更新玩家状态
+  void _updatePlayer() {
+    // 更新冷却和状态计时器
+
+    if (_player.tripleShot) {
+      _player.tripleShotTimer--;
+    }
+
+    if (_player.flameBullet) {
+      _player.flameBulletTimer--;
+    }
+
+    if (_player.bigBullet) {
+      _player.bigBulletTimer--;
+    }
+
+    if (_player.invincible) {
+      _player.invincibleTimer--;
+      if (_player.invincible) {
+        _player.flashTimer++;
+        if (_player.flashTimer >= GameConstants.playerFlashDuration) {
+          _player.flash = !_player.flash;
+          _player.flashTimer = 0;
+        }
+      } else {
+        _player.flash = false;
+        _player.flashTimer = 0;
+      }
+    }
+  }
+
+  /// 检测子弹碰撞
+  void _checkBulletCollisions() {
+    if (_gameState != GameState.playing) return;
+
+    for (var b in List.of(_bullets)) {
+      // 敌人碰撞检测
+      for (var e in List.of(_enemies)) {
+        if (b.rect.overlaps(e.rect)) {
+          _bullets.remove(b);
+          _deductEnemyHealth(e, b.config.damage);
+        }
+      }
+    }
+  }
+
+  void _deductEnemyHealth(Enemy enemy, int damage) {
+    enemy.health -= damage;
+    if (enemy.health <= 0) {
+      _enemies.remove(enemy);
+      _score += enemy.points;
+
+      _explosions.add(
+        Explosion(
+          position:
+              enemy.position +
+              Offset(enemy.size.width / 2, enemy.size.height / 2),
+          size: enemy.size.width * 1.5,
+        ),
+      );
+
+      _spawnGameProp(enemy.position, enemy.probability);
+
+      if (enemy.type == EnemyType.boss) {
+        _boss = null;
+        _levelUp();
+        // BOSS击杀成就
+        if (!_unlockedAchievements.contains(AchievementType.bossKill)) {
+          _unlockAchievement(AchievementType.bossKill);
+        }
+      } else if (enemy.type != EnemyType.fast) {
+        _enemiesDestroyed++;
+
+        if (_enemiesDestroyed >= (10 + 5 * _level)) {
+          _enemiesDestroyed = 0;
+          _spawnBoss();
+        }
+        _consecutiveKills++;
+      }
+
+      // 检查成就
+      _checkAchievements();
+    }
+  }
+
+  /// 检测玩家与敌人碰撞
+  void _checkPlayerCollisions() {
+    if (_player.invincible) return;
+
+    for (var e in List.of(_enemies)) {
+      if (_player.rect.overlaps(e.rect)) {
+        // 检查护盾
+        if (_player.shield) {
+          _player.shield = false;
+          _deductEnemyHealth(e, GameConstants.shieldOffsetDamage);
+        } else {
+          // 重置连续击杀计数器
+          _consecutiveKills = 0;
+          int enemyHealth = e.health;
+          _deductEnemyHealth(e, _player.health);
+          _deductPlayerHealth(enemyHealth);
+        }
+      }
+    }
+  }
+
+  void _deductPlayerHealth(int damage) {
+    _player.health -= damage;
+    if (_player.health <= 0) {
+      _gameOver();
+    } else {
+      _player.invincibleTimer = GameConstants.invincibleDuration;
+      _player.flash = true;
+    }
+  }
+
+  /// 检测玩家与道具碰撞
+  void _checkPropCollisions() {
+    if (_gameState != GameState.playing) return;
+
+    for (var p in List.of(_gameProps)) {
+      if (_player.rect.overlaps(p.rect)) {
+        _gameProps.remove(p);
+
+        // 应用道具效果
+        switch (p.type) {
+          case PropType.tripleShot:
+            _player.tripleShotTimer = GameConstants.propEffectDuration;
+            break;
+          case PropType.shield:
+            _player.shield = true;
+            break;
+          case PropType.flame:
+            _player.flameBulletTimer = GameConstants.propEffectDuration;
+            break;
+          case PropType.bigBullet:
+            _player.bigBulletTimer = GameConstants.propEffectDuration;
+            break;
+        }
+      }
+    }
+  }
+
+  /// 更新游戏状态
+  void _update() {
     if (_gameState == GameState.playing) {
-      _disableKeyState();
-      _gameState = GameState.paused;
-      notifyListeners();
-    }
-  }
+      _updateStars();
+      _updatePlayer();
+      _updateBullets();
+      if (hasBoss) {
+        _updateBoss();
+      } else {
+        _spawnEnemies();
+      }
+      _updateEnemies();
+      _updateProps();
+      _updateExplosions();
 
-  /// 继续游戏
-  void resumeGame() {
-    if (_gameState == GameState.paused) {
-      _disableKeyState();
-      _gameState = GameState.playing;
-      notifyListeners();
+      _checkBulletCollisions();
+      _checkPlayerCollisions();
+      _checkPropCollisions();
     }
-  }
 
-  /// 处理游戏结束
-  void _handleGameOver() {
-    _disableKeyState();
-    _gameState = GameState.gameOver;
     notifyListeners();
   }
 
-  /// 禁用所有按键状态
-  void _disableKeyState() {
-    _isUpPressed = false;
-    _isDownPressed = false;
-    _isLeftPressed = false;
-    _isRightPressed = false;
-    _isSpacePressed = false;
+  @override
+  void dispose() {
+    _ticker.dispose();
+    focusNode.dispose();
+    super.dispose();
   }
-
-  // Getters
-  Size get screenSize => _screenSize;
-  GameState get gameState => _gameState;
-  int get score => _score;
-  int get lives => _lives;
-  int get level => _level;
-  Player get player => _player;
-  List<Star> get stars => _stars;
-  List<Bullet> get bullets => _bullets;
-  List<Enemy> get enemies => _enemies;
-  List<GameProp> get gameProps => _gameProps;
-  List<Explosion> get explosions => _explosions;
-  List<GameAlert> get alerts => _alerts;
-  bool get hasBoss => _boss != null;
-  Enemy? get boss => _boss;
 }

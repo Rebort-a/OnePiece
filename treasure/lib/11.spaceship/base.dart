@@ -1,9 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-/// 游戏状态枚举
-enum GameState { start, playing, paused, gameOver, levelUp }
-
 /// 游戏对象基类
 abstract class GameObject {
   Offset position;
@@ -14,60 +11,16 @@ abstract class GameObject {
   Rect get rect => position & size;
 }
 
-/// 玩家类
-class Player extends GameObject {
-  Color color;
-  bool invincible;
-  int invincibleTimer;
-  bool shield;
-  bool tripleShot;
-  int tripleShotTimer;
-  bool flameBullet;
-  int flameBulletTimer;
-  bool bigBullet;
-  int bigBulletTimer;
-
-  Player({
-    super.position = Offset.zero,
-    super.size = const Size(40, 50),
-    this.color = const Color(0xFF00F0FF),
-    this.invincible = false,
-    this.invincibleTimer = 0,
-    this.shield = false,
-    this.tripleShot = false,
-    this.tripleShotTimer = 0,
-    this.flameBullet = false,
-    this.flameBulletTimer = 0,
-    this.bigBullet = false,
-    this.bigBulletTimer = 0,
-  });
-}
-
-/// 敌人类型枚举
-enum EnemyType { basic, fast, heavy, boss }
-
-/// 敌人类
-class Enemy extends GameObject {
-  EnemyType type;
+/// 星星背景类
+class Star extends GameObject {
+  double opacity;
   double speed;
-  double health;
-  Color color;
-  int points;
-  double dx;
-  bool isMovingDown;
-  int minionSpawnTimer;
 
-  Enemy({
-    required this.type,
+  Star({
     required super.position,
     required super.size,
+    required this.opacity,
     required this.speed,
-    required this.health,
-    required this.color,
-    required this.points,
-    required this.dx,
-    this.isMovingDown = true,
-    this.minionSpawnTimer = 0,
   });
 }
 
@@ -75,7 +28,7 @@ class Enemy extends GameObject {
 class BulletConfig {
   final bool isBig;
   final bool isFlame;
-  final double damage;
+  final int damage;
   final Color color;
 
   final Size size;
@@ -100,35 +53,104 @@ class Bullet extends GameObject {
 /// 道具类型枚举
 enum PropType { tripleShot, shield, flame, bigBullet }
 
+extension PropTypeExtension on PropType {
+  IconData getIcon(PropType type) {
+    switch (type) {
+      case PropType.tripleShot:
+        return Icons.exposure_plus_2;
+      case PropType.shield:
+        return Icons.shield_outlined;
+      case PropType.flame:
+        return Icons.whatshot;
+      case PropType.bigBullet:
+        return Icons.zoom_in;
+    }
+  }
+
+  Color getColor(PropType type) {
+    switch (type) {
+      case PropType.tripleShot:
+        return Colors.cyan;
+      case PropType.shield:
+        return Colors.green;
+      case PropType.flame:
+        return Colors.orange;
+      case PropType.bigBullet:
+        return Colors.amber;
+    }
+  }
+}
+
 /// 道具类
 class GameProp extends GameObject {
   PropType type;
   double speed;
-  Color color;
 
   GameProp({
     required super.position,
     required super.size,
     required this.type,
     required this.speed,
-    required this.color,
   });
 }
 
-/// 爆炸粒子类
-class ExplosionParticle {
-  Offset position;
-  double radius;
-  Color color;
-  Offset velocity;
-  int life;
+/// 敌人类型枚举
+enum EnemyType { basic, fast, heavy, boss }
 
-  ExplosionParticle({
-    required this.position,
-    required this.radius,
+/// 敌人类
+class Enemy extends GameObject {
+  EnemyType type;
+  Color color;
+  int health;
+  double speed;
+  double dx;
+  int points;
+  double probability;
+
+  Enemy({
+    required super.position,
+    required super.size,
+    required this.type,
     required this.color,
-    required this.velocity,
-    required this.life,
+    required this.health,
+    required this.speed,
+    required this.dx,
+    required this.points,
+    required this.probability,
+  });
+}
+
+/// 玩家类
+class Player extends GameObject {
+  Color color;
+  int health;
+  double speed;
+  bool shield;
+  int invincibleTimer;
+  int tripleShotTimer;
+  int flameBulletTimer;
+  int bigBulletTimer;
+  bool flash;
+  int flashTimer;
+
+  bool get invincible => invincibleTimer > 0;
+  bool get tripleShot => tripleShotTimer > 0;
+  bool get flameBullet => flameBulletTimer > 0;
+  bool get bigBullet => bigBulletTimer > 0;
+
+  Player({
+    super.position = Offset.zero,
+    super.size = const Size(40, 50),
+    required this.color,
+    required this.health,
+    required this.speed,
+    this.shield = false,
+    this.invincibleTimer = 0,
+    this.tripleShotTimer = 0,
+    this.flameBulletTimer = 0,
+    this.bigBulletTimer = 0,
+    this.flash = false,
+    this.flashTimer = 0,
   });
 }
 
@@ -173,51 +195,28 @@ class Explosion {
   /// 更新爆炸状态
   void update() {
     alpha -= 0.05;
-    bool active = false;
-    for (var p in List.of(particles)) {
+    for (var p in particles) {
       p.position += p.velocity;
       p.life--;
-      if (p.life <= 0) {
-        particles.remove(p);
-      } else {
-        active = true;
-      }
     }
-    if (!active || alpha <= 0) finished = true;
+    particles.removeWhere((p) => p.life <= 0);
+    finished = particles.isEmpty || alpha <= 0;
   }
 }
 
-/// 星星背景类
-class Star extends GameObject {
-  double opacity;
-  double speed;
-
-  Star({
-    required super.position,
-    required super.size,
-    required this.opacity,
-    required this.speed,
-  });
-}
-
-/// 警报类型枚举
-enum AlertType { enemyEscaped, warning, info }
-
-/// 游戏警报类
-class GameAlert {
-  String text;
+/// 爆炸粒子类
+class ExplosionParticle {
+  Offset position;
+  double radius;
   Color color;
-  int duration;
-  double opacity;
-  int timer;
-  AlertType type;
+  Offset velocity;
+  int life;
 
-  GameAlert({
-    required this.text,
+  ExplosionParticle({
+    required this.position,
+    required this.radius,
     required this.color,
-    this.duration = 60,
-    this.opacity = 1.0,
-    this.timer = 0,
-    this.type = AlertType.info,
+    required this.velocity,
+    required this.life,
   });
 }

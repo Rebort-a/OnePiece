@@ -1,9 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+
+import '../00.common/component/glass_container.dart';
+import '../00.common/component/notifier_navigator.dart';
 import 'base.dart';
+import 'constant.dart';
 import 'manager.dart';
 
-/// 太空飞船游戏页面
 class SpaceShipPage extends StatelessWidget {
   final _manager = Manager();
 
@@ -11,313 +14,493 @@ class SpaceShipPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (_manager.screenSize == Size.zero) {
-            _manager.initGame(constraints.biggest);
-          } else {
-            _manager.changeSize(constraints.biggest);
-          }
+    return Scaffold(body: _buildGameView(context));
+  }
 
-          return AnimatedBuilder(
-            animation: _manager,
-            builder: (_, _) {
-              return Stack(
-                children: [
-                  CustomPaint(
-                    size: Size.infinite,
-                    painter: GamePainter(_manager),
-                  ),
+  Widget _buildGameView(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (_manager.screenSize == Size.zero) {
+          _manager.initGame(constraints.biggest);
+        } else {
+          _manager.changeSize(constraints.biggest);
+        }
 
-                  ..._buildAlerts(),
+        return AnimatedBuilder(
+          animation: _manager,
+          builder: (_, __) {
+            return Stack(
+              children: [
+                // 游戏画布
+                CustomPaint(
+                  size: Size.infinite,
+                  painter: GamePainter(_manager),
+                ),
 
-                  // 手势控制
-                  GestureDetector(
-                    onPanUpdate: (details) =>
-                        _manager.handleDrag(details.delta),
-                    onTapDown: (_) => _manager.shoot(),
-                  ),
+                // 手势控制
+                GestureDetector(
+                  onPanUpdate: (details) => _manager.handleDrag(details.delta),
+                  onTapDown: (_) => _manager.shoot(),
+                ),
 
-                  // 键盘监听
-                  KeyboardListener(
-                    focusNode: _manager.focusNode,
-                    onKeyEvent: _manager.handleKeyEvent,
-                    child: const SizedBox.expand(),
-                  ),
+                // 键盘监听
+                KeyboardListener(
+                  focusNode: _manager.focusNode,
+                  onKeyEvent: _manager.handleKeyEvent,
+                  child: const SizedBox.expand(),
+                ),
 
-                  // 游戏状态UI
-                  if (_manager.gameState == GameState.start)
-                    _buildStartScreen(),
+                // 导航控制
+                NotifierNavigator(navigatorHandler: _manager.pageNavigator),
 
-                  if (_manager.gameState == GameState.paused)
-                    _buildPauseScreen(),
+                // 游戏状态UI
+                _buildFloatArea(context),
 
-                  if (_manager.gameState == GameState.levelUp)
-                    _buildLevelUpScreen(),
+                // 暂停/继续按钮
+                _buildControlButton(context),
 
-                  if (_manager.gameState == GameState.gameOver)
-                    _buildGameOverScreen(),
+                // 玩家信息
+                _buildInfoArea(context),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-                  // 顶部控制按钮
-                  Positioned(
-                    top: 20,
-                    left: 10,
-                    child: _buildIconButton(
-                      icon: Icons.arrow_back,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
+  Widget _buildFloatArea(BuildContext context) {
+    switch (_manager.gameState) {
+      case GameState.start:
+        return _buildStartFloat(context);
+      case GameState.playing:
+        return SizedBox.shrink();
+      case GameState.paused:
+        return _buildPauseFloat(context);
+      case GameState.gameOver:
+        return _buildGameOverFloat(context);
+      case GameState.levelUp:
+        return _buildLevelUpFloat();
+    }
+  }
 
-                  // 游戏信息
-                  Positioned(
-                    top: 80,
-                    right: 10,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '生命: ${_manager.lives}',
-                          style: _infoTextStyle(Colors.cyan),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '分数: ${_manager.score}',
-                          style: _infoTextStyle(Colors.yellow),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 暂停/继续按钮
-                  Positioned(
-                    top: 20,
-                    right: 10,
-                    child: _buildIconButton(
-                      icon: _manager.gameState == GameState.playing
-                          ? Icons.pause
-                          : Icons.play_arrow,
-                      onPressed: () => _manager.gameState == GameState.paused
-                          ? _manager.resumeGame()
-                          : _manager.pauseGame(),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+  Widget _buildInfoArea(BuildContext context) {
+    return Positioned(
+      top: 32,
+      left: 10,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '生命: ${_manager.lives / 10}',
+            style: GameConstants.infoTextStyle.copyWith(
+              color: GameConstants.textCyan,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '分数: ${_manager.score}',
+            style: GameConstants.infoTextStyle.copyWith(
+              color: GameConstants.textYellow,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '等级: ${_manager.level}',
+            style: GameConstants.infoTextStyle.copyWith(
+              color: GameConstants.textGreen,
+            ),
+          ),
+          const SizedBox(height: 4),
+          _buildPropIndicators(),
+        ],
       ),
     );
   }
 
-  /// 构建开始屏幕
-  Widget _buildStartScreen() {
+  Widget _buildControlButton(BuildContext context) {
+    return Positioned(
+      top: 32,
+      right: 10,
+      child: _buildIconButton(
+        icon: _manager.gameState == GameState.playing
+            ? Icons.pause
+            : Icons.play_arrow,
+        onPressed: () => _manager.gameState == GameState.paused
+            ? _manager.resumeGame()
+            : _manager.pauseGame(),
+      ),
+    );
+  }
+
+  Widget _buildStartFloat(BuildContext context) {
     return Center(
-      child: ElevatedButton(
-        onPressed: _manager.startGame,
-        child: const Text('开始游戏'),
+      child: GlassContainer(
+        width: 300,
+        height: 300,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('星际战机', style: GameConstants.titleTextStyle),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: _manager.startGame,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GameConstants.playerColor.withValues(
+                  alpha: 0.2,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: BorderSide(color: GameConstants.playerColor),
+                ),
+              ),
+              child: const Text(
+                '开始游戏',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: GameConstants.playerColor,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// 构建暂停屏幕
-  Widget _buildPauseScreen() {
+  Widget _buildPauseFloat(BuildContext context) {
     return Center(
-      child: ElevatedButton(
-        onPressed: _manager.resumeGame,
-        child: const Text('继续游戏'),
+      child: GlassContainer(
+        width: 300,
+        height: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('游戏暂停', style: GameConstants.titleTextStyle),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: _manager.resumeGame,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GameConstants.playerColor.withValues(
+                  alpha: 0.2,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: BorderSide(color: GameConstants.playerColor),
+                ),
+              ),
+              child: const Text(
+                '继续游戏',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: GameConstants.playerColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton(
+              onPressed: _manager.startGame,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white10,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: const BorderSide(color: Colors.white30),
+                ),
+              ),
+              child: const Text(
+                '重新开始',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white10,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: const BorderSide(color: Colors.white30),
+                ),
+              ),
+              child: const Text(
+                '退出游戏',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// 构建升级屏幕
-  Widget _buildLevelUpScreen() {
+  Widget _buildLevelUpFloat() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            '等级提升',
-            style: TextStyle(
-              color: Colors.green,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(
-                  color: Colors.black54,
-                  offset: Offset(2, 2),
-                  blurRadius: 4,
+          GlassContainer(
+            width: 300,
+            height: 200,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Text('等级提升', style: GameConstants.titleTextStyle),
+                const SizedBox(height: 20),
+                Text(
+                  '当前等级: ${_manager.level}',
+                  style: GameConstants.infoTextStyle.copyWith(
+                    color: GameConstants.textCyan,
+                    fontSize: 24,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  '准备迎接更难的挑战!',
+                  style: TextStyle(
+                    color: GameConstants.textYellow,
+                    fontSize: 18,
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '当前等级: ${_manager.level}',
-            style: const TextStyle(
-              color: Colors.cyan,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 40),
-          const Text(
-            '准备迎接更难的挑战!',
-            style: TextStyle(color: Colors.yellow, fontSize: 18),
           ),
         ],
       ),
     );
   }
 
-  /// 构建游戏结束屏幕
-  Widget _buildGameOverScreen() {
+  Widget _buildGameOverFloat(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            '游戏结束',
-            style: TextStyle(
-              color: Colors.green,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(
-                  color: Colors.black54,
-                  offset: Offset(2, 2),
-                  blurRadius: 4,
+      child: GlassContainer(
+        width: 300,
+        height: 450,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '游戏结束',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: GameConstants.textNeonPink,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildScoreItem('最终得分', _manager.score.toString()),
+            _buildScoreItem('达到等级', _manager.level.toString()),
+            const SizedBox(height: 20),
+            const Text(
+              '解锁成就',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildAchievementsList(),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _manager.startGame,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GameConstants.playerColor.withValues(
+                  alpha: 0.2,
                 ),
-              ],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: BorderSide(color: GameConstants.playerColor),
+                ),
+              ),
+              child: const Text(
+                '再玩一次',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: GameConstants.playerColor,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 15),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white10,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: const BorderSide(color: Colors.white30),
+                ),
+              ),
+              child: const Text(
+                '返回主页',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
           Text(
-            '当前等级: ${_manager.level}',
-            style: const TextStyle(
-              color: Colors.cyan,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            label,
+            style: const TextStyle(fontSize: 18, color: Colors.blueGrey),
           ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: _manager.startGame,
-            child: const Text('再来一局'),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// 构建图标按钮
+  Widget _buildAchievementsList() {
+    final unlocked = _manager.unlockedAchievements;
+    if (unlocked.isEmpty) {
+      return const Text('没有解锁任何成就', style: TextStyle(color: Colors.white70));
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var type in unlocked)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white70,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              Achievements.all.firstWhere((a) => a.type == type).title,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPropIndicators() {
+    final player = _manager.player;
+    return Row(
+      children: [
+        if (player.tripleShot)
+          _buildPropIndicator(
+            type: PropType.tripleShot,
+            duration: player.tripleShotTimer,
+          ),
+        if (player.flameBullet)
+          _buildPropIndicator(
+            type: PropType.flame,
+            duration: player.flameBulletTimer,
+          ),
+        if (player.bigBullet)
+          _buildPropIndicator(
+            type: PropType.bigBullet,
+            duration: player.bigBulletTimer,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPropIndicator({required PropType type, required int duration}) {
+    Color color = type.getColor(type);
+    IconData icon = type.getIcon(type);
+
+    return Container(
+      width: 40,
+      height: 40,
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Center(child: Icon(icon, color: color, size: 20)),
+          ),
+          if (duration > 0)
+            Container(
+              height: 3,
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: LinearProgressIndicator(
+                value: duration / GameConstants.propEffectDuration,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildIconButton({
     required IconData icon,
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: 50,
-      height: 50,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(25),
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white24),
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 24),
+        icon: Icon(icon, color: Colors.white),
         onPressed: onPressed,
         padding: EdgeInsets.zero,
-        splashRadius: 25,
       ),
     );
-  }
-
-  /// 信息文本样式
-  TextStyle _infoTextStyle(Color color) {
-    return TextStyle(
-      color: color,
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
-      shadows: const [
-        Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 4),
-      ],
-    );
-  }
-
-  /// 生成屏幕警报
-  List<Widget> _buildAlerts() {
-    if (_manager.alerts.isEmpty) return const [];
-    final alert = _manager.alerts.last;
-
-    return [
-      Positioned(
-        top: 20,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(0, -0.5),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutBack,
-                        ),
-                      ),
-                  child: child,
-                ),
-              );
-            },
-            child: Container(
-              key: ValueKey(alert.hashCode),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.black.withAlpha(191), // 0.75透明度
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: alert.color.withAlpha(229), // 0.9透明度
-                  width: 2,
-                ),
-              ),
-              child: Text(
-                alert.text,
-                style: TextStyle(
-                  color: alert.color,
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  shadows: const [
-                    Shadow(
-                      color: Colors.black87,
-                      offset: Offset(2, 2),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ];
   }
 }
 
 /// 游戏绘制器
 class GamePainter extends CustomPainter {
   final Manager manager;
+  final Paint _paint = Paint();
 
   GamePainter(this.manager) : super(repaint: manager);
 
   @override
   void paint(Canvas canvas, Size size) {
-    _drawBackground(canvas);
+    _drawBackground(canvas, size);
     _drawStars(canvas);
     _drawBullets(canvas);
     _drawEnemies(canvas);
@@ -330,46 +513,139 @@ class GamePainter extends CustomPainter {
   }
 
   /// 绘制背景
-  void _drawBackground(Canvas canvas) {
-    canvas.drawColor(const Color(0xFF0B1120), BlendMode.srcOver);
+  void _drawBackground(Canvas canvas, Size size) {
+    _paint.color = GameConstants.bgColor;
+    _paint.style = PaintingStyle.fill;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _paint);
   }
 
-  /// 绘制星星
+  /// 绘制星空
   void _drawStars(Canvas canvas) {
     for (var star in manager.stars) {
-      final paint = Paint()
-        ..color = Colors.white.withValues(alpha: star.opacity)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(star.position, star.size.width, paint);
+      _paint.color = Color.fromRGBO(255, 255, 255, star.opacity);
+      _paint.style = PaintingStyle.fill;
+      canvas.drawCircle(star.position, star.size.width, _paint);
     }
+  }
+
+  /// 绘制玩家
+  void _drawPlayer(Canvas canvas) {
+    final player = manager.player;
+
+    // 无敌状态闪烁效果
+    if (player.flash) {
+      return;
+    }
+
+    // 绘制护盾
+    if (player.shield) {
+      _paint.color = GameConstants.shieldColor.withValues(alpha: 0.5);
+      _paint.style = PaintingStyle.stroke;
+      _paint.strokeWidth = 2;
+      canvas.drawCircle(
+        player.position + Offset(player.size.width / 2, player.size.height / 2),
+        player.size.width * 0.7,
+        _paint,
+      );
+
+      _paint.color = GameConstants.shieldColor.withValues(alpha: 0.3);
+      canvas.drawCircle(
+        player.position + Offset(player.size.width / 2, player.size.height / 2),
+        player.size.width * 0.8,
+        _paint,
+      );
+    }
+
+    // 绘制玩家主体
+    _paint.color = player.color;
+    _paint.style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(player.position.dx + player.size.width / 2, player.position.dy);
+    path.lineTo(player.position.dx, player.position.dy + player.size.height);
+    path.lineTo(
+      player.position.dx + player.size.width,
+      player.position.dy + player.size.height,
+    );
+    path.close();
+    canvas.drawPath(path, _paint);
+
+    // 发光效果
+    _paint.color = player.color.withValues(alpha: 0.5);
+    final glowPath = Path();
+    glowPath.moveTo(
+      player.position.dx + player.size.width / 2,
+      player.position.dy,
+    );
+    glowPath.lineTo(
+      player.position.dx + 5,
+      player.position.dy + player.size.height - 10,
+    );
+    glowPath.lineTo(
+      player.position.dx + player.size.width - 5,
+      player.position.dy + player.size.height - 10,
+    );
+    glowPath.close();
+    canvas.drawPath(glowPath, _paint);
+
+    // 绘制细节
+    _paint.color = const Color(0xFF1E293B);
+    canvas.drawRect(
+      Rect.fromLTWH(
+        player.position.dx + player.size.width / 2 - 5,
+        player.position.dy + player.size.height / 2,
+        10,
+        15,
+      ),
+      _paint,
+    );
+
+    // 引擎效果
+    _paint.color = GameConstants.textNeonPink.withValues(alpha: 0.8);
+    final enginePath = Path();
+    enginePath.moveTo(
+      player.position.dx + player.size.width / 2 - 8,
+      player.position.dy + player.size.height,
+    );
+    enginePath.lineTo(
+      player.position.dx + player.size.width / 2,
+      player.position.dy + player.size.height + 10,
+    );
+    enginePath.lineTo(
+      player.position.dx + player.size.width / 2 + 8,
+      player.position.dy + player.size.height,
+    );
+    enginePath.close();
+    canvas.drawPath(enginePath, _paint);
   }
 
   /// 绘制子弹
   void _drawBullets(Canvas canvas) {
     for (var bullet in manager.bullets) {
-      final paint = Paint()
-        ..color = bullet.config.color
-        ..style = PaintingStyle.fill;
+      _paint.color = bullet.config.color;
+      _paint.style = PaintingStyle.fill;
 
-      // 火焰子弹添加特殊效果
-      if (bullet.config.isFlame) {
-        canvas.drawRect(bullet.rect, paint);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          bullet.position.dx,
+          bullet.position.dy,
+          bullet.config.size.width,
+          bullet.config.size.height,
+        ),
+        _paint,
+      );
 
-        final glowPaint = Paint()
-          ..color = bullet.config.color.withValues(alpha: 0.5)
-          ..style = PaintingStyle.fill;
-        canvas.drawRect(
-          Rect.fromLTWH(
-            bullet.rect.left - 2,
-            bullet.rect.top,
-            bullet.rect.width + 4,
-            bullet.rect.height * 1.5,
-          ),
-          glowPaint,
-        );
-      } else {
-        canvas.drawRect(bullet.rect, paint);
-      }
+      // 子弹发光效果
+      _paint.color = bullet.config.color.withValues(alpha: 0.5);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          bullet.position.dx - 1,
+          bullet.position.dy - 2,
+          bullet.config.size.width + 2,
+          bullet.config.size.height + 4,
+        ),
+        _paint,
+      );
     }
   }
 
@@ -513,7 +789,7 @@ class GamePainter extends CustomPainter {
 
     // 绘制BOSS生命值条
     final healthBarWidth = enemy.size.width * 0.8;
-    final maxHealth = 9 + (manager.level - 1) * 3;
+    final maxHealth = 100 + (manager.level - 1) * 20;
     final healthPercent = enemy.health / maxHealth;
     final healthBarPaint = Paint()
       ..color = Color.lerp(Colors.red, Colors.green, healthPercent)!
@@ -546,185 +822,76 @@ class GamePainter extends CustomPainter {
 
   /// 绘制道具
   void _drawProps(Canvas canvas) {
-    for (var gameProp in manager.gameProps) {
-      final center = Offset(
-        gameProp.position.dx + gameProp.size.width / 2,
-        gameProp.position.dy + gameProp.size.height / 2,
-      );
+    for (var prop in manager.gameProps) {
+      Color color = prop.type.getColor(prop.type);
+      IconData icon = prop.type.getIcon(prop.type); // 获取图标数据
 
       // 绘制道具主体
-      final paint = Paint()
-        ..color = gameProp.color
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(center, gameProp.size.width / 2, paint);
+      _paint.color = color;
+      _paint.style = PaintingStyle.fill;
+      final center =
+          prop.position + Offset(prop.size.width / 2, prop.size.height / 2);
+      canvas.drawCircle(center, prop.size.width / 2, _paint);
 
-      // 绘制发光效果
-      final glowPaint = Paint()
-        ..color = gameProp.color.withValues(alpha: 0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawCircle(center, gameProp.size.width / 2 + 3, glowPaint);
+      // 发光效果
+      _paint.color = color.withAlpha(204); // 0.8透明度对应204的alpha值
+      _paint.style = PaintingStyle.stroke;
+      _paint.strokeWidth = 2;
+      canvas.drawCircle(center, prop.size.width / 2 + 3, _paint);
 
-      // 绘制文本标识
-      final textPainter = TextPainter(
-        textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr,
-      );
-
-      String propText;
-      switch (gameProp.type) {
-        case PropType.tripleShot:
-          propText = 'T';
-          break;
-        case PropType.shield:
-          propText = 'S';
-          break;
-        case PropType.flame:
-          propText = 'F';
-          break;
-        case PropType.bigBullet:
-          propText = 'B';
-          break;
-      }
-
-      textPainter.text = TextSpan(
-        text: propText,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      );
-
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(
-          center.dx - textPainter.width / 2,
-          center.dy - textPainter.height / 2,
-        ),
-      );
+      // 绘制图标
+      _drawIcon(canvas, icon, center, prop.size, Colors.white);
     }
+  }
+
+  /// 绘制图标
+  void _drawIcon(
+    Canvas canvas,
+    IconData icon,
+    Offset center,
+    Size size,
+    Color color,
+  ) {
+    // 创建文本绘制器来绘制图标
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          color: color,
+          fontSize: size.width * 0.6, // 图标大小为道具宽度的60%
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    // 布局文本
+    textPainter.layout();
+
+    // 计算图标位置（使其居中）
+    final iconOffset = Offset(
+      center.dx - textPainter.width / 2,
+      center.dy - textPainter.height / 2,
+    );
+
+    // 绘制图标
+    textPainter.paint(canvas, iconOffset);
   }
 
   /// 绘制爆炸效果
   void _drawExplosions(Canvas canvas) {
     for (var explosion in manager.explosions) {
-      for (var p in explosion.particles) {
-        final paint = Paint()
-          ..color = p.color.withValues(alpha: explosion.alpha * (p.life / 50))
-          ..style = PaintingStyle.fill;
-        canvas.drawCircle(p.position, p.radius, paint);
+      for (var particle in explosion.particles) {
+        _paint.color = particle.color.withValues(alpha: explosion.alpha);
+        _paint.style = PaintingStyle.fill;
+        canvas.drawCircle(particle.position, particle.radius, _paint);
       }
     }
   }
 
-  /// 绘制玩家
-  void _drawPlayer(Canvas canvas) {
-    final player = manager.player;
-    if (player.invincible && (DateTime.now().millisecond % 200) >= 100) {
-      return; // 无敌状态闪烁效果
-    }
-
-    // 绘制护盾
-    if (player.shield) {
-      _drawPlayerShield(canvas, player);
-    }
-
-    // 绘制玩家主体
-    _drawPlayerShip(canvas, player);
-  }
-
-  /// 绘制玩家护盾
-  void _drawPlayerShield(Canvas canvas, Player player) {
-    final center = Offset(
-      player.position.dx + player.size.width / 2,
-      player.position.dy + player.size.height / 2,
-    );
-
-    // 内层护盾
-    final shieldPaint = Paint()
-      ..color = Colors.green.withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, player.size.width * 0.7, shieldPaint);
-
-    // 外层护盾发光
-    final shieldGlowPaint = Paint()
-      ..color = Colors.green.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, player.size.width * 0.8, shieldGlowPaint);
-  }
-
-  /// 绘制玩家飞船
-  void _drawPlayerShip(Canvas canvas, Player player) {
-    final playerPaint = Paint()
-      ..color = player.color
-      ..style = PaintingStyle.fill;
-
-    // 绘制主体
-    final path = Path()
-      ..moveTo(player.position.dx + player.size.width / 2, player.position.dy)
-      ..lineTo(player.position.dx, player.position.dy + player.size.height)
-      ..lineTo(
-        player.position.dx + player.size.width,
-        player.position.dy + player.size.height,
-      )
-      ..close();
-    canvas.drawPath(path, playerPaint);
-
-    // 绘制主体发光效果
-    final glowPaint = Paint()
-      ..color = player.color.withValues(alpha: 0.5)
-      ..style = PaintingStyle.fill;
-
-    final glowPath = Path()
-      ..moveTo(player.position.dx + player.size.width / 2, player.position.dy)
-      ..lineTo(
-        player.position.dx + 5,
-        player.position.dy + player.size.height - 10,
-      )
-      ..lineTo(
-        player.position.dx + player.size.width - 5,
-        player.position.dy + player.size.height - 10,
-      )
-      ..close();
-    canvas.drawPath(glowPath, glowPaint);
-
-    // 绘制细节装饰
-    final detailPaint = Paint()
-      ..color = const Color(0xFF1E293B)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(
-      Rect.fromLTWH(
-        player.position.dx + player.size.width / 2 - 5,
-        player.position.dy + player.size.height / 2,
-        10,
-        15,
-      ),
-      detailPaint,
-    );
-
-    // 绘制引擎效果
-    final enginePaint = Paint()
-      ..color = Colors.pink.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-
-    final enginePath = Path()
-      ..moveTo(
-        player.position.dx + player.size.width / 2 - 8,
-        player.position.dy + player.size.height,
-      )
-      ..lineTo(
-        player.position.dx + player.size.width / 2,
-        player.position.dy + player.size.height + 10,
-      )
-      ..lineTo(
-        player.position.dx + player.size.width / 2 + 8,
-        player.position.dy + player.size.height,
-      )
-      ..close();
-    canvas.drawPath(enginePath, enginePaint);
-  }
-
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
 }
