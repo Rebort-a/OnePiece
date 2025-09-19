@@ -7,7 +7,10 @@ class GameConstants {
   static const Color playerColor = Color(0xFF00F0FF);
   static const Color invincibleColor = Color(0x8000F0FF);
   static const Color shieldColor = Color(0x8000FF00);
+  static const Color textNeonBlue = Color(0xFF00F0FF);
+  static const Color textNeonBlueAlpha = Color(0xB300F0FF);
   static const Color textNeonPink = Color(0xFFFF00C8);
+  static const Color bulletFlameColor = Colors.orange;
   static const Color textCyan = Colors.cyan;
   static const Color textYellow = Colors.yellow;
   static const Color textGreen = Colors.green;
@@ -16,7 +19,6 @@ class GameConstants {
   static const Color enemyHeavyColor = Colors.purple;
   static const Color enemyBossColor = Colors.redAccent;
   static const Color bulletDefaultColor = Colors.cyan;
-  static const Color bulletFlameColor = Colors.orange;
 
   // 尺寸常量
   static const Size playerSize = Size(40, 50);
@@ -45,18 +47,22 @@ class GameConstants {
   static const int shieldOffsetDamage = 30;
 
   // 文本样式常量
+  static const TextStyle titleTextStyle = TextStyle(
+    fontSize: 36,
+    fontWeight: FontWeight.bold,
+    color: textNeonBlue,
+    shadows: [
+      Shadow(color: textNeonBlueAlpha, offset: Offset(0, 0), blurRadius: 10),
+      Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 4),
+    ],
+  );
+
   static const TextStyle infoTextStyle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
     shadows: [
       Shadow(color: Colors.black54, offset: Offset(2, 2), blurRadius: 4),
     ],
-  );
-
-  static const TextStyle titleTextStyle = TextStyle(
-    fontSize: 36,
-    fontWeight: FontWeight.bold,
-    shadows: [Shadow(color: Colors.grey, offset: Offset(2, 2), blurRadius: 4)],
   );
 
   static const TextStyle bannerTextStyle = TextStyle(

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import '../00.common/component/cool_button.dart';
 import '../00.common/component/glass_container.dart';
 import '../00.common/component/notifier_navigator.dart';
 import 'base.dart';
@@ -53,14 +54,14 @@ class SpaceShipPage extends StatelessWidget {
                 // 导航控制
                 NotifierNavigator(navigatorHandler: _manager.pageNavigator),
 
+                // 玩家信息
+                _buildInfoArea(context),
+
                 // 游戏状态UI
                 _buildFloatArea(context),
 
                 // 暂停/继续按钮
                 _buildControlButton(context),
-
-                // 玩家信息
-                _buildInfoArea(context),
               ],
             );
           },
@@ -136,35 +137,15 @@ class SpaceShipPage extends StatelessWidget {
   Widget _buildStartFloat(BuildContext context) {
     return Center(
       child: GlassContainer(
-        width: 300,
-        height: 300,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('星际战机', style: GameConstants.titleTextStyle),
             const SizedBox(height: 40),
-            ElevatedButton(
+            CoolButton(
+              text: '开始游戏',
+              icon: Icons.play_arrow,
               onPressed: _manager.startGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GameConstants.playerColor.withValues(
-                  alpha: 0.2,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 15,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: BorderSide(color: GameConstants.playerColor),
-                ),
-              ),
-              child: const Text(
-                '开始游戏',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: GameConstants.playerColor,
-                ),
-              ),
             ),
           ],
         ),
@@ -175,8 +156,6 @@ class SpaceShipPage extends StatelessWidget {
   Widget _buildPauseFloat(BuildContext context) {
     return Center(
       child: GlassContainer(
-        width: 300,
-        height: 300,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -255,12 +234,24 @@ class SpaceShipPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           GlassContainer(
-            width: 300,
-            height: 200,
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const Text('等级提升', style: GameConstants.titleTextStyle),
+                const Text(
+                  '等级提升',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black54,
+                        offset: Offset(2, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Text(
                   '当前等级: ${_manager.level}',
@@ -288,8 +279,6 @@ class SpaceShipPage extends StatelessWidget {
   Widget _buildGameOverFloat(BuildContext context) {
     return Center(
       child: GlassContainer(
-        width: 300,
-        height: 450,
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -682,8 +671,8 @@ class GamePainter extends CustomPainter {
     path.close();
     canvas.drawPath(path, paint);
 
-    // 血量为满时显示发光效果
-    if (enemy.health > 1.0) {
+    // 高于10点时绘制保护罩
+    if (enemy.health > 10) {
       final glowPaint = Paint()
         ..color = enemy.color.withValues(alpha: 0.3)
         ..style = PaintingStyle.fill;
