@@ -75,7 +75,7 @@ class SpaceShipPage extends StatelessWidget {
       case GameState.start:
         return _buildStartFloat(context);
       case GameState.playing:
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       case GameState.paused:
         return _buildPauseFloat(context);
       case GameState.gameOver:
@@ -94,22 +94,22 @@ class SpaceShipPage extends StatelessWidget {
         children: [
           Text(
             '生命: ${_manager.lives / 10}',
-            style: GameConstants.infoTextStyle.copyWith(
-              color: GameConstants.textCyan,
+            style: TextStyleConstants.info.copyWith(
+              color: ColorConstants.textCyan,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             '分数: ${_manager.score}',
-            style: GameConstants.infoTextStyle.copyWith(
-              color: GameConstants.textYellow,
+            style: TextStyleConstants.info.copyWith(
+              color: ColorConstants.textYellow,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             '等级: ${_manager.level}',
-            style: GameConstants.infoTextStyle.copyWith(
-              color: GameConstants.textGreen,
+            style: TextStyleConstants.info.copyWith(
+              color: ColorConstants.textGreen,
             ),
           ),
           const SizedBox(height: 4),
@@ -140,7 +140,7 @@ class SpaceShipPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('星际战机', style: GameConstants.titleTextStyle),
+            const Text('星际战机', style: TextStyleConstants.title),
             const SizedBox(height: 40),
             CoolButton(
               text: '开始游戏',
@@ -159,68 +159,24 @@ class SpaceShipPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('游戏暂停', style: GameConstants.titleTextStyle),
+            const Text('游戏暂停', style: TextStyleConstants.title),
             const SizedBox(height: 30),
-            ElevatedButton(
+            _buildActionButton(
+              text: '继续游戏',
+              color: ColorConstants.textGreen,
               onPressed: _manager.resumeGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GameConstants.playerColor.withValues(
-                  alpha: 0.2,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: BorderSide(color: GameConstants.playerColor),
-                ),
-              ),
-              child: const Text(
-                '继续游戏',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: GameConstants.playerColor,
-                ),
-              ),
             ),
             const SizedBox(height: 15),
-            ElevatedButton(
+            _buildActionButton(
+              text: '重新开始',
+              color: Colors.white,
               onPressed: _manager.startGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: const BorderSide(color: Colors.white30),
-                ),
-              ),
-              child: const Text(
-                '重新开始',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
             ),
             const SizedBox(height: 15),
-            ElevatedButton(
+            _buildActionButton(
+              text: '退出游戏',
+              color: Colors.white,
               onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: const BorderSide(color: Colors.white30),
-                ),
-              ),
-              child: const Text(
-                '退出游戏',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
             ),
           ],
         ),
@@ -255,8 +211,8 @@ class SpaceShipPage extends StatelessWidget {
                 const SizedBox(height: 20),
                 Text(
                   '当前等级: ${_manager.level}',
-                  style: GameConstants.infoTextStyle.copyWith(
-                    color: GameConstants.textCyan,
+                  style: TextStyleConstants.info.copyWith(
+                    color: ColorConstants.textCyan,
                     fontSize: 24,
                   ),
                 ),
@@ -264,7 +220,7 @@ class SpaceShipPage extends StatelessWidget {
                 const Text(
                   '准备迎接更难的挑战!',
                   style: TextStyle(
-                    color: GameConstants.textYellow,
+                    color: ColorConstants.textYellow,
                     fontSize: 18,
                   ),
                 ),
@@ -288,7 +244,7 @@ class SpaceShipPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: GameConstants.textNeonPink,
+                color: ColorConstants.textNeonPink,
               ),
             ),
             const SizedBox(height: 20),
@@ -306,51 +262,39 @@ class SpaceShipPage extends StatelessWidget {
             const SizedBox(height: 10),
             _buildAchievementsList(),
             const SizedBox(height: 20),
-            ElevatedButton(
+            _buildActionButton(
+              text: '再玩一次',
+              color: ColorConstants.playerColor,
               onPressed: _manager.startGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GameConstants.playerColor.withValues(
-                  alpha: 0.2,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: BorderSide(color: GameConstants.playerColor),
-                ),
-              ),
-              child: const Text(
-                '再玩一次',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: GameConstants.playerColor,
-                ),
-              ),
             ),
             const SizedBox(height: 15),
-            ElevatedButton(
+            _buildActionButton(
+              text: '返回主页',
+              color: Colors.white,
               onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: const BorderSide(color: Colors.white30),
-                ),
-              ),
-              child: const Text(
-                '返回主页',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String text,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withValues(alpha: 0.2),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+          side: BorderSide(color: color),
+        ),
+      ),
+      child: Text(text, style: TextStyle(fontSize: 18, color: color)),
     );
   }
 
@@ -427,8 +371,8 @@ class SpaceShipPage extends StatelessWidget {
   }
 
   Widget _buildPropIndicator({required PropType type, required int duration}) {
-    Color color = type.getColor(type);
-    IconData icon = type.getIcon(type);
+    Color color = PropTypeExtension.getColor(type);
+    IconData icon = PropTypeExtension.getIcon(type);
 
     return Container(
       width: 40,
@@ -449,7 +393,7 @@ class SpaceShipPage extends StatelessWidget {
               height: 3,
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: LinearProgressIndicator(
-                value: duration / GameConstants.propEffectDuration,
+                value: duration / ParamConstants.propEffectDuration,
                 backgroundColor: Colors.transparent,
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
@@ -501,9 +445,12 @@ class GamePainter extends CustomPainter {
     }
   }
 
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+
   /// 绘制背景
   void _drawBackground(Canvas canvas, Size size) {
-    _paint.color = GameConstants.bgColor;
+    _paint.color = ColorConstants.backgroundColor;
     _paint.style = PaintingStyle.fill;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _paint);
   }
@@ -522,30 +469,35 @@ class GamePainter extends CustomPainter {
     final player = manager.player;
 
     // 无敌状态闪烁效果
-    if (player.flash) {
-      return;
-    }
+    if (player.flash) return;
 
     // 绘制护盾
     if (player.shield) {
-      _paint.color = GameConstants.shieldColor.withValues(alpha: 0.5);
-      _paint.style = PaintingStyle.stroke;
-      _paint.strokeWidth = 2;
-      canvas.drawCircle(
-        player.position + Offset(player.size.width / 2, player.size.height / 2),
-        player.size.width * 0.7,
-        _paint,
-      );
-
-      _paint.color = GameConstants.shieldColor.withValues(alpha: 0.3);
-      canvas.drawCircle(
-        player.position + Offset(player.size.width / 2, player.size.height / 2),
-        player.size.width * 0.8,
-        _paint,
-      );
+      _drawShield(canvas, player);
     }
 
     // 绘制玩家主体
+    _drawPlayerBody(canvas, player);
+
+    // 绘制引擎效果
+    _drawEngineEffect(canvas, player);
+  }
+
+  void _drawShield(Canvas canvas, Player player) {
+    final center =
+        player.position + Offset(player.size.width / 2, player.size.height / 2);
+    final radius = player.size.width * 0.7;
+
+    _paint.color = ColorConstants.shieldColor.withValues(alpha: 0.5);
+    _paint.style = PaintingStyle.stroke;
+    _paint.strokeWidth = 2;
+    canvas.drawCircle(center, radius, _paint);
+
+    _paint.color = ColorConstants.shieldColor.withValues(alpha: 0.3);
+    canvas.drawCircle(center, radius * 1.14, _paint);
+  }
+
+  void _drawPlayerBody(Canvas canvas, Player player) {
     _paint.color = player.color;
     _paint.style = PaintingStyle.fill;
 
@@ -588,9 +540,10 @@ class GamePainter extends CustomPainter {
       ),
       _paint,
     );
+  }
 
-    // 引擎效果
-    _paint.color = GameConstants.textNeonPink.withValues(alpha: 0.8);
+  void _drawEngineEffect(Canvas canvas, Player player) {
+    _paint.color = ColorConstants.textNeonPink.withValues(alpha: 0.8);
     final enginePath = Path();
     enginePath.moveTo(
       player.position.dx + player.size.width / 2 - 8,
@@ -672,7 +625,7 @@ class GamePainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     // 高于10点时绘制保护罩
-    if (enemy.health > 10) {
+    if (enemy.health > ParamConstants.bulletBaseDamage) {
       final glowPaint = Paint()
         ..color = enemy.color.withValues(alpha: 0.3)
         ..style = PaintingStyle.fill;
@@ -778,7 +731,7 @@ class GamePainter extends CustomPainter {
 
     // 绘制BOSS生命值条
     final healthBarWidth = enemy.size.width * 0.8;
-    final maxHealth = 100 + (manager.level - 1) * 20;
+    final maxHealth = enemy.points;
     final healthPercent = enemy.health / maxHealth;
     final healthBarPaint = Paint()
       ..color = Color.lerp(Colors.red, Colors.green, healthPercent)!
@@ -812,8 +765,8 @@ class GamePainter extends CustomPainter {
   /// 绘制道具
   void _drawProps(Canvas canvas) {
     for (var prop in manager.gameProps) {
-      Color color = prop.type.getColor(prop.type);
-      IconData icon = prop.type.getIcon(prop.type); // 获取图标数据
+      Color color = PropTypeExtension.getColor(prop.type);
+      IconData icon = PropTypeExtension.getIcon(prop.type);
 
       // 绘制道具主体
       _paint.color = color;
@@ -823,7 +776,7 @@ class GamePainter extends CustomPainter {
       canvas.drawCircle(center, prop.size.width / 2, _paint);
 
       // 发光效果
-      _paint.color = color.withAlpha(204); // 0.8透明度对应204的alpha值
+      _paint.color = color.withAlpha(204);
       _paint.style = PaintingStyle.stroke;
       _paint.strokeWidth = 2;
       canvas.drawCircle(center, prop.size.width / 2 + 3, _paint);
@@ -841,13 +794,12 @@ class GamePainter extends CustomPainter {
     Size size,
     Color color,
   ) {
-    // 创建文本绘制器来绘制图标
     final textPainter = TextPainter(
       text: TextSpan(
         text: String.fromCharCode(icon.codePoint),
         style: TextStyle(
           color: color,
-          fontSize: size.width * 0.6, // 图标大小为道具宽度的60%
+          fontSize: size.width * 0.6,
           fontFamily: icon.fontFamily,
           package: icon.fontPackage,
         ),
@@ -855,16 +807,13 @@ class GamePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    // 布局文本
     textPainter.layout();
 
-    // 计算图标位置（使其居中）
     final iconOffset = Offset(
       center.dx - textPainter.width / 2,
       center.dy - textPainter.height / 2,
     );
 
-    // 绘制图标
     textPainter.paint(canvas, iconOffset);
   }
 
@@ -877,10 +826,5 @@ class GamePainter extends CustomPainter {
         canvas.drawCircle(particle.position, particle.radius, _paint);
       }
     }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// 游戏对象基类
 abstract class GameObject {
   Offset position;
-  Size size;
+  final Size size;
 
   GameObject({required this.position, required this.size});
 
@@ -13,8 +13,8 @@ abstract class GameObject {
 
 /// 星星背景类
 class Star extends GameObject {
-  double opacity;
-  double speed;
+  final double opacity;
+  final double speed;
 
   Star({
     required super.position,
@@ -24,13 +24,12 @@ class Star extends GameObject {
   });
 }
 
-/// 子弹属性
+/// 子弹属性配置
 class BulletConfig {
   final bool isBig;
   final bool isFlame;
   final int damage;
   final Color color;
-
   final Size size;
 
   BulletConfig({
@@ -45,7 +44,8 @@ class BulletConfig {
 /// 子弹类
 class Bullet extends GameObject {
   final double angle;
-  BulletConfig config;
+  final BulletConfig config;
+
   Bullet({required super.position, required this.angle, required this.config})
     : super(size: config.size);
 }
@@ -53,8 +53,9 @@ class Bullet extends GameObject {
 /// 道具类型枚举
 enum PropType { tripleShot, shield, flame, bigBullet }
 
+/// 道具类型扩展方法
 extension PropTypeExtension on PropType {
-  IconData getIcon(PropType type) {
+  static IconData getIcon(PropType type) {
     switch (type) {
       case PropType.tripleShot:
         return Icons.exposure_plus_2;
@@ -67,7 +68,7 @@ extension PropTypeExtension on PropType {
     }
   }
 
-  Color getColor(PropType type) {
+  static Color getColor(PropType type) {
     switch (type) {
       case PropType.tripleShot:
         return Colors.cyan;
@@ -83,8 +84,8 @@ extension PropTypeExtension on PropType {
 
 /// 道具类
 class GameProp extends GameObject {
-  PropType type;
-  double speed;
+  final PropType type;
+  final double speed;
 
   GameProp({
     required super.position,
@@ -99,13 +100,13 @@ enum EnemyType { basic, fast, heavy, boss }
 
 /// 敌人类
 class Enemy extends GameObject {
-  EnemyType type;
-  Color color;
+  final EnemyType type;
+  final Color color;
   int health;
-  double speed;
+  final double speed;
   double dx;
-  int points;
-  double probability;
+  final int points;
+  final double probability;
 
   Enemy({
     required super.position,
@@ -115,16 +116,15 @@ class Enemy extends GameObject {
     required this.health,
     required this.speed,
     required this.dx,
-    required this.points,
     required this.probability,
-  });
+  }) : points = health;
 }
 
 /// 玩家类
 class Player extends GameObject {
   Color color;
   int health;
-  double speed;
+  final double speed;
   bool shield;
   int invincibleTimer;
   int tripleShotTimer;
@@ -151,6 +151,23 @@ class Player extends GameObject {
     this.bigBulletTimer = 0,
     this.flash = false,
     this.flashTimer = 0,
+  });
+}
+
+/// 爆炸粒子类
+class ExplosionParticle {
+  Offset position;
+  double radius;
+  Color color;
+  Offset velocity;
+  int life;
+
+  ExplosionParticle({
+    required this.position,
+    required this.radius,
+    required this.color,
+    required this.velocity,
+    required this.life,
   });
 }
 
@@ -204,19 +221,73 @@ class Explosion {
   }
 }
 
-/// 爆炸粒子类
-class ExplosionParticle {
-  Offset position;
-  double radius;
-  Color color;
-  Offset velocity;
-  int life;
+/// 成就类型枚举
+enum AchievementType {
+  firstKill,
+  score100,
+  score500,
+  score1000,
+  level5,
+  level10,
+  bossKill,
+  tripleKill,
+}
 
-  ExplosionParticle({
-    required this.position,
-    required this.radius,
-    required this.color,
-    required this.velocity,
-    required this.life,
+/// 成就配置类
+class Achievement {
+  final AchievementType type;
+  final String title;
+  final String description;
+
+  Achievement({
+    required this.type,
+    required this.title,
+    required this.description,
   });
+}
+
+/// 所有成就列表
+class Achievements {
+  static List<Achievement> all = [
+    Achievement(
+      type: AchievementType.firstKill,
+      title: "初露锋芒",
+      description: "首次击败敌人",
+    ),
+    Achievement(
+      type: AchievementType.score100,
+      title: "百炼成钢",
+      description: "得分达到100分",
+    ),
+    Achievement(
+      type: AchievementType.score500,
+      title: "半壁江山",
+      description: "得分达到500分",
+    ),
+    Achievement(
+      type: AchievementType.score1000,
+      title: "千锤百炼",
+      description: "得分达到1000分",
+    ),
+    Achievement(
+      type: AchievementType.level5,
+      title: "五级挑战",
+      description: "达到5级",
+    ),
+    Achievement(
+      type: AchievementType.level10,
+      title: "十级大师",
+      description: "达到10级",
+    ),
+    Achievement(
+      type: AchievementType.bossKill,
+      title: "Boss猎手",
+      description: "首次击败BOSS",
+    ),
+    Achievement(
+      type: AchievementType.tripleKill,
+      title: "三连击",
+      description: "一次击败3个敌人",
+    ),
+  ];
 }

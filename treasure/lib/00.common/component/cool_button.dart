@@ -30,10 +30,10 @@ class CoolButton extends StatefulWidget {
   });
 
   @override
-  State<CoolButton> createState() => _FeatureButtonState();
+  State<CoolButton> createState() => _CoolButtonState();
 }
 
-class _FeatureButtonState extends State<CoolButton>
+class _CoolButtonState extends State<CoolButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _glowAnimation;
@@ -54,9 +54,13 @@ class _FeatureButtonState extends State<CoolButton>
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    // 发光强度动画
-    _glowAnimation = Tween<double>(begin: 5, end: 30).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    // 发光强度动画，使用自定义曲线
+    _glowAnimation = Tween<double>(begin: 0, end: 20).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        // 使用自定义曲线，使值越大速度越快
+        curve: const SpeedCurve(),
+      ),
     );
   }
 
@@ -101,12 +105,12 @@ class _FeatureButtonState extends State<CoolButton>
                   // 发光效果
                   boxShadow: [
                     BoxShadow(
-                      color: _neonBlue.withValues(alpha: 0.5),
+                      color: _neonBlue,
                       blurRadius: _glowAnimation.value,
                       spreadRadius: 2,
                     ),
                     BoxShadow(
-                      color: _neonPurple.withValues(alpha: 0.3),
+                      color: _neonPurple.withValues(alpha: 0.7),
                       blurRadius: _glowAnimation.value * 0.7,
                       spreadRadius: 2,
                     ),
@@ -134,5 +138,18 @@ class _FeatureButtonState extends State<CoolButton>
         );
       },
     );
+  }
+}
+
+// 自定义曲线：值越大速度越快
+class SpeedCurve extends Curve {
+  const SpeedCurve();
+
+  @override
+  double transform(double t) {
+    // t 的范围是 0.0 到 1.0
+    // 当 t 接近 1.0 时（值较大），速度加快
+    // 使用二次函数使曲线在末尾更陡峭，实现速度随值增大而加快的效果
+    return t * t;
   }
 }

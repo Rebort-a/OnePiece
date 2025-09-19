@@ -18,9 +18,9 @@ class Manager with ChangeNotifier implements TickerProvider {
   Size _screenSize = Size.zero;
   GameState _gameState = GameState.start;
   Player _player = Player(
-    color: GameConstants.playerColor,
-    health: GameConstants.playHealth,
-    speed: GameConstants.playerMoveSpeed,
+    color: ColorConstants.playerColor,
+    health: ParamConstants.playerInitialHealth,
+    speed: ParamConstants.playerMoveSpeed,
   );
 
   final AlwaysNotifier<void Function(BuildContext)> pageNavigator =
@@ -33,7 +33,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   final List<Star> _stars = [];
 
   int _score = 0;
-  int _level = GameConstants.initialLevel;
+  int _level = ParamConstants.initialLevel;
   int _consecutiveKills = 0;
   int _enemiesDestroyed = 0;
   int _spawnTimer = 0;
@@ -41,13 +41,6 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   // 成就相关
   final Set<AchievementType> _unlockedAchievements = {};
-
-  // 按键状态
-  bool _isUpPressed = false;
-  bool _isDownPressed = false;
-  bool _isLeftPressed = false;
-  bool _isRightPressed = false;
-  bool _isSpacePressed = false;
 
   final FocusNode focusNode = FocusNode();
 
@@ -90,7 +83,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   }
 
   void _initTicker() {
-    _ticker = createTicker((_) => _update());
+    _ticker = createTicker(_update);
     _ticker.start();
   }
 
@@ -117,13 +110,6 @@ class Manager with ChangeNotifier implements TickerProvider {
     }
   }
 
-  // bool _isOnScreen(GameObject object) {
-  //   return object.position.dx >= 0 && // 左边界
-  //       object.position.dx + object.size.width <= screenSize.width && // 右边界
-  //       object.position.dy >= 0 && // 上边界
-  //       object.position.dy + object.size.height <= screenSize.height; // 下边界
-  // }
-
   /// 确保玩家在边界内
   void _keepPlayerInBounds() {
     double x = _player.position.dx;
@@ -139,13 +125,13 @@ class Manager with ChangeNotifier implements TickerProvider {
   void _resetPlayer() {
     _player = Player(
       position: Offset(
-        _screenSize.width / 2 - GameConstants.playerSize.width / 2,
-        _screenSize.height - GameConstants.playerSize.height - 20,
+        _screenSize.width / 2 - SizeConstants.player.width / 2,
+        _screenSize.height - SizeConstants.player.height - 20,
       ),
-      size: GameConstants.playerSize,
-      color: GameConstants.playerColor,
-      health: GameConstants.playHealth,
-      speed: GameConstants.playerMoveSpeed,
+      size: SizeConstants.player,
+      color: ColorConstants.playerColor,
+      health: ParamConstants.playerInitialHealth,
+      speed: ParamConstants.playerMoveSpeed,
     );
   }
 
@@ -158,7 +144,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   /// 重置游戏
   void _resetGame() {
     _score = 0;
-    _level = GameConstants.initialLevel;
+    _level = ParamConstants.initialLevel;
     _resetPlayer();
     _enemiesDestroyed = 0;
     _consecutiveKills = 0;
@@ -203,10 +189,8 @@ class Manager with ChangeNotifier implements TickerProvider {
 
     // 3秒后继续游戏
     Future.delayed(
-      const Duration(milliseconds: GameConstants.levelUpDelay),
-      () {
-        resumeGame();
-      },
+      const Duration(milliseconds: ParamConstants.levelUpDelay),
+      resumeGame,
     );
   }
 
@@ -260,7 +244,7 @@ class Manager with ChangeNotifier implements TickerProvider {
           context: context,
           title: achievement.title,
           description: achievement.description,
-          duration: GameConstants.achieveDuration,
+          duration: DurationConstants.achievement,
         );
       };
     }
@@ -277,57 +261,39 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 处理键盘事件
   void handleKeyEvent(KeyEvent event) {
-    if (_gameState == GameState.start || _gameState == GameState.gameOver) {
-      return;
-    }
+    if (_gameState == GameState.playing || _gameState == GameState.paused) {
+      if (event is KeyDownEvent || event is KeyRepeatEvent) {
+        switch (event.logicalKey) {
+          case LogicalKeyboardKey.arrowUp:
+            _player.position += Offset(0, -_player.speed);
+            _keepPlayerInBounds();
+            break;
+          case LogicalKeyboardKey.arrowDown:
+            _player.position += Offset(0, _player.speed);
+            _keepPlayerInBounds();
+            break;
+          case LogicalKeyboardKey.arrowLeft:
+            _player.position += Offset(-_player.speed, 0);
+            _keepPlayerInBounds();
+            break;
+          case LogicalKeyboardKey.arrowRight:
+            _player.position += Offset(_player.speed, 0);
+            _keepPlayerInBounds();
+            break;
+          case LogicalKeyboardKey.space:
+            shoot();
+            break;
+          case LogicalKeyboardKey.keyP:
+            if (_gameState == GameState.playing) {
+              pauseGame();
+            } else {
+              resumeGame();
+            }
 
-    final isKeyDown = event is KeyDownEvent;
-
-    switch (event.logicalKey) {
-      case LogicalKeyboardKey.arrowUp:
-        _isUpPressed = isKeyDown;
-        break;
-      case LogicalKeyboardKey.arrowDown:
-        _isDownPressed = isKeyDown;
-        break;
-      case LogicalKeyboardKey.arrowLeft:
-        _isLeftPressed = isKeyDown;
-        break;
-      case LogicalKeyboardKey.arrowRight:
-        _isRightPressed = isKeyDown;
-        break;
-      case LogicalKeyboardKey.space:
-        _isSpacePressed = isKeyDown;
-        break;
-      case LogicalKeyboardKey.keyP:
-        if (isKeyDown) {
-          if (_gameState == GameState.playing) {
-            pauseGame();
-          } else {
-            resumeGame();
-          }
+            break;
         }
-        break;
+      }
     }
-
-    if (isKeyDown) {
-      _handleLongPressActions();
-    }
-  }
-
-  /// 处理长按操作
-  void _handleLongPressActions() {
-    if (_gameState != GameState.playing) return;
-    double moveSpeed = _player.speed;
-
-    // 方向键移动
-    if (_isUpPressed) _player.position += Offset(0, -moveSpeed);
-    if (_isDownPressed) _player.position += Offset(0, moveSpeed);
-    if (_isLeftPressed) _player.position += Offset(-moveSpeed, 0);
-    if (_isRightPressed) _player.position += Offset(moveSpeed, 0);
-
-    // 空格键射击
-    if (_isSpacePressed) shoot();
   }
 
   /// 射击
@@ -347,28 +313,30 @@ class Manager with ChangeNotifier implements TickerProvider {
       }
 
       // 设置冷却时间
-      _cooldown = _player.bigBullet ? 30 : 20;
+      _cooldown = _player.bigBullet
+          ? ParamConstants.bulletCooldown
+          : ParamConstants.bulletCooldown;
     }
   }
 
   /// 获取子弹配置
   BulletConfig _getBulletConfig() {
-    bool isBig = false;
-    bool isFlame = false;
-    Size bulletSize = const Size(4, 12);
-    Color bulletColor = Colors.cyan;
-    int damage = 10;
+    bool isBig = _player.bigBullet;
+    bool isFlame = _player.flameBullet;
+    Size bulletSize = isBig
+        ? SizeConstants.bulletBig
+        : SizeConstants.bulletNormal;
+    Color bulletColor = isFlame
+        ? ColorConstants.bulletFlame
+        : ColorConstants.bulletDefault;
+    int damage = ParamConstants.bulletBaseDamage;
 
-    if (_player.bigBullet) {
-      isBig = true;
-      bulletSize = const Size(8, 20);
-      damage = (damage * 1.5).round();
+    if (isBig) {
+      damage = (damage * ParamConstants.bulletBigMultiplier).round();
     }
 
-    if (_player.flameBullet) {
-      isFlame = true;
-      bulletColor = Colors.orange;
-      damage *= 2;
+    if (isFlame) {
+      damage *= ParamConstants.bulletFlameMultiplier;
     }
 
     return BulletConfig(
@@ -393,31 +361,29 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 生成道具
   void _spawnGameProp(Offset position, double probability) {
-    if (probability <= 0) return;
+    if (probability <= 0 || _random.nextDouble() >= probability) return;
 
-    if (_random.nextDouble() < probability) {
-      PropType type;
-      final rand = _random.nextDouble();
+    final rand = _random.nextDouble();
+    PropType type;
 
-      if (rand < 0.3) {
-        type = PropType.tripleShot;
-      } else if (rand < 0.5) {
-        type = PropType.shield;
-      } else if (rand < 0.75) {
-        type = PropType.flame;
-      } else {
-        type = PropType.bigBullet;
-      }
-
-      _gameProps.add(
-        GameProp(
-          position: position,
-          size: GameConstants.propSize,
-          speed: 2,
-          type: type,
-        ),
-      );
+    if (rand < 0.3) {
+      type = PropType.tripleShot;
+    } else if (rand < 0.5) {
+      type = PropType.shield;
+    } else if (rand < 0.75) {
+      type = PropType.flame;
+    } else {
+      type = PropType.bigBullet;
     }
+
+    _gameProps.add(
+      GameProp(
+        position: position,
+        size: SizeConstants.prop,
+        speed: 2,
+        type: type,
+      ),
+    );
   }
 
   /// 生成敌人
@@ -435,33 +401,33 @@ class Manager with ChangeNotifier implements TickerProvider {
         enemy = Enemy(
           position: Offset(
             _random.nextDouble() *
-                (_screenSize.width - GameConstants.enemyBasicSize.width),
-            -GameConstants.enemyBasicSize.height,
+                (_screenSize.width - SizeConstants.enemyBasic.width),
+            -SizeConstants.enemyBasic.height,
           ),
-          size: GameConstants.enemyBasicSize,
+          size: SizeConstants.enemyBasic,
           type: EnemyType.basic,
-          color: GameConstants.enemyBasicColor,
-          health: 5 + _random.nextInt(10),
+          color: ColorConstants.enemyBasic,
+          health:
+              ParamConstants.enemyBaseHealth +
+              _random.nextInt(ParamConstants.bulletBaseDamage),
           speed: 2 + (_level - 1) * 0.3,
           dx: 0,
-          points: 10,
-          probability: 0.25,
+          probability: ParamConstants.propDropRateBasic,
         );
       } else if (type < 0.9) {
         // 快速敌人
         enemy = Enemy(
           position: Offset(
             _random.nextDouble() *
-                (_screenSize.width - GameConstants.enemyFastSize.width),
-            -GameConstants.enemyFastSize.height,
+                (_screenSize.width - SizeConstants.enemyFast.width),
+            -SizeConstants.enemyFast.height,
           ),
-          size: GameConstants.enemyFastSize,
+          size: SizeConstants.enemyFast,
           type: EnemyType.fast,
-          color: GameConstants.enemyFastColor,
-          health: 5,
+          color: ColorConstants.enemyFast,
+          health: ParamConstants.enemyBaseHealth,
           speed: 4 + (_level - 1) * 0.5,
           dx: (_random.nextDouble() - 0.5) * 2,
-          points: 5,
           probability: 0,
         );
       } else {
@@ -469,17 +435,16 @@ class Manager with ChangeNotifier implements TickerProvider {
         enemy = Enemy(
           position: Offset(
             _random.nextDouble() *
-                (_screenSize.width - GameConstants.enemyHeavySize.width),
-            -GameConstants.enemyHeavySize.height,
+                (_screenSize.width - SizeConstants.enemyHeavy.width),
+            -SizeConstants.enemyHeavy.height,
           ),
-          size: GameConstants.enemyHeavySize,
+          size: SizeConstants.enemyHeavy,
           type: EnemyType.heavy,
-          color: GameConstants.enemyHeavyColor,
-          health: 30,
+          color: ColorConstants.enemyHeavy,
+          health: ParamConstants.enemyHeavyHealth,
           speed: 1 + (_level - 1) * 0.2,
           dx: 0,
-          points: 15,
-          probability: 0.5,
+          probability: ParamConstants.propDropRateHeavy,
         );
       }
 
@@ -504,7 +469,7 @@ class Manager with ChangeNotifier implements TickerProvider {
       if (e.position.dy > _screenSize.height) {
         _enemies.remove(e);
         if (e.type != EnemyType.fast) {
-          _score = (_score - GameConstants.enemyEscapePenalty)
+          _score = (_score - ParamConstants.enemyEscapePenalty)
               .clamp(0, double.infinity)
               .toInt();
           _consecutiveKills = 0;
@@ -513,7 +478,7 @@ class Manager with ChangeNotifier implements TickerProvider {
             TemplateDialog.textBanner(
               context: context,
               text: "敌人逃脱！",
-              duration: GameConstants.textDuration,
+              duration: DurationConstants.text,
             );
           };
         }
@@ -530,24 +495,26 @@ class Manager with ChangeNotifier implements TickerProvider {
       TemplateDialog.alertBanner(
         context: context,
         text: "Boss出现！",
-        duration: GameConstants.alertDuration,
+        duration: DurationConstants.alert,
       );
     };
+
     _boss = Enemy(
       position: Offset(
-        _screenSize.width / 2 - GameConstants.enemyBossSize.width / 2,
-        -GameConstants.enemyBossSize.height,
+        _screenSize.width / 2 - SizeConstants.enemyBoss.width / 2,
+        -SizeConstants.enemyBoss.height,
       ),
-      size: GameConstants.enemyBossSize,
+      size: SizeConstants.enemyBoss,
       type: EnemyType.boss,
-      color: GameConstants.enemyBossColor,
-      health: 100 + (_level - 1) * 20,
+      color: ColorConstants.enemyBoss,
+      health:
+          ParamConstants.bossInitialHealth +
+          (_level * ParamConstants.bossHealthPerLevel),
       speed: 1.5,
       dx: _random.nextBool()
           ? _random.nextDouble() * 2 + 1
           : _random.nextDouble() * 2 - 3,
-      points: 20,
-      probability: 1,
+      probability: ParamConstants.propDropRateBoss,
     );
 
     _enemies.add(_boss!);
@@ -585,7 +552,6 @@ class Manager with ChangeNotifier implements TickerProvider {
           health: 5,
           speed: 4 + (_level - 1) * 0.5,
           dx: (_random.nextDouble() - 0.5) * 2,
-          points: 5,
           probability: 0,
         ),
       );
@@ -648,30 +614,22 @@ class Manager with ChangeNotifier implements TickerProvider {
   /// 更新玩家状态
   void _updatePlayer() {
     // 更新冷却和状态计时器
-
-    if (_player.tripleShot) {
-      _player.tripleShotTimer--;
-    }
-
-    if (_player.flameBullet) {
-      _player.flameBulletTimer--;
-    }
-
-    if (_player.bigBullet) {
-      _player.bigBulletTimer--;
-    }
+    if (_player.tripleShot) _player.tripleShotTimer--;
+    if (_player.flameBullet) _player.flameBulletTimer--;
+    if (_player.bigBullet) _player.bigBulletTimer--;
 
     if (_player.invincible) {
       _player.invincibleTimer--;
       if (_player.invincible) {
         _player.flashTimer++;
-        if (_player.flashTimer >= GameConstants.playerFlashDuration) {
+        if (_player.flashTimer >= ParamConstants.playerFlashDuration) {
           _player.flash = !_player.flash;
           _player.flashTimer = 0;
         }
       } else {
         _player.flash = false;
         _player.flashTimer = 0;
+        _player.color = ColorConstants.playerColor;
       }
     }
   }
@@ -686,6 +644,7 @@ class Manager with ChangeNotifier implements TickerProvider {
         if (b.rect.overlaps(e.rect)) {
           _bullets.remove(b);
           _deductEnemyHealth(e, b.config.damage);
+          break; // 一颗子弹只能击中一个敌人
         }
       }
     }
@@ -718,7 +677,9 @@ class Manager with ChangeNotifier implements TickerProvider {
       } else if (enemy.type != EnemyType.fast) {
         _enemiesDestroyed++;
 
-        if (_enemiesDestroyed >= (10 + 5 * _level)) {
+        if (_enemiesDestroyed >=
+            (ParamConstants.enemyCountPerBoss +
+                ParamConstants.enemyCountPerBossIncrement * _level)) {
           _enemiesDestroyed = 0;
           _spawnBoss();
         }
@@ -739,7 +700,7 @@ class Manager with ChangeNotifier implements TickerProvider {
         // 检查护盾
         if (_player.shield) {
           _player.shield = false;
-          _deductEnemyHealth(e, GameConstants.shieldOffsetDamage);
+          _deductEnemyHealth(e, ParamConstants.shieldOffsetDamage);
         } else {
           // 重置连续击杀计数器
           _consecutiveKills = 0;
@@ -756,7 +717,8 @@ class Manager with ChangeNotifier implements TickerProvider {
     if (_player.health <= 0) {
       _gameOver();
     } else {
-      _player.invincibleTimer = GameConstants.invincibleDuration;
+      _player.invincibleTimer = ParamConstants.invincibleDuration;
+      _player.color = ColorConstants.invincibleColor;
       _player.flash = true;
     }
   }
@@ -772,16 +734,16 @@ class Manager with ChangeNotifier implements TickerProvider {
         // 应用道具效果
         switch (p.type) {
           case PropType.tripleShot:
-            _player.tripleShotTimer = GameConstants.propEffectDuration;
+            _player.tripleShotTimer = ParamConstants.propEffectDuration;
             break;
           case PropType.shield:
             _player.shield = true;
             break;
           case PropType.flame:
-            _player.flameBulletTimer = GameConstants.propEffectDuration;
+            _player.flameBulletTimer = ParamConstants.propEffectDuration;
             break;
           case PropType.bigBullet:
-            _player.bigBulletTimer = GameConstants.propEffectDuration;
+            _player.bigBulletTimer = ParamConstants.propEffectDuration;
             break;
         }
       }
@@ -789,7 +751,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   }
 
   /// 更新游戏状态
-  void _update() {
+  void _update(Duration elapsed) {
     if (_gameState == GameState.playing) {
       _updateStars();
       _updatePlayer();
