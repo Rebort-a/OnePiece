@@ -95,15 +95,14 @@ class ParamConstants {
   static const double difficultyIncrease = 0.1; // 难度提升系数
 
   // 星星背景
-
-  static const double minStarSpeed = 10; // 星星最小移动速度（每秒）
-  static const double maxStarSpeed = 100; // 星星最大移动速度（每秒）
+  static const double minStarSpeed = 1; // 星星最小移动速度（每秒）
+  static const double maxStarSpeed = 50; // 星星最大移动速度（每秒）
 }
 
 class ProbabilityConstants {
   static const double enemyMissileSpawnRate = 0.3;
-  static const double enemyFastSpawnRate = 0.4;
-  static const double enemyHeavySpawnRate = 0.3;
+  static const double enemyFastSpawnRate = 0.45;
+  static const double enemyHeavySpawnRate = 0.25;
 
   static const double propTripleRate = 0.3;
   static const double propBigRate = 0.3;
