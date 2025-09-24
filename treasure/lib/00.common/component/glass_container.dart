@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // 需要导入dart:ui以使用ImageFilter
+import 'dart:ui';
 
-/// 玻璃态容器 - 支持根据内容自适应大小
-class GlassContainer extends StatelessWidget {
+class GlassContainer extends StatefulWidget {
   final Widget child;
   final EdgeInsets padding;
   final double? maxWidth;
@@ -11,6 +10,10 @@ class GlassContainer extends StatelessWidget {
   final double? minHeight;
   final BorderRadiusGeometry borderRadius;
   final double blurStrength;
+
+  final bool enableFloat;
+  final double floatOffset;
+  final Duration animationDuration;
 
   const GlassContainer({
     super.key,
@@ -21,44 +24,99 @@ class GlassContainer extends StatelessWidget {
     this.minWidth,
     this.minHeight,
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
-    this.blurStrength = 10,
+    this.blurStrength = 8,
+    this.enableFloat = true,
+    this.floatOffset = 20,
+    this.animationDuration = const Duration(seconds: 6),
   });
 
   @override
+  State<GlassContainer> createState() => _GlassContainerState();
+}
+
+class _GlassContainerState extends State<GlassContainer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _floatAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: widget.animationDuration,
+      value: 0.0,
+    );
+
+    _floatAnimation =
+        Tween<double>(
+          begin: -widget.floatOffset / 2,
+          end: widget.floatOffset / 2,
+        ).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.linear),
+        );
+
+    if (widget.enableFloat) {
+      _animationController.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _floatAnimation,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, _floatAnimation.value),
+            child: child,
+          );
+        },
+        child: _buildStaticContent(),
+      ),
+    );
+  }
+
+  Widget _buildStaticContent() {
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxWidth: maxWidth ?? double.infinity,
-        maxHeight: maxHeight ?? double.infinity,
-        minWidth: minWidth ?? 0,
-        minHeight: minHeight ?? 0,
+        maxWidth: widget.maxWidth ?? double.infinity,
+        maxHeight: widget.maxHeight ?? double.infinity,
+        minWidth: widget.minWidth ?? 0,
+        minHeight: widget.minHeight ?? 0,
       ),
-      child: IntrinsicWidth(
-        child: IntrinsicHeight(
-          child: ClipRRect(
-            borderRadius: borderRadius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: blurStrength,
-                sigmaY: blurStrength,
-              ),
-              child: Container(
-                padding: padding,
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: borderRadius,
-                  border: Border.all(color: Colors.white24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black38,
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
+
+      child: ClipRRect(
+        borderRadius: widget.borderRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: widget.blurStrength,
+            sigmaY: widget.blurStrength,
+            tileMode: TileMode.mirror,
+          ),
+          child: Container(
+            padding: widget.padding,
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: widget.borderRadius,
+              border: Border.all(color: Colors.white24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 0,
                 ),
-                child: child,
-              ),
+              ],
             ),
+            child: widget.child,
           ),
         ),
       ),

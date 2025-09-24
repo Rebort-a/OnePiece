@@ -21,11 +21,7 @@ class SpaceShipPage extends StatelessWidget {
   Widget _buildGameView(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (_manager.screenSize == Size.zero) {
-          _manager.initGame(constraints.biggest);
-        } else {
-          _manager.changeSize(constraints.biggest);
-        }
+        _manager.changeSize(constraints.biggest);
 
         return AnimatedBuilder(
           animation: _manager,
@@ -71,18 +67,23 @@ class SpaceShipPage extends StatelessWidget {
   }
 
   Widget _buildFloatArea(BuildContext context) {
-    switch (_manager.gameState) {
-      case GameState.start:
-        return _buildStartFloat(context);
-      case GameState.playing:
-        return const SizedBox.shrink();
-      case GameState.paused:
-        return _buildPauseFloat(context);
-      case GameState.gameOver:
-        return _buildGameOverFloat(context);
-      case GameState.levelUp:
-        return _buildLevelUpFloat();
-    }
+    return ValueListenableBuilder<GameState>(
+      valueListenable: _manager.state,
+      builder: (context, value, _) {
+        switch (value) {
+          case GameState.start:
+            return _buildStartFloat(context);
+          case GameState.playing:
+            return const SizedBox.shrink();
+          case GameState.paused:
+            return _buildPauseFloat(context);
+          case GameState.gameOver:
+            return _buildGameOverFloat(context);
+          case GameState.levelUp:
+            return _buildLevelUpFloat();
+        }
+      },
+    );
   }
 
   Widget _buildInfoArea(BuildContext context) {
@@ -123,13 +124,14 @@ class SpaceShipPage extends StatelessWidget {
     return Positioned(
       top: 32,
       right: 10,
-      child: _buildIconButton(
-        icon: _manager.gameState == GameState.playing
-            ? Icons.pause
-            : Icons.play_arrow,
-        onPressed: () => _manager.gameState == GameState.paused
-            ? _manager.resumeGame()
-            : _manager.pauseGame(),
+      child: ValueListenableBuilder<GameState>(
+        valueListenable: _manager.state,
+        builder: (context, value, _) {
+          return _buildIconButton(
+            icon: value == GameState.playing ? Icons.pause : Icons.play_arrow,
+            onPressed: _manager.toggleState,
+          );
+        },
       ),
     );
   }
@@ -138,6 +140,7 @@ class SpaceShipPage extends StatelessWidget {
     return Center(
       child: GlassContainer(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('星际战机', style: TextStyleConstants.title),
@@ -147,6 +150,7 @@ class SpaceShipPage extends StatelessWidget {
               icon: Icons.play_arrow,
               onPressed: _manager.startGame,
             ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -158,13 +162,20 @@ class SpaceShipPage extends StatelessWidget {
       child: GlassContainer(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('游戏暂停', style: TextStyleConstants.title),
             const SizedBox(height: 30),
             _buildActionButton(
               text: '继续游戏',
-              color: ColorConstants.textGreen,
-              onPressed: _manager.resumeGame,
+              color: Colors.blue,
+              onPressed: _manager.toggleState,
+            ),
+            const SizedBox(height: 15),
+            _buildActionButton(
+              text: '游戏设置',
+              color: Colors.green,
+              onPressed: _manager.showSettingDialog,
             ),
             const SizedBox(height: 15),
             _buildActionButton(
@@ -186,48 +197,42 @@ class SpaceShipPage extends StatelessWidget {
 
   Widget _buildLevelUpFloat() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GlassContainer(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const Text(
-                  '等级提升',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black54,
-                        offset: Offset(2, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
+      child: GlassContainer(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              '等级提升',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black54,
+                    offset: Offset(2, 2),
+                    blurRadius: 4,
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  '当前等级: ${_manager.level}',
-                  style: TextStyleConstants.info.copyWith(
-                    color: ColorConstants.textCyan,
-                    fontSize: 24,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  '准备迎接更难的挑战!',
-                  style: TextStyle(
-                    color: ColorConstants.textYellow,
-                    fontSize: 18,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            Text(
+              '当前等级: ${_manager.level}',
+              style: TextStyleConstants.info.copyWith(
+                color: ColorConstants.textCyan,
+                fontSize: 24,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '准备迎接更难的挑战!',
+              style: TextStyle(color: ColorConstants.textYellow, fontSize: 18),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -235,9 +240,9 @@ class SpaceShipPage extends StatelessWidget {
   Widget _buildGameOverFloat(BuildContext context) {
     return Center(
       child: GlassContainer(
-        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
               '游戏结束',
@@ -302,12 +307,14 @@ class SpaceShipPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 18, color: Colors.blueGrey),
+            style: const TextStyle(fontSize: 18, color: Colors.cyanAccent),
           ),
+          const SizedBox(width: 20),
           Text(
             value,
             style: const TextStyle(
@@ -353,7 +360,7 @@ class SpaceShipPage extends StatelessWidget {
       children: [
         if (player.tripleShot)
           _buildPropIndicator(
-            type: PropType.tripleShot,
+            type: PropType.triple,
             duration: player.tripleShotTimer,
           ),
         if (player.flameBullet)
@@ -363,14 +370,17 @@ class SpaceShipPage extends StatelessWidget {
           ),
         if (player.bigBullet)
           _buildPropIndicator(
-            type: PropType.bigBullet,
+            type: PropType.big,
             duration: player.bigBulletTimer,
           ),
       ],
     );
   }
 
-  Widget _buildPropIndicator({required PropType type, required int duration}) {
+  Widget _buildPropIndicator({
+    required PropType type,
+    required double duration,
+  }) {
     Color color = PropTypeExtension.getColor(type);
     IconData icon = PropTypeExtension.getIcon(type);
 
@@ -393,7 +403,7 @@ class SpaceShipPage extends StatelessWidget {
               height: 3,
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: LinearProgressIndicator(
-                value: duration / ParamConstants.propEffectDuration,
+                value: duration / ParamConstants.propEffectDurationSeconds,
                 backgroundColor: Colors.transparent,
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
@@ -440,9 +450,7 @@ class GamePainter extends CustomPainter {
     _drawProps(canvas);
     _drawExplosions(canvas);
 
-    if (manager.gameState != GameState.gameOver) {
-      _drawPlayer(canvas);
-    }
+    _drawPlayer(canvas);
   }
 
   @override
@@ -488,12 +496,16 @@ class GamePainter extends CustomPainter {
         player.position + Offset(player.size.width / 2, player.size.height / 2);
     final radius = player.size.width * 0.7;
 
-    _paint.color = ColorConstants.shieldColor.withValues(alpha: 0.5);
+    _paint.color = PropTypeExtension.getColor(
+      PropType.shield,
+    ).withValues(alpha: 0.5);
     _paint.style = PaintingStyle.stroke;
     _paint.strokeWidth = 2;
     canvas.drawCircle(center, radius, _paint);
 
-    _paint.color = ColorConstants.shieldColor.withValues(alpha: 0.3);
+    _paint.color = PropTypeExtension.getColor(
+      PropType.shield,
+    ).withValues(alpha: 0.3);
     canvas.drawCircle(center, radius * 1.14, _paint);
   }
 
@@ -599,10 +611,10 @@ class GamePainter extends CustomPainter {
         ..style = PaintingStyle.fill;
 
       switch (enemy.type) {
-        case EnemyType.basic:
+        case EnemyType.fast:
           _drawBasicEnemy(canvas, enemy, paint);
           break;
-        case EnemyType.fast:
+        case EnemyType.missile:
           _drawFastEnemy(canvas, enemy, paint);
           break;
         case EnemyType.heavy:
@@ -764,7 +776,7 @@ class GamePainter extends CustomPainter {
 
   /// 绘制道具
   void _drawProps(Canvas canvas) {
-    for (var prop in manager.gameProps) {
+    for (var prop in manager.props) {
       Color color = PropTypeExtension.getColor(prop.type);
       IconData icon = PropTypeExtension.getIcon(prop.type);
 

@@ -26,19 +26,11 @@ class Star extends GameObject {
 
 /// 子弹属性配置
 class BulletConfig {
-  final bool isBig;
-  final bool isFlame;
   final int damage;
   final Color color;
   final Size size;
 
-  BulletConfig({
-    required this.isBig,
-    required this.isFlame,
-    required this.damage,
-    required this.color,
-    required this.size,
-  });
+  BulletConfig({required this.damage, required this.color, required this.size});
 }
 
 /// 子弹类
@@ -51,36 +43,7 @@ class Bullet extends GameObject {
 }
 
 /// 道具类型枚举
-enum PropType { tripleShot, shield, flame, bigBullet }
-
-/// 道具类型扩展方法
-extension PropTypeExtension on PropType {
-  static IconData getIcon(PropType type) {
-    switch (type) {
-      case PropType.tripleShot:
-        return Icons.exposure_plus_2;
-      case PropType.shield:
-        return Icons.shield_outlined;
-      case PropType.flame:
-        return Icons.whatshot;
-      case PropType.bigBullet:
-        return Icons.zoom_in;
-    }
-  }
-
-  static Color getColor(PropType type) {
-    switch (type) {
-      case PropType.tripleShot:
-        return Colors.cyan;
-      case PropType.shield:
-        return Colors.green;
-      case PropType.flame:
-        return Colors.orange;
-      case PropType.bigBullet:
-        return Colors.amber;
-    }
-  }
-}
+enum PropType { shield, triple, big, flame }
 
 /// 道具类
 class GameProp extends GameObject {
@@ -96,17 +59,17 @@ class GameProp extends GameObject {
 }
 
 /// 敌人类型枚举
-enum EnemyType { basic, fast, heavy, boss }
+enum EnemyType { missile, fast, heavy, boss }
 
 /// 敌人类
 class Enemy extends GameObject {
   final EnemyType type;
   final Color color;
   int health;
-  final double speed;
-  double dx;
-  final int points;
-  final double probability;
+  final double speed; // 纵向每秒速度
+  double dx; // 横向每秒速度
+  final double probability; // 道具掉落概率
+  final int points; // 分数
 
   Enemy({
     required super.position,
@@ -123,43 +86,39 @@ class Enemy extends GameObject {
 /// 玩家类
 class Player extends GameObject {
   Color color;
-  int health;
-  final double speed;
-  bool shield;
-  int invincibleTimer;
-  int tripleShotTimer;
-  int flameBulletTimer;
-  int bigBulletTimer;
-  bool flash;
-  int flashTimer;
+  int health; // 生命值
+  double speed; // 移动速度
+
+  double invincibleTimer = 0; // 无敌剩余时间（秒）
+  bool flash = false; // 无敌时闪烁
+  double flashTimer = 0; // 闪烁计时器（秒）
+
+  bool shield = false; // 护盾
+  double bigBulletTimer = 0; // 大子弹剩余时间（秒）
+  double tripleShotTimer = 0; // 三向射击剩余时间（秒）
+  double flameBulletTimer = 0; // 火焰子弹剩余时间（秒）
+  double cooldown = 0; // 冷却剩余时间（秒）
 
   bool get invincible => invincibleTimer > 0;
+  bool get bigBullet => bigBulletTimer > 0;
   bool get tripleShot => tripleShotTimer > 0;
   bool get flameBullet => flameBulletTimer > 0;
-  bool get bigBullet => bigBulletTimer > 0;
 
   Player({
-    super.position = Offset.zero,
-    super.size = const Size(40, 50),
+    required super.position,
+    required super.size,
     required this.color,
     required this.health,
     required this.speed,
-    this.shield = false,
-    this.invincibleTimer = 0,
-    this.tripleShotTimer = 0,
-    this.flameBulletTimer = 0,
-    this.bigBulletTimer = 0,
-    this.flash = false,
-    this.flashTimer = 0,
   });
 }
 
 /// 爆炸粒子类
 class ExplosionParticle {
   Offset position;
-  double radius;
-  Color color;
-  Offset velocity;
+  final double radius;
+  final Color color;
+  final Offset velocity;
   int life;
 
   ExplosionParticle({
@@ -175,23 +134,13 @@ class ExplosionParticle {
 class Explosion {
   Offset position;
   double size;
-  List<ExplosionParticle> particles;
-  double alpha;
-  bool finished;
+  double alpha = 1.0;
+  List<ExplosionParticle> particles = [];
+  bool finished = false;
 
-  Explosion({required this.position, required this.size})
-    : particles = [],
-      alpha = 1.0,
-      finished = false {
-    _init();
-  }
-
-  /// 初始化爆炸粒子
-  void _init() {
+  Explosion({required this.position, required this.size}) {
     final random = Random();
-    for (int i = 0; i < size.toInt(); i++) {
-      final angle = random.nextDouble() * 2 * pi;
-      final speed = random.nextDouble() * 3 + 1;
+    for (int i = 0; i < 20; i++) {
       particles.add(
         ExplosionParticle(
           position: position,
@@ -202,18 +151,21 @@ class Explosion {
             0,
             1,
           ),
-          velocity: Offset(cos(angle) * speed, sin(angle) * speed),
+          velocity: Offset(
+            (random.nextDouble() - 0.5) * 6,
+            (random.nextDouble() - 0.5) * 6,
+          ),
           life: (random.nextDouble() * 30 + 20).toInt(),
         ),
       );
     }
   }
 
-  /// 更新爆炸状态
-  void update() {
-    alpha -= 0.05;
+  /// 更新爆炸状态（基于时间）
+  void update(double deltaTime) {
+    alpha -= deltaTime * 2; // 每秒减少2点透明度
     for (var p in particles) {
-      p.position += p.velocity;
+      p.position += p.velocity * deltaTime * 60; // 基于时间调整粒子速度
       p.life--;
     }
     particles.removeWhere((p) => p.life <= 0);
@@ -244,50 +196,4 @@ class Achievement {
     required this.title,
     required this.description,
   });
-}
-
-/// 所有成就列表
-class Achievements {
-  static List<Achievement> all = [
-    Achievement(
-      type: AchievementType.firstKill,
-      title: "初露锋芒",
-      description: "首次击败敌人",
-    ),
-    Achievement(
-      type: AchievementType.score100,
-      title: "百炼成钢",
-      description: "得分达到100分",
-    ),
-    Achievement(
-      type: AchievementType.score500,
-      title: "半壁江山",
-      description: "得分达到500分",
-    ),
-    Achievement(
-      type: AchievementType.score1000,
-      title: "千锤百炼",
-      description: "得分达到1000分",
-    ),
-    Achievement(
-      type: AchievementType.level5,
-      title: "五级挑战",
-      description: "达到5级",
-    ),
-    Achievement(
-      type: AchievementType.level10,
-      title: "十级大师",
-      description: "达到10级",
-    ),
-    Achievement(
-      type: AchievementType.bossKill,
-      title: "Boss猎手",
-      description: "首次击败BOSS",
-    ),
-    Achievement(
-      type: AchievementType.tripleKill,
-      title: "三连击",
-      description: "一次击败3个敌人",
-    ),
-  ];
 }

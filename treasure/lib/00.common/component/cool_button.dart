@@ -4,29 +4,37 @@ class CoolButton extends StatefulWidget {
   final String text;
   final IconData icon;
   final VoidCallback onPressed;
-  final double minWidth;
+
+  final double widget;
   final double height;
-  final double borderRadius;
+
+  final double radius;
+  final double padding;
+
   final TextStyle textStyle;
   final double iconSize;
   final double gap;
+
+  final Duration duration;
 
   const CoolButton({
     super.key,
     required this.text,
     required this.icon,
     required this.onPressed,
-    this.minWidth = 200,
-    this.height = 56,
-    this.borderRadius = 28,
+    this.widget = 180,
+    this.height = 60,
+    this.radius = 30,
+    this.padding = 16.0,
     this.textStyle = const TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
       color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
       fontFamily: 'Orbitron',
     ),
-    this.iconSize = 20,
-    this.gap = 8,
+    this.iconSize = 22,
+    this.gap = 10,
+    this.duration = const Duration(seconds: 2),
   });
 
   @override
@@ -35,32 +43,32 @@ class CoolButton extends StatefulWidget {
 
 class _CoolButtonState extends State<CoolButton>
     with SingleTickerProviderStateMixin {
+  // 动画控制器
   late AnimationController _animationController;
   late Animation<double> _glowAnimation;
+
+  // 交互状态
   bool _isHovered = false;
   bool _isPressed = false;
 
   // 霓虹色定义
-  static const Color _neonBlue = Color(0xFF00F0FF);
-  static const Color _neonPurple = Color(0xFFBF00FF);
+  final Color _neonBlue = const Color(0xFF00F0FF);
+  final Color _neonPurple = const Color(0xFFBF00FF);
 
   @override
   void initState() {
     super.initState();
 
-    // 初始化发光动画控制器
+    // 初始化发光动画
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: widget.duration,
     )..repeat(reverse: true);
 
-    // 发光强度动画，使用自定义曲线
-    _glowAnimation = Tween<double>(begin: 0, end: 20).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        // 使用自定义曲线，使值越大速度越快
-        curve: const SpeedCurve(),
-      ),
+    // 发光强度动画
+    _glowAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
     );
   }
 
@@ -75,49 +83,56 @@ class _CoolButtonState extends State<CoolButton>
     return AnimatedBuilder(
       animation: _glowAnimation,
       builder: (context, child) {
+        // 根据动画值计算发光强度
+        final glowValue = 5.0 + (_glowAnimation.value * 25.0);
+
         return MouseRegion(
+          // 鼠标悬停检测
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),
+
           child: GestureDetector(
+            // 点击状态检测
             onTapDown: (_) => setState(() => _isPressed = true),
             onTapUp: (_) => setState(() => _isPressed = false),
             onTapCancel: () => setState(() => _isPressed = false),
             onTap: widget.onPressed,
+
             child: Transform.scale(
-              // 缩放动画：悬停放大，点击缩小
-              scale: _isPressed
-                  ? 0.95
-                  : _isHovered
-                  ? 1.05
-                  : 1.0,
+              // 交互缩放效果
+              scale: _isPressed ? 0.95 : (_isHovered ? 1.05 : 1.0),
               child: Container(
-                width: widget.minWidth,
+                width: widget.widget,
                 height: widget.height,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.padding * 2,
+                  vertical: widget.padding,
+                ),
                 decoration: BoxDecoration(
-                  // 蓝紫渐变背景
-                  gradient: const LinearGradient(
+                  // 渐变背景
+                  gradient: LinearGradient(
                     colors: [_neonBlue, _neonPurple],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
-                  borderRadius: BorderRadius.circular(widget.borderRadius),
-                  // 发光效果
+                  // 圆角
+                  borderRadius: BorderRadius.circular(widget.radius),
+                  // 动态发光效果
                   boxShadow: [
                     BoxShadow(
-                      color: _neonBlue,
-                      blurRadius: _glowAnimation.value,
-                      spreadRadius: 2,
-                    ),
-                    BoxShadow(
-                      color: _neonPurple.withValues(alpha: 0.7),
-                      blurRadius: _glowAnimation.value * 0.7,
-                      spreadRadius: 2,
+                      color: _neonBlue.withValues(
+                        alpha: 0.5 + _glowAnimation.value * 0.4,
+                      ),
+                      blurRadius: glowValue,
+                      spreadRadius: 1.0,
                     ),
                   ],
                 ),
+
+                // 按钮内容（图标+文字）
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       widget.icon,
@@ -125,11 +140,7 @@ class _CoolButtonState extends State<CoolButton>
                       size: widget.iconSize,
                     ),
                     SizedBox(width: widget.gap),
-                    Text(
-                      widget.text,
-                      style: widget.textStyle,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(widget.text, style: widget.textStyle),
                   ],
                 ),
               ),
@@ -138,18 +149,5 @@ class _CoolButtonState extends State<CoolButton>
         );
       },
     );
-  }
-}
-
-// 自定义曲线：值越大速度越快
-class SpeedCurve extends Curve {
-  const SpeedCurve();
-
-  @override
-  double transform(double t) {
-    // t 的范围是 0.0 到 1.0
-    // 当 t 接近 1.0 时（值较大），速度加快
-    // 使用二次函数使曲线在末尾更陡峭，实现速度随值增大而加快的效果
-    return t * t;
   }
 }
