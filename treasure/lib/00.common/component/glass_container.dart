@@ -58,7 +58,7 @@ class _GlassContainerState extends State<GlassContainer>
         );
 
     if (widget.enableFloat) {
-      _animationController.repeat();
+      _animationController.repeat(reverse: true);
     }
   }
 
