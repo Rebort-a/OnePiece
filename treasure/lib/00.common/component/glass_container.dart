@@ -26,8 +26,8 @@ class GlassContainer extends StatefulWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
     this.blurStrength = 8,
     this.enableFloat = true,
-    this.floatOffset = 20,
-    this.animationDuration = const Duration(seconds: 6),
+    this.floatOffset = 12,
+    this.animationDuration = const Duration(seconds: 2),
   });
 
   @override
@@ -51,10 +51,13 @@ class _GlassContainerState extends State<GlassContainer>
 
     _floatAnimation =
         Tween<double>(
-          begin: -widget.floatOffset / 2,
-          end: widget.floatOffset / 2,
+          begin: widget.floatOffset / 2,
+          end: -widget.floatOffset / 2,
         ).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.linear),
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
         );
 
     if (widget.enableFloat) {

@@ -219,9 +219,9 @@ class Achievements {
       description: "首次击败BOSS",
     ),
     Achievement(
-      type: AchievementType.tripleKill,
-      title: "三连击",
-      description: "一次击败3个敌人",
+      type: AchievementType.eightKill,
+      title: "八连杀",
+      description: "连续击败八个敌人",
     ),
   ];
 }

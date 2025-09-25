@@ -249,7 +249,8 @@ class Manager with ChangeNotifier implements TickerProvider {
         color = ColorConstants.enemyFast;
         health =
             ParamConstants.enemyBaseHealth +
-            _random.nextInt(ParamConstants.bulletBaseDamage);
+            _random.nextInt(ParamConstants.bulletBaseDamage) +
+            1;
         baseSpeed = ParamConstants.enemyFastSpeed;
         baseDx = 0;
         dropRate = ParamConstants.propDropRateBasic;
@@ -306,6 +307,7 @@ class Manager with ChangeNotifier implements TickerProvider {
       if (e.position.dy > _screenSize.height) {
         _enemies.remove(e);
         if (e.type.index > EnemyType.missile.index) {
+          _enemiesKilled = 0;
           _score -= e.health;
           // 显示敌人逃脱信息
           pageNavigator.value = (context) {
@@ -417,8 +419,8 @@ class Manager with ChangeNotifier implements TickerProvider {
         }
 
         // 解锁成就检测
-        if (_enemiesKilled >= 3) {
-          _unlockAchievement(AchievementType.tripleKill);
+        if (_enemiesKilled >= 8) {
+          _unlockAchievement(AchievementType.eightKill);
         } else if (_enemiesKilled == 1) {
           _unlockAchievement(AchievementType.firstKill);
         }
@@ -564,7 +566,6 @@ class Manager with ChangeNotifier implements TickerProvider {
     _level++;
     _state.value = GameState.levelUp;
     _levelUpTimer = 0;
-    _enemiesKilled = 0;
 
     // 解锁等级成就
     if (_level >= 5) {

@@ -182,7 +182,7 @@ enum AchievementType {
   level5,
   level10,
   bossKill,
-  tripleKill,
+  eightKill,
 }
 
 /// 成就配置类

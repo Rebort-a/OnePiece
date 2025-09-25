@@ -242,7 +242,6 @@ class SpaceShipPage extends StatelessWidget {
       child: GlassContainer(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
               '游戏结束',
@@ -306,24 +305,32 @@ class SpaceShipPage extends StatelessWidget {
   Widget _buildScoreItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 18, color: Colors.cyanAccent),
-          ),
-          const SizedBox(width: 20),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.blueGrey,
+      child: SizedBox(
+        width: 200,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 18, color: Colors.cyanAccent),
+              ),
             ),
-          ),
-        ],
+            const Spacer(flex: 1),
+            Expanded(
+              flex: 1,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
