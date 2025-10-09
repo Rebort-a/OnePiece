@@ -11,7 +11,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   double _lastElapsed = 0; // 上次更新时间
   final FocusNode focusNode = FocusNode();
 
-  SoftCylinder _soft = SoftCylinder(center: Vector3(0, 0, 400)); // 在焦点位置生成圆环
+  SoftCylinder _soft = SoftCylinder(center: Vector3(0, 0, 300)); // 在焦点位置生成圆环
   Vector3 _externalForce = Vector3(0, 0, 0); // 所有粒子都受相同的外力
 
   double _lastScale = 1.0;
@@ -49,7 +49,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   void resetSoft() {
     _externalForce = Vector3.zero(); // 清除外力
-    _soft = SoftCylinder(center: Vector3(0, 0, 400)); // 在焦点位置生成圆环
+    _soft = SoftCylinder(center: Vector3(0, 0, 300)); // 在焦点位置生成圆环
   }
 
   /// 处理键盘事件

@@ -142,8 +142,8 @@ class SoftCylinder {
   final double maxX = 400;
   final double minY = -400;
   final double maxY = 400;
-  final double minZ = 400;
-  final double maxZ = 1200;
+  final double minZ = 100;
+  final double maxZ = 900;
   final double restitution = 0.8; // 碰撞恢复系数
 
   SoftCylinder({
@@ -297,7 +297,7 @@ class SoftCylinder {
       p.position = Vector3(
         p.position.x,
         p.position.y,
-        1.0 - (p.position.z - 1.0),
+        minZ - (p.position.z - minZ),
       );
       p.velocity = Vector3(
         p.velocity.x,
@@ -324,7 +324,7 @@ class SoftCylinderPainter extends CustomPainter {
   final SoftCylinder cylinder; // 要绘制的圆柱
   final double flashAlpha; // 闪光效果透明度
 
-  static const double _focalLength = 400; // 透视投影的焦距
+  static const double _focalLength = 300; // 透视投影的焦距
 
   SoftCylinderPainter({required this.cylinder, this.flashAlpha = 1.0});
 
