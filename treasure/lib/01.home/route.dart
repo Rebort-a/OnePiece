@@ -16,6 +16,7 @@ import '../08.sudoku/page.dart';
 import '../09.guess/page.dart';
 import '../10.three_tiles/page.dart';
 import '../11.spaceship/page.dart';
+import '../12.soft/page.dart';
 
 enum LocalItemType {
   animalChess,
@@ -27,6 +28,7 @@ enum LocalItemType {
   guess,
   threeTiles,
   spaceship,
+  soft,
 }
 
 enum NetItemType {
@@ -59,6 +61,8 @@ extension LocalItemTypeExtension on LocalItemType {
         return ThreeTilesPage();
       case LocalItemType.spaceship:
         return SpaceShipPage();
+      case LocalItemType.soft:
+        return SoftPage();
     }
   }
 }
