@@ -48,11 +48,11 @@ class Manager with ChangeNotifier implements TickerProvider {
   Manager() {
     _resetState();
     _resetPlayer();
-    _initFocusNote();
+    _initFocusNode();
     _initTicker();
   }
 
-  void _initFocusNote() {
+  void _initFocusNode() {
     focusNode.requestFocus();
   }
 
