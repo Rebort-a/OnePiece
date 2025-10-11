@@ -17,6 +17,7 @@ import '../09.guess/page.dart';
 import '../10.three_tiles/page.dart';
 import '../11.spaceship/page.dart';
 import '../12.soft/page.dart';
+import '../13.minecraft/page.dart';
 
 enum LocalItemType {
   animalChess,
@@ -29,6 +30,7 @@ enum LocalItemType {
   threeTiles,
   spaceship,
   soft,
+  minecraft,
 }
 
 enum NetItemType {
@@ -63,6 +65,8 @@ extension LocalItemTypeExtension on LocalItemType {
         return SpaceShipPage();
       case LocalItemType.soft:
         return SoftPage();
+      case LocalItemType.minecraft:
+        return MinecraftPage();
     }
   }
 }

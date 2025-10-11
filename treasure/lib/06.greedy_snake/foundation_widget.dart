@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../00.common/component/joystick_component.dart';
 import '../00.common/component/notifier_navigator.dart';
-import '../00.common/component/speed_button.dart';
+import '../00.common/component/bool_button.dart';
 import 'draw_paint.dart';
 import 'foundation_manager.dart';
 
@@ -58,12 +58,18 @@ class GameScreen extends StatelessWidget {
         Positioned(
           left: 20,
           bottom: 40,
-          child: Joystick(onDirectionChanged: manager.updatePlayerAngle),
+          child: Joystick(
+            onDirectionChanged: manager.updatePlayerAngle,
+            onStop: () {},
+          ),
         ),
         Positioned(
           right: 20,
           bottom: 40,
-          child: SpeedButton(onSpeedChanged: manager.updatePlayerSpeed),
+          child: BoolButton(
+            onChanged: manager.updatePlayerSpeed,
+            icon: Icons.flash_on,
+          ),
         ),
       ],
     );

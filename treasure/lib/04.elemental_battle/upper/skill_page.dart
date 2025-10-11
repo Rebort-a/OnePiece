@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:treasure/04.elemental_battle/base/energy.dart';
 
-import '../../00.common/component/template_dialog.dart';
+import '../../00.common/component/template_banner.dart';
 import '../middle/player.dart';
 import '../base/skill.dart';
 
@@ -111,13 +111,13 @@ class _SkillsPageState extends State<SkillsPage> {
             onPressed: () {
               if (widget.player.experience >= 30) {
                 widget.player.experience -= 30;
-                TemplateDialog.snackBarDialog(context, '学习成功！');
+                TemplateBanner.snackBarDialog(context, '学习成功！');
                 setState(() {
                   widget.player.upgradeAppointSkill(_index);
                   _updateSkills();
                 });
               } else {
-                TemplateDialog.snackBarDialog(context, '经验不足！');
+                TemplateBanner.snackBarDialog(context, '经验不足！');
               }
               Navigator.pop(context);
             },

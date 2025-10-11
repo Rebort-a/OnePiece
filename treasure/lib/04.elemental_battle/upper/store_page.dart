@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../00.common/component/template_dialog.dart';
+import '../../00.common/component/template_banner.dart';
 import '../middle/prop.dart';
 import '../middle/player.dart';
 
@@ -182,9 +182,9 @@ class _StorePageState extends State<StorePage> {
       setState(() {
         widget.player.props[_selectedItem.id]?.count += 1;
       });
-      TemplateDialog.snackBarDialog(context, '购买成功');
+      TemplateBanner.snackBarDialog(context, '购买成功');
     } else {
-      TemplateDialog.snackBarDialog(context, '金币不足');
+      TemplateBanner.snackBarDialog(context, '金币不足');
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import '../00.common/component/template_banner.dart';
 import '../00.common/component/template_dialog.dart';
 import '../00.common/tool/notifier.dart';
 import 'base.dart';
@@ -311,7 +312,7 @@ class Manager with ChangeNotifier implements TickerProvider {
           _score -= e.health;
           // 显示敌人逃脱信息
           pageNavigator.value = (context) {
-            TemplateDialog.textBanner(
+            TemplateBanner.textBanner(
               context: context,
               text: "敌人逃脱！",
               duration: DurationConstants.text,
@@ -526,7 +527,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
     // 使用AlertBanner显示BOSS出现信息
     pageNavigator.value = (context) {
-      TemplateDialog.alertBanner(
+      TemplateBanner.alertBanner(
         context: context,
         text: "Boss出现！",
         duration: DurationConstants.alert,
@@ -594,7 +595,7 @@ class Manager with ChangeNotifier implements TickerProvider {
       final achievement = Achievements.all.firstWhere((a) => a.type == type);
 
       pageNavigator.value = (context) {
-        TemplateDialog.achieveBanner(
+        TemplateBanner.achieveBanner(
           context: context,
           title: achievement.title,
           description: achievement.description,
