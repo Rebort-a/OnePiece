@@ -39,6 +39,8 @@ class IntSliderData {
 }
 
 class TemplateDialog {
+  TemplateDialog._();
+
   static void promptDialog({
     required BuildContext context,
     required String title,

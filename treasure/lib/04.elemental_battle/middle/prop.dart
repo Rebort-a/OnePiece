@@ -29,6 +29,8 @@ class MapProp {
 }
 
 class PropCollection {
+  PropCollection._();
+
   static final Map<EntityType, MapProp> totalItems = {
     EntityType.hospital: hospital,
     EntityType.sword: sword,

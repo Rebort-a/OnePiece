@@ -100,6 +100,8 @@ class CombatSkill {
 }
 
 class SkillCollection {
+  SkillCollection._();
+
   // 各属性可学习技能列表
   static final List<CombatSkill> metalAvailableSkills = [
     SkillCollection.metalPassive_0,

@@ -5,6 +5,8 @@ import 'alert_banner.dart';
 import 'text_banner.dart';
 
 class TemplateBanner {
+  TemplateBanner._();
+
   static void snackBarDialog(BuildContext context, String message) {
     final snackBar = SnackBar(
       content: Text(message),
