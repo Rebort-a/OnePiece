@@ -1,13 +1,23 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'dart:ui';
 
+import 'constant.dart';
+
+// 三维向量
 class Vector3 {
-  final double x;
-  final double y;
-  final double z;
+  final double x, y, z;
 
-  Vector3(this.x, this.y, this.z);
+  const Vector3(this.x, this.y, this.z);
 
+  static const Vector3 zero = Vector3(0, 0, 0);
+  // factory Vector3.zero() => const Vector3(0, 0, 0);
+  // const Vector3.zero() : x = 0, y = 0, z = 0;
+  static const Vector3 one = Vector3(1, 1, 1);
+  static const Vector3 right = Vector3(1, 0, 0); // 右方向（x轴）
+  static const Vector3 up = Vector3(0, 1, 0); // 上方向（y轴）
+  static const Vector3 forward = Vector3(0, 0, 1); // 前方向（z轴）
+
+  // 向量运算符
   Vector3 operator +(Vector3 other) =>
       Vector3(x + other.x, y + other.y, z + other.z);
   Vector3 operator -(Vector3 other) =>
@@ -16,11 +26,21 @@ class Vector3 {
       Vector3(x * scalar, y * scalar, z * scalar);
   Vector3 operator /(double scalar) =>
       Vector3(x / scalar, y / scalar, z / scalar);
+  Vector3 operator -() => Vector3(-x, -y, -z);
 
-  double get magnitude => sqrt(x * x + y * y + z * z);
-  Vector3 get normalized => this / magnitude;
+  // 向量模长
+  double get magnitude => math.sqrt(x * x + y * y + z * z);
+  // 向量归一化，单位向量
+  Vector3 get normalized =>
+      magnitude > Constant.epsilon ? this / magnitude : Vector3.zero;
 
+  // 计算与另一个向量的距离（模长差）
+  double distanceTo(Vector3 other) => (this - other).magnitude;
+
+  //向量点积，用来计算夹角
   double dot(Vector3 other) => x * other.x + y * other.y + z * other.z;
+
+  //向量叉积，用来计算法线
   Vector3 cross(Vector3 other) => Vector3(
     y * other.z - z * other.y,
     z * other.x - x * other.z,
@@ -28,14 +48,14 @@ class Vector3 {
   );
 
   Vector3 rotateX(double angle) {
-    final cosAngle = cos(angle);
-    final sinAngle = sin(angle);
+    final cosAngle = math.cos(angle);
+    final sinAngle = math.sin(angle);
     return Vector3(x, y * cosAngle - z * sinAngle, y * sinAngle + z * cosAngle);
   }
 
   Vector3 rotateY(double angle) {
-    final cosAngle = cos(angle);
-    final sinAngle = sin(angle);
+    final cosAngle = math.cos(angle);
+    final sinAngle = math.sin(angle);
     return Vector3(
       x * cosAngle + z * sinAngle,
       y,
@@ -43,11 +63,25 @@ class Vector3 {
     );
   }
 
-  bool equals(Vector3 other, [double epsilon = 0.001]) {
+  Vector3 rotateZ(double angle) {
+    final cosAngle = math.cos(angle);
+    final sinAngle = math.sin(angle);
+    return Vector3(x * cosAngle - y * sinAngle, x * sinAngle + y * cosAngle, z);
+  }
+
+  bool equals(Vector3 other, [double epsilon = Constant.epsilon]) {
     return (x - other.x).abs() < epsilon &&
         (y - other.y).abs() < epsilon &&
         (z - other.z).abs() < epsilon;
   }
+
+  bool get isZero =>
+      x.abs() < Constant.epsilon &&
+      y.abs() < Constant.epsilon &&
+      z.abs() < Constant.epsilon;
+
+  @override
+  String toString() => 'Vector3($x, $y, $z)';
 }
 
 // 碰撞体类型
@@ -55,8 +89,11 @@ enum ColliderType { box, sphere }
 
 // 碰撞体接口
 abstract class Collider {
+  // 获取碰撞体类型
   ColliderType get type;
+  // 检查和其他碰撞体碰撞
   bool checkCollision(Collider other);
+  // 检查和点碰撞
   bool containsPoint(Vector3 point);
 }
 
@@ -64,19 +101,21 @@ abstract class Collider {
 class BoxCollider implements Collider {
   Vector3 position;
   final Vector3 size;
+  final Vector3 _halfSize;
 
-  BoxCollider(this.position, this.size);
+  BoxCollider({required this.position, required this.size})
+    : _halfSize = size * 0.5;
 
   @override
   ColliderType get type => ColliderType.box;
 
   // 获取碰撞体的边界
-  double get minX => position.x - size.x / 2;
-  double get maxX => position.x + size.x / 2;
-  double get minY => position.y - size.y / 2;
-  double get maxY => position.y + size.y / 2;
-  double get minZ => position.z - size.z / 2;
-  double get maxZ => position.z + size.z / 2;
+  double get minX => position.x - _halfSize.x;
+  double get maxX => position.x + _halfSize.x;
+  double get minY => position.y - _halfSize.y;
+  double get maxY => position.y + _halfSize.y;
+  double get minZ => position.z - _halfSize.z;
+  double get maxZ => position.z + _halfSize.z;
 
   @override
   bool checkCollision(Collider other) {
@@ -107,51 +146,93 @@ class Block {
   final Vector3 position;
   final BlockType type;
   final BoxCollider collider;
-  final bool isSolid;
 
   Block(this.position, this.type)
-    : collider = BoxCollider(position, Vector3(1, 1, 1)),
-      isSolid = type != BlockType.air;
+    : collider = BoxCollider(position: position, size: Vector3(1, 1, 1));
+
+  bool get penetrable => type == BlockType.air;
 
   // 获取方块颜色
   Color get color {
     switch (type) {
       case BlockType.grass:
-        return Color(0xFF4CAF50);
+        return const Color(0xFF4CAF50);
       case BlockType.dirt:
-        return Color(0xFF8D6E63);
+        return const Color(0xFF8D6E63);
       case BlockType.stone:
-        return Color(0xFF9E9E9E);
+        return const Color(0xFF9E9E9E);
       case BlockType.wood:
-        return Color(0xFFFF9800);
+        return const Color(0xFFFF9800);
       case BlockType.glass:
-        return Color(0x88FFFFFF);
+        return const Color(0x88FFFFFF);
       default:
-        return Color(0x00000000);
+        return const Color(0x00000000);
     }
   }
 }
 
-class Player {
+class CameraView {
   Vector3 position;
   double yaw; // 水平旋转 (弧度)
   double pitch; // 垂直旋转 (弧度)
+
+  CameraView({required this.position, this.yaw = 0, this.pitch = 0});
+
+  CameraView copyWith({Vector3? position, double? yaw, double? pitch}) {
+    return CameraView(
+      position: position ?? this.position,
+      yaw: yaw ?? this.yaw,
+      pitch: pitch ?? this.pitch,
+    );
+  }
+
+  bool equals(CameraView other) {
+    return position.equals(other.position) &&
+        yaw == other.yaw &&
+        pitch == other.pitch;
+  }
+}
+
+class Player {
+  final BoxCollider collider; // 玩家碰撞体
+  final CameraView view; // 玩家视野
+  Vector3 _position;
   Vector3 velocity;
-  bool isOnGround;
-  final BoxCollider collider;
+  bool bottomSupport;
 
   Player({
-    required this.position,
-    this.yaw = 0,
-    this.pitch = 0,
+    required Vector3 position,
     Vector3? velocity,
-    this.isOnGround = false,
-  }) : velocity = velocity ?? Vector3(0, 0, 0),
-       collider = BoxCollider(position, Vector3(0.6, 1.8, 0.6));
+    this.bottomSupport = false,
+  }) : _position = position,
+       velocity = velocity ?? Vector3.zero,
+       view = CameraView(position: position),
+       collider = BoxCollider(
+         position: position,
+         size: Vector3(
+           Constant.playerWidth,
+           Constant.playerHeight,
+           Constant.playerWidth,
+         ),
+       );
 
-  // 获取玩家前方方向向量
+  Vector3 get position => _position;
+
+  set position(Vector3 value) {
+    // 更新玩家坐标
+    _position = value;
+    // 更新视野坐标
+    view.position = _position;
+    // 更新碰撞体坐标
+    collider.position = _position;
+  }
+
+  double get yaw => view.yaw;
+  double get pitch => view.pitch;
+
+  // 获取玩家前方方向向量 (Z轴正方向为前方)
   Vector3 get forward {
-    final dir = Vector3(0, 0, -1).rotateY(yaw).rotateX(pitch);
+    final dir = Vector3(0, 0, 1).rotateY(yaw);
     return Vector3(dir.x, 0, dir.z).normalized;
   }
 
@@ -161,14 +242,21 @@ class Player {
     return Vector3(dir.x, 0, dir.z).normalized;
   }
 
+  // 获取相机方向向量 (考虑俯仰角)
+  Vector3 get cameraDirection {
+    return Vector3(0, 0, 1).rotateY(yaw).rotateX(pitch).normalized;
+  }
+
   // 更新玩家状态
   void update(double deltaTime, List<Block> blocks) {
     // 应用重力
-    velocity = velocity + Vector3(0, -9.8 * deltaTime, 0);
+    if (!bottomSupport) {
+      velocity = velocity + Vector3(0, -Constant.gravity * deltaTime, 0);
+    }
 
     // 限制下落速度
-    if (velocity.y < -20) {
-      velocity = Vector3(velocity.x, -20, velocity.z);
+    if (velocity.y < -Constant.maxFallSpeed) {
+      velocity = Vector3(velocity.x, -Constant.maxFallSpeed, velocity.z);
     }
 
     // 保存当前位置用于碰撞检测
@@ -178,88 +266,74 @@ class Player {
     position = position + velocity * deltaTime;
     collider.position = position;
 
-    // 检测与地面和方块的碰撞
-    isOnGround = false;
+    // 检测与方块的碰撞
+    bottomSupport = false;
     for (final block in blocks) {
-      if (!block.isSolid) continue;
+      if (block.penetrable) continue;
 
       if (collider.checkCollision(block.collider)) {
-        // 处理Y轴碰撞 (上下)
-        if (oldPosition.y <= block.collider.maxY &&
-            position.y > block.collider.maxY) {
-          position = Vector3(
-            position.x,
-            block.collider.maxY + collider.size.y / 2,
-            position.z,
-          );
-          velocity = Vector3(velocity.x, 0, velocity.z);
-          isOnGround = true;
-        } else if (oldPosition.y >= block.collider.minY &&
-            position.y < block.collider.minY) {
-          position = Vector3(
-            position.x,
-            block.collider.minY - collider.size.y / 2,
-            position.z,
-          );
-          velocity = Vector3(velocity.x, 0, velocity.z);
-        }
-
-        // 处理X轴碰撞 (左右)
-        if (oldPosition.x <= block.collider.maxX &&
-            position.x > block.collider.maxX) {
-          position = Vector3(
-            block.collider.maxX + collider.size.x / 2,
-            position.y,
-            position.z,
-          );
-          velocity = Vector3(0, velocity.y, velocity.z);
-        } else if (oldPosition.x >= block.collider.minX &&
-            position.x < block.collider.minX) {
-          position = Vector3(
-            block.collider.minX - collider.size.x / 2,
-            position.y,
-            position.z,
-          );
-          velocity = Vector3(0, velocity.y, velocity.z);
-        }
-
-        // 处理Z轴碰撞 (前后)
-        if (oldPosition.z <= block.collider.maxZ &&
-            position.z > block.collider.maxZ) {
-          position = Vector3(
-            position.x,
-            position.y,
-            block.collider.maxZ + collider.size.z / 2,
-          );
-          velocity = Vector3(velocity.x, velocity.y, 0);
-        } else if (oldPosition.z >= block.collider.minZ &&
-            position.z < block.collider.minZ) {
-          position = Vector3(
-            position.x,
-            position.y,
-            block.collider.minZ - collider.size.z / 2,
-          );
-          velocity = Vector3(velocity.x, velocity.y, 0);
-        }
-
-        // 更新碰撞体位置
-        collider.position = position;
+        _resolveCollision(block.collider, oldPosition);
       }
     }
+  }
 
-    // 简单的地面检测（如果没有方块碰撞，检查Y坐标）
-    if (!isOnGround && position.y < 1.8) {
-      position = Vector3(position.x, 1.8, position.z);
+  // 解析碰撞
+  void _resolveCollision(BoxCollider block, Vector3 oldPosition) {
+    // 计算穿透深度
+    final overlapX = _calculateOverlap(
+      collider.minX,
+      collider.maxX,
+      block.minX,
+      block.maxX,
+    );
+    final overlapY = _calculateOverlap(
+      collider.minY,
+      collider.maxY,
+      block.minY,
+      block.maxY,
+    );
+    final overlapZ = _calculateOverlap(
+      collider.minZ,
+      collider.maxZ,
+      block.minZ,
+      block.maxZ,
+    );
+
+    // 找出最小穿透方向
+    if (overlapX.abs() <= overlapY.abs() && overlapX.abs() <= overlapZ.abs()) {
+      // X轴碰撞
+      position = Vector3(position.x + overlapX, position.y, position.z);
+      velocity = Vector3(0, velocity.y, velocity.z);
+    } else if (overlapY.abs() <= overlapX.abs() &&
+        overlapY.abs() <= overlapZ.abs()) {
+      // Y轴碰撞
+      position = Vector3(position.x, position.y + overlapY, position.z);
+      if (overlapY > 0) {
+        // 从上方碰撞，站在地面上
+        bottomSupport = true;
+      }
       velocity = Vector3(velocity.x, 0, velocity.z);
-      isOnGround = true;
+    } else {
+      // Z轴碰撞
+      position = Vector3(position.x, position.y, position.z + overlapZ);
+      velocity = Vector3(velocity.x, velocity.y, 0);
     }
+
+    collider.position = position;
+  }
+
+  double _calculateOverlap(double min1, double max1, double min2, double max2) {
+    if (max1 <= min2 || min1 >= max2) return 0;
+    final overlap1 = max1 - min2;
+    final overlap2 = max2 - min1;
+    return overlap1 < overlap2 ? -overlap1 : overlap2;
   }
 
   // 跳跃
   void jump() {
-    if (isOnGround) {
-      velocity = Vector3(velocity.x, 5, velocity.z);
-      isOnGround = false;
+    if (bottomSupport) {
+      velocity = Vector3(velocity.x, Constant.jumpForce, velocity.z);
+      bottomSupport = false;
     }
   }
 
@@ -271,10 +345,13 @@ class Player {
 
   // 旋转视角
   void rotate(double deltaYaw, double deltaPitch) {
-    yaw += deltaYaw;
-    pitch += deltaPitch;
+    view.yaw += deltaYaw;
+    view.pitch += deltaPitch;
 
-    // 限制俯仰角范围，防止过度仰头或低头
-    pitch = pitch.clamp(-pi * 0.47, pi * 0.47); // 约-85°到85°
+    // 限制俯仰角范围
+    view.pitch = view.pitch.clamp(
+      -Constant.pitchLimit * math.pi,
+      Constant.pitchLimit * math.pi,
+    );
   }
 }
