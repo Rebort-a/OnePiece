@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 
 class Joystick extends StatefulWidget {
   /// 方向改变回调函数，参数为弧度值（-π 到 π）
-  final void Function(double radians) onDirectionChanged;
+  final void Function(double radians) onDrag;
 
   /// 松手回调函数，当摇杆被释放时调用
   final void Function() onStop;
 
-  const Joystick({
-    super.key,
-    required this.onDirectionChanged,
-    required this.onStop,
-  });
+  const Joystick({super.key, required this.onDrag, required this.onStop});
 
   @override
   State<Joystick> createState() => _JoystickState();
@@ -87,7 +83,7 @@ class _JoystickState extends State<Joystick> {
 
     if (_currentRadians != radians) {
       _currentRadians = radians;
-      widget.onDirectionChanged(radians);
+      widget.onDrag(radians);
     }
 
     setState(() {

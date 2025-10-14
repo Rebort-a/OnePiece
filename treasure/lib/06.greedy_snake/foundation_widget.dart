@@ -58,10 +58,7 @@ class GameScreen extends StatelessWidget {
         Positioned(
           left: 20,
           bottom: 40,
-          child: Joystick(
-            onDirectionChanged: manager.updatePlayerAngle,
-            onStop: () {},
-          ),
+          child: Joystick(onDrag: manager.updatePlayerAngle, onStop: () {}),
         ),
         Positioned(
           right: 20,
