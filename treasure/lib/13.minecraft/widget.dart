@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../00.common/component/bool_button.dart';
+import 'base.dart';
 
 // 十字准星组件
 class Crosshair extends StatelessWidget {
@@ -29,7 +30,6 @@ class CrosshairPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final third = size.width / 3;
 
-    // 绘制十字准星
     canvas.drawLine(
       Offset(center.dx, 0),
       Offset(center.dx, center.dy - third),
@@ -57,29 +57,16 @@ class CrosshairPainter extends CustomPainter {
 }
 
 class MobileControls extends StatelessWidget {
-  final Function(double, double) onMovement;
-  final VoidCallback onStop;
+  final Function(Vector2) onDrag;
   final VoidCallback onJump;
 
-  const MobileControls({
-    super.key,
-    required this.onMovement,
-    required this.onStop,
-    required this.onJump,
-  });
+  const MobileControls({super.key, required this.onDrag, required this.onJump});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 左侧：虚拟摇杆（控制移动）
-        Positioned(
-          left: 20,
-          bottom: 20,
-          child: Joystick(onDirectionChanged: onMovement, onStop: onStop),
-        ),
-
-        // 右侧：跳跃按钮
+        Positioned(left: 20, bottom: 20, child: Joystick(onDrag: onDrag)),
         Positioned(
           right: 20,
           bottom: 20,
@@ -96,14 +83,9 @@ class MobileControls extends StatelessWidget {
 }
 
 class Joystick extends StatefulWidget {
-  final void Function(double horizontal, double vertical) onDirectionChanged;
-  final VoidCallback onStop;
+  final void Function(Vector2) onDrag;
 
-  const Joystick({
-    super.key,
-    required this.onDirectionChanged,
-    required this.onStop,
-  });
+  const Joystick({super.key, required this.onDrag});
 
   @override
   State<Joystick> createState() => _JoystickState();
@@ -157,8 +139,7 @@ class _JoystickState extends State<Joystick> {
     setState(() {
       _stickPosition = Offset.zero;
     });
-    widget.onDirectionChanged(0, 0);
-    widget.onStop();
+    widget.onDrag(Vector2.zero);
   }
 
   void _updateStickPosition(Offset localPosition) {
@@ -166,19 +147,15 @@ class _JoystickState extends State<Joystick> {
     final relativePosition = localPosition - centerOffset;
     final distance = relativePosition.distance;
 
-    // 限制摇杆在基座范围内
-    final clampedDistance = distance > _baseRadius ? _baseRadius : distance;
-    final normalized = clampedDistance > 0
-        ? relativePosition / distance
-        : Offset.zero;
+    // 计算归一化向量
+    final normalized = distance > 0 ? relativePosition / distance : Offset.zero;
 
+    // 限制在单位圆内，并计算实际位置
+    final double clampedDistance = distance.clamp(0, _baseRadius);
     final clampedPosition = normalized * clampedDistance;
 
-    // 计算归一化的方向向量
-    final horizontal = normalized.dx;
-    final vertical = -normalized.dy; // 反转Y轴，使向上为正
-
-    widget.onDirectionChanged(horizontal, vertical);
+    // 转换为 Vector2，范围 [-1, 1]
+    widget.onDrag(Vector2(normalized.dx, -normalized.dy));
 
     setState(() {
       _stickPosition = clampedPosition;
