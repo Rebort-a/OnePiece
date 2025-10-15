@@ -2,8 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../00.common/component/notifier_navigator.dart';
+import '../00.common/widget/notifier_navigator.dart';
 import '../00.common/style/theme.dart';
+import '../00.common/widget/parchment_texture.dart';
 import 'base.dart';
 import 'manager.dart';
 
@@ -215,7 +216,10 @@ class SudokuPage extends StatelessWidget {
                         border: Border.all(color: Colors.black, width: 2),
                       ),
                 child: isNightMode
-                    ? MagicTheme.withParchmentTexture(child: _buildBoardGrid())
+                    ? CustomPaint(
+                        painter: ParchmentTexture(),
+                        child: _buildBoardGrid(),
+                      )
                     : _buildBoardGrid(),
               ),
             ),

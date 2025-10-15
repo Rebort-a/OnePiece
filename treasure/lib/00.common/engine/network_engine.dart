@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../component/template_dialog.dart';
-import '../tool/notifier.dart';
+import '../widget/dialog/template_dialog.dart';
+import '../tool/notifiers.dart';
 import '../network/network_message.dart';
 import '../network/network_room.dart';
 
@@ -142,7 +142,7 @@ class NetworkEngine {
 
   void _handleConnectionError(Object error) {
     navigatorHandler.value = (context) {
-      TemplateDialog.promptDialog(
+      DialogTemplate.promptDialog(
         context: context,
         title: "Connection failed",
         content: "Could not connect to the server: ${error.toString()}",
@@ -155,7 +155,7 @@ class NetworkEngine {
   void _handleSocketDone() {
     if (_isClosing || _isClosed) return;
     navigatorHandler.value = (context) {
-      TemplateDialog.promptDialog(
+      DialogTemplate.promptDialog(
         context: context,
         title: "Disconnected",
         content: "You have been disconnected from the server",

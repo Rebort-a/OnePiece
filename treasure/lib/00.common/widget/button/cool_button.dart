@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 class CoolButton extends StatefulWidget {
   final String text;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback onTap;
 
-  final double widget;
+  final double width;
   final double height;
 
   final double radius;
@@ -21,8 +21,8 @@ class CoolButton extends StatefulWidget {
     super.key,
     required this.text,
     required this.icon,
-    required this.onPressed,
-    this.widget = 180,
+    required this.onTap,
+    this.width = 180,
     this.height = 60,
     this.radius = 30,
     this.padding = 16.0,
@@ -96,13 +96,13 @@ class _CoolButtonState extends State<CoolButton>
             onTapDown: (_) => setState(() => _isPressed = true),
             onTapUp: (_) => setState(() => _isPressed = false),
             onTapCancel: () => setState(() => _isPressed = false),
-            onTap: widget.onPressed,
+            onTap: widget.onTap,
 
             child: Transform.scale(
               // 交互缩放效果
               scale: _isPressed ? 0.95 : (_isHovered ? 1.05 : 1.0),
               child: Container(
-                width: widget.widget,
+                width: widget.width,
                 height: widget.height,
                 padding: EdgeInsets.symmetric(
                   horizontal: widget.padding * 2,

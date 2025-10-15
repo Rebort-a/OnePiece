@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:treasure/00.common/tool/notifier.dart';
-import '../00.common/component/template_dialog.dart';
+import 'package:treasure/00.common/tool/notifiers.dart';
+import '../00.common/widget/dialog/template_dialog.dart';
 import '../00.common/tool/timer_counter.dart';
 import 'base.dart';
 
@@ -53,7 +53,7 @@ class GuessManager {
 
   /// 显示难度设置对话框
   void showSelector() {
-    pageNavigator.value = (context) => TemplateDialog.intSliderDialog(
+    pageNavigator.value = (context) => DialogTemplate.intSliderDialog(
       context: context,
       title: '设置难度',
       sliderData: IntSliderData(

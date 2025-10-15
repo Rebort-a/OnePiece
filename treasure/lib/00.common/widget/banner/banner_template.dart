@@ -4,8 +4,8 @@ import 'achieve_banner.dart';
 import 'alert_banner.dart';
 import 'text_banner.dart';
 
-class TemplateBanner {
-  TemplateBanner._();
+class BannerTemplate {
+  BannerTemplate._();
 
   static void snackBarDialog(BuildContext context, String message) {
     final snackBar = SnackBar(
@@ -15,7 +15,7 @@ class TemplateBanner {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  static void showOverlayDialog({
+  static void _showOverlayDialog({
     required BuildContext context,
     required WidgetBuilder builder,
     required Duration duration,
@@ -37,7 +37,7 @@ class TemplateBanner {
     required String text,
     required Duration duration,
   }) {
-    showOverlayDialog(
+    _showOverlayDialog(
       context: context,
       duration: duration,
       builder: (context) => TextBanner(text: text, duration: duration),
@@ -51,7 +51,7 @@ class TemplateBanner {
     required String description,
     required Duration duration,
   }) {
-    showOverlayDialog(
+    _showOverlayDialog(
       context: context,
       duration: duration,
       builder: (context) =>
@@ -65,7 +65,7 @@ class TemplateBanner {
     required String text,
     required Duration duration,
   }) {
-    showOverlayDialog(
+    _showOverlayDialog(
       context: context,
       duration: duration,
       builder: (context) => AlertBanner(text: text, duration: duration),

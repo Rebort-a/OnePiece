@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../component/template_dialog.dart';
+import '../widget/dialog/template_dialog.dart';
 import 'network_engine.dart';
 import '../network/network_message.dart';
 import '../game/gamer.dart';
@@ -149,7 +149,7 @@ class NetTurnGameEngine extends NetworkEngine {
 
   void _handleOpponentExit() {
     navigatorHandler.value = (context) {
-      TemplateDialog.promptDialog(
+      DialogTemplate.promptDialog(
         context: context,
         title: "Competitors withdraw",
         content: "The opponent has withdrawn",

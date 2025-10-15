@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../00.common/component/template_dialog.dart';
+import '../00.common/widget/dialog/template_dialog.dart';
 import '../00.common/network/network_room.dart';
 import 'route.dart';
 
@@ -9,7 +9,7 @@ class RoomDialog {
     required BuildContext context,
     required Function(String roomName, NetItemType roomType) onConfirm,
   }) {
-    TemplateDialog.optionDialog<NetItemType>(
+    DialogTemplate.optionDialog<NetItemType>(
       context: context,
       title: 'Create',
       hintText: 'Enter room name',
@@ -25,7 +25,7 @@ class RoomDialog {
     required Function(String userName, RoomInfo room, BuildContext context)
     onConfirm,
   }) {
-    TemplateDialog.inputDialog(
+    DialogTemplate.inputDialog(
       context: context,
       title: 'Join',
       hintText: 'Enter user name',
@@ -39,7 +39,7 @@ class RoomDialog {
     required RoomInfo room,
     required Function() onConfirm,
   }) {
-    TemplateDialog.promptDialog(
+    DialogTemplate.promptDialog(
       context: context,
       title: '离开',
       content: '即将退出房间',

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../00.common/tool/notifier.dart';
+import '../00.common/tool/notifiers.dart';
 
 // 围棋棋子状态
 enum StoneState { empty, black, white }

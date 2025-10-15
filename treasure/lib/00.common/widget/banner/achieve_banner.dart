@@ -54,7 +54,7 @@ class _AchieveBannerState extends State<AchieveBanner>
       right: 16,
       child: SlideTransition(
         position: _slideAnimation,
-        child: GlassMorphism(
+        child: _GlassMorphism(
           child: Container(
             width: 300,
             padding: const EdgeInsets.all(16),
@@ -112,10 +112,10 @@ class _AchieveBannerState extends State<AchieveBanner>
 }
 
 // 玻璃态效果组件
-class GlassMorphism extends StatelessWidget {
+class _GlassMorphism extends StatelessWidget {
   final Widget child;
 
-  const GlassMorphism({super.key, required this.child});
+  const _GlassMorphism({required this.child});
 
   @override
   Widget build(BuildContext context) {

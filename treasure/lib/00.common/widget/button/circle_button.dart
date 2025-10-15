@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 
-class BoolButton extends StatefulWidget {
-  final Function(bool isDown) onChanged;
+class CircleButton extends StatefulWidget {
+  final Function(bool) onToggle;
   final IconData icon;
 
-  const BoolButton({super.key, required this.onChanged, required this.icon});
+  const CircleButton({super.key, required this.onToggle, required this.icon});
 
   @override
-  State<BoolButton> createState() => _SpeedButtonState();
+  State<CircleButton> createState() => _CircleIconButtonState();
 }
 
-class _SpeedButtonState extends State<BoolButton> {
+class _CircleIconButtonState extends State<CircleButton> {
   bool _isPressed = false;
   static const double _buttonRadius = 60;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => _setState(true),
-      onTapUp: (_) => _setState(false),
-      onTapCancel: () => _setState(false),
+      onTapDown: (_) => _update(true),
+      onTapUp: (_) => _update(false),
+      onTapCancel: () => _update(false),
       child: Container(
         width: _buttonRadius * 2,
         height: _buttonRadius * 2,
@@ -34,10 +34,10 @@ class _SpeedButtonState extends State<BoolButton> {
     );
   }
 
-  void _setState(bool isDown) {
-    widget.onChanged(isDown);
+  void _update(bool isPressed) {
+    widget.onToggle(isPressed);
     setState(() {
-      _isPressed = isDown;
+      _isPressed = isPressed;
     });
   }
 }

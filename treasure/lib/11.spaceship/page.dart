@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-import '../00.common/component/cool_button.dart';
-import '../00.common/component/glass_container.dart';
-import '../00.common/component/notifier_navigator.dart';
+import '../00.common/widget/button/cool_button.dart';
+import '../00.common/widget/container/glass_container.dart';
+import '../00.common/widget/notifier_navigator.dart';
 import 'base.dart';
 import 'constant.dart';
 import 'manager.dart';
@@ -148,7 +148,7 @@ class SpaceShipPage extends StatelessWidget {
             CoolButton(
               text: '开始游戏',
               icon: Icons.play_arrow,
-              onPressed: _manager.startGame,
+              onTap: _manager.startGame,
             ),
             const SizedBox(height: 10),
           ],

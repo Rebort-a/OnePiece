@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/game/map.dart';
-import '../00.common/tool/notifier.dart';
-import '../00.common/component/template_dialog.dart';
+import '../00.common/tool/notifiers.dart';
+import '../00.common/widget/dialog/template_dialog.dart';
 import 'base.dart';
 import 'extension.dart';
 
@@ -24,7 +24,7 @@ abstract class FoundationalManager {
 
   void showBoardSizeSelector() {
     pageNavigator.value = (context) {
-      TemplateDialog.intSliderDialog(
+      DialogTemplate.intSliderDialog(
         context: context,
         title: '设置棋牌大小',
         sliderData: IntSliderData(start: 2, end: 6, value: boardLevel, step: 1),

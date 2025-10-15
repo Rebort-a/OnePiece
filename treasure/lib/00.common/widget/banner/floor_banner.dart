@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 
 class FloorBanner extends StatefulWidget {
   final String text;
-  final Duration displayDuration;
+  final Duration duration;
 
   const FloorBanner({
     super.key,
     required this.text,
-    this.displayDuration = const Duration(seconds: 1),
+    this.duration = const Duration(seconds: 1),
   });
 
   @override
@@ -53,7 +53,7 @@ class _FloorBannerState extends State<FloorBanner>
   void _showBanner() {
     _animationController.forward();
     // 保存计时器引用以便取消
-    _hideTimer = Timer(widget.displayDuration, _hideBanner);
+    _hideTimer = Timer(widget.duration, _hideBanner);
   }
 
   void _hideBanner() {

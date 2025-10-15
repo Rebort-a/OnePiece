@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
-import '../00.common/component/template_banner.dart';
-import '../00.common/component/template_dialog.dart';
-import '../00.common/tool/notifier.dart';
+import '../00.common/widget/banner/banner_template.dart';
+import '../00.common/widget/dialog/template_dialog.dart';
+import '../00.common/tool/notifiers.dart';
 import 'base.dart';
 import 'constant.dart';
 
@@ -312,7 +312,7 @@ class Manager with ChangeNotifier implements TickerProvider {
           _score -= e.health;
           // 显示敌人逃脱信息
           pageNavigator.value = (context) {
-            TemplateBanner.textBanner(
+            BannerTemplate.textBanner(
               context: context,
               text: "敌人逃脱！",
               duration: DurationConstants.text,
@@ -527,7 +527,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
     // 使用AlertBanner显示BOSS出现信息
     pageNavigator.value = (context) {
-      TemplateBanner.alertBanner(
+      BannerTemplate.alertBanner(
         context: context,
         text: "Boss出现！",
         duration: DurationConstants.alert,
@@ -595,7 +595,7 @@ class Manager with ChangeNotifier implements TickerProvider {
       final achievement = Achievements.all.firstWhere((a) => a.type == type);
 
       pageNavigator.value = (context) {
-        TemplateBanner.achieveBanner(
+        BannerTemplate.achieveBanner(
           context: context,
           title: achievement.title,
           description: achievement.description,
@@ -806,7 +806,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   }
 
   void showSettingDialog() {
-    pageNavigator.value = (context) => TemplateDialog.sliderDialog(
+    pageNavigator.value = (context) => DialogTemplate.sliderDialog(
       context: context,
       title: '灵敏度设置',
       sliderData: SliderData(

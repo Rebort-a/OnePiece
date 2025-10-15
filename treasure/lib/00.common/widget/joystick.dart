@@ -7,9 +7,9 @@ class Joystick extends StatefulWidget {
   final void Function(double radians) onDrag;
 
   /// 松手回调函数，当摇杆被释放时调用
-  final void Function() onStop;
+  final void Function() onRelease;
 
-  const Joystick({super.key, required this.onDrag, required this.onStop});
+  const Joystick({super.key, required this.onDrag, required this.onRelease});
 
   @override
   State<Joystick> createState() => _JoystickState();
@@ -65,7 +65,7 @@ class _JoystickState extends State<Joystick> {
       _stickPosition = Offset.zero;
       _currentRadians = 0;
     });
-    widget.onStop();
+    widget.onRelease();
   }
 
   void _updateStickPosition(Offset localPosition) {

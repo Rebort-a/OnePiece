@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'int_slider.dart';
+import '../int_slider.dart';
 
 class SliderData {
   double start;
@@ -38,8 +38,8 @@ class IntSliderData {
   int get divisions => ((end - start) / step).toInt();
 }
 
-class TemplateDialog {
-  TemplateDialog._();
+class DialogTemplate {
+  DialogTemplate._();
 
   static void promptDialog({
     required BuildContext context,

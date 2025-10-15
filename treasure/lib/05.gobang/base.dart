@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/game/map.dart';
-import '../00.common/tool/notifier.dart';
+import '../00.common/tool/notifiers.dart';
 
 // 围棋棋子状态
 enum PieceType { empty, black, white }

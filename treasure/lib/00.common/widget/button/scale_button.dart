@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 class ScaleButton extends StatefulWidget {
   final Size size;
-  final VoidCallback onTap;
+  final VoidCallback onPressed;
   final Widget? icon;
   final Color color;
   final bool enableLongPress;
@@ -13,7 +13,7 @@ class ScaleButton extends StatefulWidget {
   const ScaleButton({
     super.key,
     required this.size,
-    required this.onTap,
+    required this.onPressed,
     this.icon,
     this.color = Colors.blue,
     this.enableLongPress = true,
@@ -26,7 +26,7 @@ class ScaleButton extends StatefulWidget {
 class _ScaleButtonState extends State<ScaleButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
+  late Animation<double> _scaleAnimation;
   Timer? _timer;
 
   @override
@@ -40,7 +40,7 @@ class _ScaleButtonState extends State<ScaleButton>
           setState(() {});
         });
 
-    _animation = Tween<double>(begin: 1.0, end: 0.8).animate(_controller);
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(_controller);
   }
 
   @override
@@ -52,7 +52,7 @@ class _ScaleButtonState extends State<ScaleButton>
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      widget.onTap();
+      widget.onPressed();
       HapticFeedback.mediumImpact();
     });
   }
@@ -64,7 +64,7 @@ class _ScaleButtonState extends State<ScaleButton>
 
   void _onTapDown(TapDownDetails details) {
     _controller.forward();
-    widget.onTap();
+    widget.onPressed();
   }
 
   void _onTapUp(TapUpDetails details) {
@@ -84,10 +84,7 @@ class _ScaleButtonState extends State<ScaleButton>
   }
 
   void _onLongPressEnd(LongPressEndDetails details) {
-    if (widget.enableLongPress) {
-      _controller.reverse();
-      _cancelTimer();
-    }
+    _onLongPressUp();
   }
 
   void _onLongPressUp() {
@@ -108,7 +105,7 @@ class _ScaleButtonState extends State<ScaleButton>
       onLongPressEnd: _onLongPressEnd,
       onLongPressCancel: _onLongPressUp,
       child: Transform.scale(
-        scale: _animation.value,
+        scale: _scaleAnimation.value,
         child: Container(
           width: widget.size.width,
           height: widget.size.height,

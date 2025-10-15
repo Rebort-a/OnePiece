@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../00.common/component/template_banner.dart';
+import '../../00.common/widget/banner/banner_template.dart';
 import '../../00.common/game/gamer.dart';
-import '../../00.common/component/template_dialog.dart';
-import '../../00.common/tool/notifier.dart';
+import '../../00.common/widget/dialog/template_dialog.dart';
+import '../../00.common/tool/notifiers.dart';
 import '../../00.common/image/entity.dart';
 import '../../00.common/game/map.dart';
 
@@ -376,7 +376,7 @@ class MazeManager {
     _updatePlayerCell(Direction.down); // 更新方向
     _setCellToPlayer(mapLevel, mapLevel, player.id);
     pageNavigator.value = (BuildContext context) {
-      TemplateBanner.snackBarDialog(context, '你回到了主城');
+      BannerTemplate.snackBarDialog(context, '你回到了主城');
     };
   }
 
@@ -472,7 +472,7 @@ class MazeManager {
         case EntityType.home:
           _restorePlayer();
           pageNavigator.value = (BuildContext context) {
-            TemplateDialog.promptDialog(
+            DialogTemplate.promptDialog(
               context: context,
               title: "提示",
               content: "你睡了一觉，恢复了状态",
@@ -484,21 +484,21 @@ class MazeManager {
         case EntityType.hospital:
           player.props[EntityType.hospital]?.count += 1;
           pageNavigator.value = (BuildContext context) {
-            TemplateBanner.snackBarDialog(context, '你得到了一个药');
+            BannerTemplate.snackBarDialog(context, '你得到了一个药');
           };
           _setCellToEntity(newY, newX, EntityType.road);
           break;
         case EntityType.sword:
           player.props[EntityType.sword]?.count += 1;
           pageNavigator.value = (BuildContext context) {
-            TemplateBanner.snackBarDialog(context, '你得到了一个武器');
+            BannerTemplate.snackBarDialog(context, '你得到了一个武器');
           };
           _setCellToEntity(newY, newX, EntityType.road);
           break;
         case EntityType.shield:
           player.props[EntityType.shield]?.count += 1;
           pageNavigator.value = (BuildContext context) {
-            TemplateBanner.snackBarDialog(context, '你得到了一个防具');
+            BannerTemplate.snackBarDialog(context, '你得到了一个防具');
           };
           _setCellToEntity(newY, newX, EntityType.road);
           break;
@@ -506,7 +506,7 @@ class MazeManager {
           int money = 5 + _random.nextInt(25);
           player.money += money;
           pageNavigator.value = (BuildContext context) {
-            TemplateBanner.snackBarDialog(context, '你得到了一个钱袋，获得了$money枚金币');
+            BannerTemplate.snackBarDialog(context, '你得到了一个钱袋，获得了$money枚金币');
           };
           _setCellToEntity(newY, newX, EntityType.road);
           break;
@@ -558,7 +558,7 @@ class MazeManager {
   void _enterTheNext(int newY, int newX) {
     if (player.preview.health.value <= 0) {
       pageNavigator.value = (BuildContext context) {
-        TemplateBanner.snackBarDialog(context, '无法继续冒险');
+        BannerTemplate.snackBarDialog(context, '无法继续冒险');
       };
       return;
     }
@@ -604,11 +604,11 @@ class MazeManager {
       player.experience -= 30;
       player.upgradeAppointAttribute(EnergyType.values[index], attribute);
       pageNavigator.value = (BuildContext context) {
-        TemplateBanner.snackBarDialog(context, '升级成功！');
+        BannerTemplate.snackBarDialog(context, '升级成功！');
       };
     } else {
       pageNavigator.value = (BuildContext context) {
-        TemplateBanner.snackBarDialog(context, '经验不足！');
+        BannerTemplate.snackBarDialog(context, '经验不足！');
       };
     }
   }

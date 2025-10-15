@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../00.common/component/magic_celebration.dart';
+import '../00.common/widget/magic_celebration.dart';
 import '../00.common/style/theme.dart';
-import '../00.common/tool/notifier.dart';
-import '../00.common/component/template_dialog.dart';
+import '../00.common/tool/notifiers.dart';
+import '../00.common/widget/dialog/template_dialog.dart';
 import '../00.common/tool/timer_counter.dart';
 import 'algorithm.dart';
 import 'base.dart';
@@ -141,7 +141,7 @@ class Manager {
 
   /// 显示难度设置对话框
   void showSelector() {
-    pageNavigator.value = (context) => TemplateDialog.intSliderDialog(
+    pageNavigator.value = (context) => DialogTemplate.intSliderDialog(
       context: context,
       title: '设置难度',
       sliderData: IntSliderData(
@@ -188,7 +188,7 @@ class Manager {
   }
 
   void _showLeaveDialog(BuildContext context) {
-    TemplateDialog.confirmDialog(
+    DialogTemplate.confirmDialog(
       context: context,
       title: '请确认',
       content: '离开房间将丢失进度',

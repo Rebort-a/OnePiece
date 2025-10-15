@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../00.common/component/notifier_navigator.dart';
-import '../../00.common/component/scale_button.dart';
+import '../../00.common/widget/notifier_navigator.dart';
+import '../../00.common/widget/button/scale_button.dart';
 import '../../00.common/image/image_manager.dart';
 import '../base/energy.dart';
 
@@ -222,7 +222,7 @@ class MazePage extends StatelessWidget {
     children: [
       const SizedBox(height: 16),
       _DirectionButton(
-        onTap: _manager.movePlayerUp,
+        onPressed: _manager.movePlayerUp,
         icon: Icons.keyboard_arrow_up,
       ),
       const SizedBox(height: 16),
@@ -230,19 +230,19 @@ class MazePage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _DirectionButton(
-            onTap: _manager.movePlayerLeft,
+            onPressed: _manager.movePlayerLeft,
             icon: Icons.keyboard_arrow_left,
           ),
           const SizedBox(width: 16 * 4),
           _DirectionButton(
-            onTap: _manager.movePlayerRight,
+            onPressed: _manager.movePlayerRight,
             icon: Icons.keyboard_arrow_right,
           ),
         ],
       ),
       const SizedBox(height: 16),
       _DirectionButton(
-        onTap: _manager.movePlayerDown,
+        onPressed: _manager.movePlayerDown,
         icon: Icons.keyboard_arrow_down,
       ),
     ],
@@ -281,16 +281,16 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _DirectionButton extends StatelessWidget {
-  final VoidCallback onTap;
+  final VoidCallback onPressed;
   final IconData icon;
 
-  const _DirectionButton({required this.onTap, required this.icon});
+  const _DirectionButton({required this.onPressed, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return ScaleButton(
       size: const Size.square(48),
-      onTap: onTap,
+      onPressed: onPressed,
       // icon: Icon(icon, size: _LayoutConstants.buttonSize),
     );
   }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:treasure/04.elemental_battle/base/energy.dart';
 
 import '../../00.common/game/gamer.dart';
-import '../../00.common/component/template_dialog.dart';
-import '../../00.common/tool/notifier.dart';
+import '../../00.common/widget/dialog/template_dialog.dart';
+import '../../00.common/tool/notifiers.dart';
 import 'elemental.dart';
 import '../base/skill.dart';
 import 'common.dart';
@@ -239,7 +239,7 @@ abstract class FoundationalCombatManager {
 
   void _showGameResult() {
     pageNavigator.value = (BuildContext context) {
-      TemplateDialog.promptDialog(
+      DialogTemplate.promptDialog(
         context: context,
         title: resultTitles[combatResult] ?? '',
         content: resultContents[combatResult] ?? '',

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:treasure/00.common/component/template_dialog.dart';
+import 'package:treasure/00.common/widget/dialog/template_dialog.dart';
 
 import '../00.common/game/gamer.dart';
 import '../00.common/engine/net_turn_engine.dart';
@@ -120,7 +120,7 @@ class NetManager extends FoundationalManager {
   void showChessResult(bool isRedWin) {
     netTurnEngine.gameStep.value = GameStep.gameOver;
     pageNavigator.value = (context) {
-      TemplateDialog.promptDialog(
+      DialogTemplate.promptDialog(
         context: context,
         title: '游戏结束',
         content: "${isRedWin ? "红" : "蓝"}方获胜！",

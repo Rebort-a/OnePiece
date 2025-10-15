@@ -2,32 +2,31 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 
 class GlassContainer extends StatefulWidget {
-  final Widget child;
-  final EdgeInsets padding;
+  final Duration animationDuration;
+  final bool enableFloat;
+  final double floatOffset;
   final double? maxWidth;
   final double? maxHeight;
   final double? minWidth;
   final double? minHeight;
   final BorderRadiusGeometry borderRadius;
   final double blurStrength;
-
-  final bool enableFloat;
-  final double floatOffset;
-  final Duration animationDuration;
+  final EdgeInsets padding;
+  final Widget child;
 
   const GlassContainer({
     super.key,
-    required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.animationDuration = const Duration(seconds: 2),
+    this.enableFloat = true,
+    this.floatOffset = 12,
     this.maxWidth,
     this.maxHeight,
     this.minWidth,
     this.minHeight,
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
     this.blurStrength = 8,
-    this.enableFloat = true,
-    this.floatOffset = 12,
-    this.animationDuration = const Duration(seconds: 2),
+    this.padding = const EdgeInsets.all(20),
+    required this.child,
   });
 
   @override

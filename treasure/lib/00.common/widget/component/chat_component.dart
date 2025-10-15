@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../engine/network_engine.dart';
-import '../network/network_message.dart';
+import '../../engine/network_engine.dart';
+import '../../network/network_message.dart';
 
 class MessageList extends StatelessWidget {
   final NetworkEngine networkEngine;

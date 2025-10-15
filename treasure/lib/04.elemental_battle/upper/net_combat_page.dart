@@ -3,8 +3,8 @@ import 'package:treasure/04.elemental_battle/middle/foundation_combat_widget.dar
 
 import '../../00.common/game/step.dart';
 import '../../00.common/network/network_room.dart';
-import '../../00.common/component/chat_component.dart';
-import '../../00.common/component/notifier_navigator.dart';
+import '../../00.common/widget/component/chat_component.dart';
+import '../../00.common/widget/notifier_navigator.dart';
 import 'net_combat_manager.dart';
 
 class NetCombatPage extends StatelessWidget {
