@@ -100,8 +100,8 @@ class GamePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GamePainter oldDelegate) {
-    return !oldDelegate.player.position.equals(player.position) ||
-        oldDelegate.blocks.length != blocks.length;
+    return !oldDelegate.player.position.equals(player.position, 0.1) ||
+        !oldDelegate.player.orientation.equals(player.orientation, 0.01);
   }
 }
 
