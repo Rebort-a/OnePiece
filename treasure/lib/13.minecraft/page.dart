@@ -5,8 +5,9 @@ import 'constant.dart';
 import 'manager.dart';
 import 'widget.dart';
 
+/// 主游戏页面
 class MinecraftPage extends StatelessWidget {
-  final Manager manager = Manager();
+  final GameManager gameManager = GameManager();
 
   MinecraftPage({super.key});
 
@@ -16,114 +17,131 @@ class MinecraftPage extends StatelessWidget {
       body: Stack(
         children: [
           // 游戏场景
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return AnimatedBuilder(
-                animation: manager,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: ImprovedGamePainter(
-                      manager.player,
-                      manager.visibleBlocks,
-                    ),
-                    size: constraints.biggest,
-                  );
-                },
-              );
-            },
-          ),
+          _buildGameScene(),
 
           // 十字准星
           const Crosshair(),
 
-          // 主机端控制方式，键盘控制移动和跳跃，鼠标移动转动视角
-          KeyboardListener(
-            focusNode: manager.focusNode,
-            onKeyEvent: manager.handleKeyEvent,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.none,
-              onHover: manager.handleMouseHover,
-              child: GestureDetector(
-                onPanStart: manager.handleTouchStart,
-                onPanUpdate: manager.handleTouchMove,
-                onPanEnd: manager.handleTouchEnd,
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-          ),
+          // 输入处理
+          _buildInputHandler(),
 
-          // 移动端控制方式，屏幕按键移动和跳跃，滑动屏幕转动视角
-          MobileControls(
-            onDrag: manager.mobileMove,
-            onJump: manager.mobileJump,
-          ),
+          // 移动端控制
+          _buildMobileControls(),
         ],
       ),
     );
   }
+
+  /// 构建游戏场景
+  Widget _buildGameScene() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return AnimatedBuilder(
+          animation: gameManager,
+          builder: (context, child) {
+            return CustomPaint(
+              painter: GamePainter(
+                gameManager.player,
+                gameManager.visibleBlocks,
+              ),
+              size: constraints.biggest,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// 构建输入处理器
+  Widget _buildInputHandler() {
+    final inputHandler = gameManager.inputHandler;
+
+    return KeyboardListener(
+      focusNode: inputHandler.focusNode,
+      onKeyEvent: inputHandler.handleKeyEvent,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.none,
+        onHover: inputHandler.handleMouseHover,
+        child: GestureDetector(
+          onPanStart: inputHandler.handleTouchStart,
+          onPanUpdate: inputHandler.handleTouchMove,
+          onPanEnd: inputHandler.handleTouchEnd,
+          child: Container(color: Colors.transparent),
+        ),
+      ),
+    );
+  }
+
+  /// 构建移动端控制
+  Widget _buildMobileControls() {
+    final inputHandler = gameManager.inputHandler;
+
+    return MobileControls(
+      onMove: inputHandler.setMobileMove,
+      onJump: inputHandler.setMobileJump,
+    );
+  }
 }
 
-// 改进的游戏场景绘制器
-class ImprovedGamePainter extends CustomPainter {
+/// 游戏绘制器
+class GamePainter extends CustomPainter {
   final Player player;
   final List<Block> blocks;
+  late final GameRenderer _renderer;
 
-  ImprovedGamePainter(this.player, this.blocks);
-
-  // 改进的投影方法 - 更宽松的检查
-  Offset project(Vector3 point, Size size) {
-    final relativePoint = point - player.position;
-    final rotatedPoint = _rotateToViewSpace(relativePoint);
-
-    // 只做近平面裁剪，但更智能
-    if (rotatedPoint.z <= Constant.nearClip) {
-      // 不直接返回 infinite，而是尝试修复靠近近平面的点
-      final fixedZ = Constant.nearClip + 0.01;
-      final scale = Constant.focalLength / fixedZ;
-      final x = size.width / 2 + rotatedPoint.x * scale;
-      final y = size.height / 2 - rotatedPoint.y * scale;
-
-      // 检查是否在合理屏幕范围内
-      if (x.abs() > size.width * 3 || y.abs() > size.height * 3) {
-        return Offset.infinite;
-      }
-      return Offset(x, y);
-    }
-
-    // 正常投影
-    final scale = Constant.focalLength / rotatedPoint.z;
-    final x = size.width / 2 + rotatedPoint.x * scale;
-    final y = size.height / 2 - rotatedPoint.y * scale;
-
-    return Offset(x, y);
+  GamePainter(this.player, this.blocks) {
+    _renderer = GameRenderer(player, blocks);
   }
 
   @override
   void paint(Canvas canvas, Size size) {
+    _renderer.render(canvas, size);
+  }
+
+  @override
+  bool shouldRepaint(covariant GamePainter oldDelegate) {
+    return !oldDelegate.player.position.equals(player.position) ||
+        oldDelegate.blocks.length != blocks.length;
+  }
+}
+
+/// 方块面信息
+class BlockFace {
+  final List<int> vertexIndices;
+  final Vector3 normal;
+  final Vector3 center;
+
+  BlockFace(this.vertexIndices, this.normal, this.center);
+}
+
+/// 游戏渲染器
+class GameRenderer {
+  final Player player;
+  final List<Block> blocks;
+
+  GameRenderer(this.player, this.blocks);
+
+  /// 绘制游戏场景
+  void render(Canvas canvas, Size size) {
     _drawBackground(canvas, size);
     _drawBlocks(canvas, size);
   }
 
-  Vector3 _rotateToViewSpace(Vector3 point) {
-    final forward = player.orientation.normalized;
-    final right = Vector3.up.cross(forward).normalized;
-    final up = forward.cross(right).normalized;
-
-    return Vector3(point.dot(right), point.dot(up), point.dot(forward));
-  }
-
+  /// 绘制背景（天空和地面）
   void _drawBackground(Canvas canvas, Size size) {
-    final sinP = player.pitchSin;
+    final sinPitch = player.pitchSin;
     const angleScale = 0.8;
-    final horizonOffset = -(sinP / angleScale) * (size.height / 2);
+    final horizonOffset = -(sinPitch / angleScale) * (size.height / 2);
     final horizonY = (size.height / 2) + horizonOffset;
     final clampedHorizonY = horizonY.clamp(-size.height, size.height * 2);
 
+    // 绘制天空
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, clampedHorizonY),
       Paint()..color = const Color(0xFF87CEEB),
     );
 
+    // 绘制地面
     canvas.drawRect(
       Rect.fromLTWH(
         0,
@@ -135,138 +153,142 @@ class ImprovedGamePainter extends CustomPainter {
     );
   }
 
+  /// 绘制所有方块
   void _drawBlocks(Canvas canvas, Size size) {
-    for (final block in blocks) {
+    final visibleBlocks = _getVisibleBlocks();
+
+    // 按距离排序（从远到近）
+    visibleBlocks.sort((a, b) {
+      final distA = (a.position - player.position).magnitude;
+      final distB = (b.position - player.position).magnitude;
+      return distB.compareTo(distA);
+    });
+
+    for (final block in visibleBlocks) {
       _drawBlock(canvas, size, block);
     }
   }
 
-  void _drawBlock(Canvas canvas, Size size, Block block) {
-    final vertices = _getBlockVertices(block.position);
-    final projected = vertices.map((v) => project(v, size)).toList();
+  /// 获取可见方块
+  List<Block> _getVisibleBlocks() {
+    return blocks.where((block) {
+      if (block.penetrable) return false;
 
-    // 检查是否有任何有效的点（比原来宽松）
-    final hasValidPoints = projected.any((p) => p != Offset.infinite);
-    if (!hasValidPoints) return;
+      final relativePos = block.position - player.position;
+      final rotatedPos = _rotateToViewSpace(relativePos);
 
-    final faces = [
-      _Face([0, 1, 2, 3], Vector3(0, 0, -1)), // 前
-      _Face([4, 5, 6, 7], Vector3(0, 0, 1)), // 后
-      _Face([1, 5, 6, 2], Vector3(1, 0, 0)), // 右
-      _Face([4, 0, 3, 7], Vector3(-1, 0, 0)), // 左
-      _Face([3, 2, 6, 7], Vector3(0, 1, 0)), // 上
-      _Face([0, 4, 5, 1], Vector3(0, -1, 0)), // 下
-    ];
-
-    // 只剔除背面，不过度检查
-    final visibleFaces = faces.where((face) {
-      return _isFaceVisible(face, block.position);
+      return rotatedPos.z > 0;
     }).toList();
+  }
+
+  /// 绘制单个方块
+  void _drawBlock(Canvas canvas, Size size, Block block) {
+    final faces = _getBlockFaces(block.position);
+    final visibleFaces = faces
+        .where((face) => _isFaceVisible(face, block.position))
+        .toList();
 
     // 按深度排序（从远到近）
-    visibleFaces.sort((a, b) {
-      final depthA = _getFaceDepth(a, block.position);
-      final depthB = _getFaceDepth(b, block.position);
-      return depthB.compareTo(depthA);
-    });
+    visibleFaces.sort(
+      (a, b) => _getFaceDepth(
+        b,
+        block.position,
+      ).compareTo(_getFaceDepth(a, block.position)),
+    );
 
     for (final face in visibleFaces) {
-      _drawFaceImproved(canvas, block, face, projected);
+      _drawFace(canvas, size, block, face);
     }
   }
 
-  List<Vector3> _getBlockVertices(Vector3 position) {
+  /// 获取方块的所有面
+  List<BlockFace> _getBlockFaces(Vector3 position) {
     return [
-      Vector3(position.x - 0.5, position.y - 0.5, position.z - 0.5),
-      Vector3(position.x + 0.5, position.y - 0.5, position.z - 0.5),
-      Vector3(position.x + 0.5, position.y + 0.5, position.z - 0.5),
-      Vector3(position.x - 0.5, position.y + 0.5, position.z - 0.5),
-      Vector3(position.x - 0.5, position.y - 0.5, position.z + 0.5),
-      Vector3(position.x + 0.5, position.y - 0.5, position.z + 0.5),
-      Vector3(position.x + 0.5, position.y + 0.5, position.z + 0.5),
-      Vector3(position.x - 0.5, position.y + 0.5, position.z + 0.5),
+      BlockFace(
+        [0, 1, 2, 3],
+        Vector3(0, 0, -1),
+        position + Vector3(0, 0, -0.5),
+      ),
+      BlockFace([4, 5, 6, 7], Vector3(0, 0, 1), position + Vector3(0, 0, 0.5)),
+      BlockFace([1, 5, 6, 2], Vector3(1, 0, 0), position + Vector3(0.5, 0, 0)),
+      BlockFace(
+        [4, 0, 3, 7],
+        Vector3(-1, 0, 0),
+        position + Vector3(-0.5, 0, 0),
+      ),
+      BlockFace([3, 2, 6, 7], Vector3(0, 1, 0), position + Vector3(0, 0.5, 0)),
+      BlockFace(
+        [0, 4, 5, 1],
+        Vector3(0, -1, 0),
+        position + Vector3(0, -0.5, 0),
+      ),
     ];
   }
 
-  bool _isFaceVisible(_Face face, Vector3 blockPosition) {
-    final faceCenter = blockPosition + face.normal * 0.5;
-    final toCamera = (player.position - faceCenter).normalized;
+  /// 检查面是否可见
+  bool _isFaceVisible(BlockFace face, Vector3 blockPosition) {
+    final toCamera = (player.position - face.center).normalized;
     return face.normal.dot(toCamera) > 0;
   }
 
-  double _getFaceDepth(_Face face, Vector3 blockPosition) {
-    final faceCenter = blockPosition + face.normal * 0.5;
-    return (faceCenter - player.position).magnitude;
+  /// 获取面的深度
+  double _getFaceDepth(BlockFace face, Vector3 blockPosition) {
+    return (face.center - player.position).magnitude;
   }
 
-  // 改进的面绘制方法 - 处理部分顶点无效的情况
-  void _drawFaceImproved(
-    Canvas canvas,
-    Block block,
-    _Face face,
-    List<Offset> projected,
-  ) {
-    final validPoints = <Offset>[];
-    final validIndices = <int>[];
+  /// 绘制方块面
+  void _drawFace(Canvas canvas, Size size, Block block, BlockFace face) {
+    // 获取面的原始顶点
+    final worldVertices = face.vertexIndices
+        .map((index) => block.vertices[index])
+        .toList();
 
-    // 收集有效点及其原始索引
-    for (int i = 0; i < face.indices.length; i++) {
-      final point = projected[face.indices[i]];
-      if (point != Offset.infinite) {
-        validPoints.add(point);
-        validIndices.add(i);
-      }
+    // 检查面是否至少有一个顶点在视野内
+    if (!_hasVisibleVertex(worldVertices)) {
+      return;
     }
 
-    // 需要至少3个点才能形成面
+    // 投影所有顶点到2D屏幕（不进行近裁剪面裁剪）
+    final projected = worldVertices.map((v) => _projectPoint(v, size)).toList();
+
+    // 检查是否有有效点
+    final validPoints = projected.where((p) => p != Offset.infinite).toList();
     if (validPoints.length < 3) return;
 
-    // 如果所有点都有效，直接绘制四边形
-    if (validPoints.length == 4) {
-      _drawQuadrilateral(canvas, block, validPoints);
-    } else {
-      // 部分点无效，绘制多边形
-      _drawPolygon(canvas, block, validPoints);
-    }
+    // 裁剪到屏幕范围
+    final clippedPoints = _clipToScreen(validPoints, size);
+    if (clippedPoints.isEmpty) return;
+
+    _drawPolygon(canvas, block, clippedPoints, face.normal);
   }
 
-  // 绘制四边形（正常情况）
-  void _drawQuadrilateral(Canvas canvas, Block block, List<Offset> points) {
-    final path = Path();
-    path.moveTo(points[0].dx, points[0].dy);
-    for (int i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
-    }
-    path.close();
+  /// 检查面是否至少有一个顶点在视野内
+  bool _hasVisibleVertex(List<Vector3> vertices) {
+    for (final vertex in vertices) {
+      final relativePoint = vertex - player.position;
+      final rotatedPoint = _rotateToViewSpace(relativePoint);
 
-    final paint = Paint()
-      ..color = _getFaceColor(block.color, Vector3.zero); // 简化颜色计算
-    canvas.drawPath(path, paint);
-
-    if (block.type != BlockType.glass) {
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = Colors.black38
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
+      // 如果顶点在近裁剪面之后，就认为可见
+      if (rotatedPoint.z > Constants.nearClip) {
+        return true;
+      }
     }
+    return false;
   }
 
-  // 绘制多边形（处理顶点缺失情况）
-  void _drawPolygon(Canvas canvas, Block block, List<Offset> points) {
-    final path = Path();
-    path.moveTo(points[0].dx, points[0].dy);
-    for (int i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
-    }
-    path.close();
+  /// 绘制多边形
+  void _drawPolygon(
+    Canvas canvas,
+    Block block,
+    List<Offset> points,
+    Vector3 normal,
+  ) {
+    final path = Path()..addPolygon(points, true);
 
-    // 使用基础颜色（简化）
     final baseColor = block.color;
-    final paint = Paint()..color = baseColor;
-    canvas.drawPath(path, paint);
+    final shadedColor = _applyLighting(baseColor, normal);
+
+    canvas.drawPath(path, Paint()..color = shadedColor);
 
     if (block.type != BlockType.glass) {
       canvas.drawPath(
@@ -279,47 +301,119 @@ class ImprovedGamePainter extends CustomPainter {
     }
   }
 
-  Color _getFaceColor(Color baseColor, Vector3 normal) {
-    double brightness = 1.0;
+  /// 应用光照效果
+  Color _applyLighting(Color baseColor, Vector3 normal) {
+    final brightness = switch ((normal.z, normal.y)) {
+      (< 0, _) => 0.8, // 背面
+      (> 0, _) => 1.2, // 正面
+      (0, > 0) => 1.1, // 顶面（z=0时判断y）
+      (0, < 0) => 0.9, // 底面（z=0时判断y）
+      _ => 1.0, // 默认亮度（如侧面z=0且y=0）
+    };
 
-    if (normal.z < 0) {
-      brightness = 0.8;
-    } else if (normal.z > 0) {
-      brightness = 1.2;
-    } else if (normal.y > 0) {
-      brightness = 1.1;
-    } else if (normal.y < 0) {
-      brightness = 0.9;
-    }
-
-    return Color.fromARGB(
-      (baseColor.a * 255.0).round() & 0xff,
-      ((baseColor.r * 255.0) * brightness).clamp(0, 255).toInt() & 0xff,
-      ((baseColor.g * 255.0) * brightness).clamp(0, 255).toInt() & 0xff,
-      ((baseColor.b * 255.0) * brightness).clamp(0, 255).toInt() & 0xff,
+    return baseColor.withValues(
+      red: (baseColor.r * brightness).clamp(0.0, 1.0),
+      green: (baseColor.g * brightness).clamp(0.0, 1.0),
+      blue: (baseColor.b * brightness).clamp(0.0, 1.0),
     );
   }
 
-  @override
-  bool shouldRepaint(covariant ImprovedGamePainter oldDelegate) {
-    return !oldDelegate.player.position.equals(player.position) ||
-        oldDelegate.blocks.length != blocks.length;
+  /// 3D到2D投影
+  Offset _projectPoint(Vector3 point, Size size) {
+    final relativePoint = point - player.position;
+    final rotatedPoint = _rotateToViewSpace(relativePoint);
+
+    // 处理近裁剪面之前的情况
+    final zValue = rotatedPoint.z;
+    final divisor = zValue > Constants.nearClip ? zValue : Constants.nearClip;
+    final scale = Constants.focalLength / divisor;
+
+    final x = size.width / 2 + rotatedPoint.x * scale;
+    final y = size.height / 2 - rotatedPoint.y * scale;
+
+    return Offset(x, y);
   }
-}
 
-// 投影点包装类
-class ProjectedPoint {
-  final Offset offset;
-  final bool isOnScreen;
+  /// 旋转到视图空间
+  Vector3 _rotateToViewSpace(Vector3 point) {
+    final forward = player.orientation.normalized;
+    final right = Vector3.up.cross(forward).normalized;
+    final up = forward.cross(right).normalized;
 
-  bool get isValid => offset != Offset.infinite;
+    return Vector3(point.dot(right), point.dot(up), point.dot(forward));
+  }
 
-  const ProjectedPoint(this.offset, this.isOnScreen);
-}
+  /// 裁剪多边形到屏幕范围
+  List<Offset> _clipToScreen(List<Offset> polygon, Size size) {
+    final Rect screen = Offset.zero & size;
 
-class _Face {
-  final List<int> indices;
-  final Vector3 normal;
+    // 定义裁剪边界（左、右、下、上）
+    bool insideLeft(Offset p) => p.dx >= screen.left;
+    bool insideRight(Offset p) => p.dx <= screen.right;
+    bool insideBottom(Offset p) => p.dy <= screen.bottom;
+    bool insideTop(Offset p) => p.dy >= screen.top;
 
-  _Face(this.indices, this.normal);
+    // Sutherland-Hodgman 裁剪函数
+    List<Offset> clipEdge(
+      List<Offset> input,
+      bool Function(Offset) inside,
+      Offset Function(Offset, Offset) intersect,
+    ) {
+      final output = <Offset>[];
+      final len = input.length;
+      for (int i = 0; i < len; i++) {
+        final current = input[i];
+        final prev = input[(i - 1 + len) % len];
+
+        final curIn = inside(current);
+        final prevIn = inside(prev);
+
+        if (curIn && prevIn) {
+          output.add(current);
+        } else if (curIn && !prevIn) {
+          output.add(intersect(prev, current));
+          output.add(current);
+        } else if (!curIn && prevIn) {
+          output.add(intersect(prev, current));
+        }
+      }
+      return output;
+    }
+
+    // 插值交点函数
+    Offset intersectHorizontal(Offset a, Offset b, double y) {
+      final t = (y - a.dy) / (b.dy - a.dy);
+      return Offset(a.dx + t * (b.dx - a.dx), y);
+    }
+
+    Offset intersectVertical(Offset a, Offset b, double x) {
+      final t = (x - a.dx) / (b.dx - a.dx);
+      return Offset(x, a.dy + t * (b.dy - a.dy));
+    }
+
+    // 裁剪顺序：左 -> 右 -> 下 -> 上
+    List<Offset> clipped = polygon;
+    clipped = clipEdge(
+      clipped,
+      insideLeft,
+      (a, b) => intersectVertical(a, b, screen.left),
+    );
+    clipped = clipEdge(
+      clipped,
+      insideRight,
+      (a, b) => intersectVertical(a, b, screen.right),
+    );
+    clipped = clipEdge(
+      clipped,
+      insideBottom,
+      (a, b) => intersectHorizontal(a, b, screen.bottom),
+    );
+    clipped = clipEdge(
+      clipped,
+      insideTop,
+      (a, b) => intersectHorizontal(a, b, screen.top),
+    );
+
+    return clipped;
+  }
 }

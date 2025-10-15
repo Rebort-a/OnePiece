@@ -2,84 +2,29 @@ import 'package:flutter/material.dart';
 
 import 'base.dart';
 
-// 十字准星组件
-class Crosshair extends StatelessWidget {
-  const Crosshair({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 20,
-        height: 20,
-        child: CustomPaint(painter: CrosshairPainter()),
-      ),
-    );
-  }
-}
-
-class CrosshairPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final third = size.width / 3;
-
-    canvas.drawLine(
-      Offset(center.dx, 0),
-      Offset(center.dx, center.dy - third),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(center.dx, center.dy + third),
-      Offset(center.dx, size.height),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, center.dy),
-      Offset(center.dx - third, center.dy),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(center.dx + third, center.dy),
-      Offset(size.width, center.dy),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
+/// 移动端控制组件
 class MobileControls extends StatelessWidget {
-  final Function(Vector2) onDrag;
+  final Function(Vector2) onMove;
   final VoidCallback onJump;
 
-  const MobileControls({super.key, required this.onDrag, required this.onJump});
+  const MobileControls({super.key, required this.onMove, required this.onJump});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned(left: 20, bottom: 20, child: Joystick(onDrag: onDrag)),
-        Positioned(
-          right: 20,
-          bottom: 20,
-          child: BoolButton(icon: Icons.arrow_upward, onPressed: onJump),
-        ),
+        Positioned(left: 20, bottom: 20, child: Joystick(onMove: onMove)),
+        Positioned(right: 20, bottom: 20, child: JumpButton(onPressed: onJump)),
       ],
     );
   }
 }
 
+/// 虚拟摇杆
 class Joystick extends StatefulWidget {
-  final void Function(Vector2) onDrag;
+  final Function(Vector2) onMove;
 
-  const Joystick({super.key, required this.onDrag});
+  const Joystick({super.key, required this.onMove});
 
   @override
   State<Joystick> createState() => _JoystickState();
@@ -88,7 +33,6 @@ class Joystick extends StatefulWidget {
 class _JoystickState extends State<Joystick> {
   static const double _baseRadius = 60;
   static const double _stickRadius = 30;
-
   Offset _stickPosition = Offset.zero;
 
   @override
@@ -121,82 +65,113 @@ class _JoystickState extends State<Joystick> {
     );
   }
 
-  void _onDragStart(DragStartDetails details) {
-    _updateStickPosition(details.localPosition);
-  }
-
-  void _onDragUpdate(DragUpdateDetails details) {
-    _updateStickPosition(details.localPosition);
-  }
+  void _onDragStart(DragStartDetails details) =>
+      _updateStick(details.localPosition);
+  void _onDragUpdate(DragUpdateDetails details) =>
+      _updateStick(details.localPosition);
 
   void _onDragEnd(DragEndDetails _) {
-    setState(() {
-      _stickPosition = Offset.zero;
-    });
-    widget.onDrag(Vector2.zero);
+    setState(() => _stickPosition = Offset.zero);
+    widget.onMove(Vector2.zero);
   }
 
-  void _updateStickPosition(Offset localPosition) {
-    final centerOffset = Offset(_baseRadius, _baseRadius);
-    final relativePosition = localPosition - centerOffset;
-    final distance = relativePosition.distance;
+  void _updateStick(Offset localPosition) {
+    final center = Offset(_baseRadius, _baseRadius);
+    final relative = localPosition - center;
+    final distance = relative.distance;
 
-    // 计算归一化向量
-    final normalized = distance > 0 ? relativePosition / distance : Offset.zero;
-
-    // 限制在单位圆内，并计算实际位置
+    final normalized = distance > 0 ? relative / distance : Offset.zero;
     final double clampedDistance = distance.clamp(0, _baseRadius);
     final clampedPosition = normalized * clampedDistance;
 
-    // 转换为 Vector2，范围 [-1, 1]
-    widget.onDrag(Vector2(normalized.dx, -normalized.dy));
+    widget.onMove(Vector2(normalized.dx, -normalized.dy));
 
-    setState(() {
-      _stickPosition = clampedPosition;
-    });
+    setState(() => _stickPosition = clampedPosition);
   }
 }
 
-class BoolButton extends StatefulWidget {
-  final void Function() onPressed;
-  final IconData icon;
+/// 跳跃按钮
+class JumpButton extends StatefulWidget {
+  final VoidCallback onPressed;
 
-  const BoolButton({super.key, required this.onPressed, required this.icon});
+  const JumpButton({super.key, required this.onPressed});
 
   @override
-  State<BoolButton> createState() => _SpeedButtonState();
+  State<JumpButton> createState() => _JumpButtonState();
 }
 
-class _SpeedButtonState extends State<BoolButton> {
+class _JumpButtonState extends State<JumpButton> {
   bool _isPressed = false;
-  static const double _buttonRadius = 60;
+  static const double _buttonSize = 60;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => _setState(true),
-      onTapUp: (_) => _setState(false),
-      onTapCancel: () => _setState(false),
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
       child: Container(
-        width: _buttonRadius * 2,
-        height: _buttonRadius * 2,
+        width: _buttonSize * 2,
+        height: _buttonSize * 2,
         decoration: BoxDecoration(
           color: _isPressed
               ? Colors.black.withValues(alpha: 0.5)
               : Colors.grey.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(_buttonRadius),
+          borderRadius: BorderRadius.circular(_buttonSize),
         ),
-        child: Center(child: Icon(widget.icon, color: Colors.white, size: 30)),
+        child: const Center(
+          child: Icon(Icons.arrow_upward, color: Colors.white, size: 30),
+        ),
       ),
     );
   }
 
-  void _setState(bool isPressed) {
-    if (isPressed) {
-      widget.onPressed();
-    }
-    setState(() {
-      _isPressed = isPressed;
-    });
+  void _setPressed(bool pressed) {
+    if (pressed) widget.onPressed();
+    setState(() => _isPressed = pressed);
   }
+}
+
+/// 十字准星组件
+class Crosshair extends StatelessWidget {
+  const Crosshair({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: 20,
+        height: 20,
+        child: CustomPaint(painter: CrosshairPainter()),
+      ),
+    );
+  }
+}
+
+/// 十字准星
+class CrosshairPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    const crossSize = 8.0;
+
+    canvas.drawLine(
+      Offset(center.dx, center.dy - crossSize),
+      Offset(center.dx, center.dy + crossSize),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(center.dx - crossSize, center.dy),
+      Offset(center.dx + crossSize, center.dy),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
