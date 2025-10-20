@@ -17,7 +17,7 @@ import '../09.guess/page.dart';
 import '../10.three_tiles/page.dart';
 import '../11.spaceship/page.dart';
 import '../12.soft/page.dart';
-import '../13.minecraft/page.dart';
+import '../13.minecraft/upper/page.dart';
 
 enum LocalItemType {
   animalChess,
