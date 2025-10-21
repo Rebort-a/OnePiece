@@ -1,5 +1,6 @@
 import 'block.dart';
 import 'vector.dart';
+import 'constant.dart';
 
 /// 八叉树节点
 class OctreeNode {
@@ -224,8 +225,8 @@ class BlockOctree {
   BlockOctree({
     required Vector3 center,
     required double worldSize,
-    int maxBlocksPerNode = 8,
-    double minHalfSize = 4,
+    int maxBlocksPerNode = Constants.maxBlocksPerNode,
+    double minHalfSize = Constants.minHalfSize,
   }) : root = OctreeNode(
          center: center,
          halfSize: worldSize / 2,

@@ -8,9 +8,10 @@ import '../base/vector.dart';
 class ScenePainter extends CustomPainter {
   final Player player;
   final List<Block> blocks;
+  final String debugInfo;
 
   // 构造函数：直接接收玩家和方块数据，无需中间Renderer
-  ScenePainter(this.player, this.blocks);
+  ScenePainter(this.player, this.blocks, this.debugInfo);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -310,7 +311,8 @@ class ScenePainter extends CustomPainter {
           'Orientation: (${player.orientation.x.toStringAsFixed(2)}, '
           '${player.orientation.y.toStringAsFixed(2)}, '
           '${player.orientation.z.toStringAsFixed(2)})\n'
-          'Blocks: ${blocks.length}',
+          'Blocks: ${blocks.length}\n'
+          '$debugInfo',
       style: textStyle,
     );
     final textPainter = TextPainter(

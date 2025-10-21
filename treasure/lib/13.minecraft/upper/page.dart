@@ -39,7 +39,11 @@ class MinecraftPage extends StatelessWidget {
           animation: manager,
           builder: (context, child) {
             return CustomPaint(
-              painter: ScenePainter(manager.player, manager.visibleBlocks),
+              painter: ScenePainter(
+                manager.player,
+                manager.visibleBlocks,
+                manager.debugInfo,
+              ),
               size: constraints.biggest,
             );
           },

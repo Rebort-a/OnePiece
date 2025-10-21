@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../base/vector.dart';
+import '../base/constant.dart';
 
 /// 移动端控制组件
 class MobileControls extends StatelessWidget {
@@ -31,8 +32,8 @@ class Joystick extends StatefulWidget {
 }
 
 class _JoystickState extends State<Joystick> {
-  static const double _baseRadius = 60;
-  static const double _stickRadius = 30;
+  static const double _baseRadius = Constants.joystickBaseRadius;
+  static const double _stickRadius = Constants.joystickStickRadius;
   Offset _stickPosition = Offset.zero;
 
   @override
@@ -102,7 +103,7 @@ class JumpButton extends StatefulWidget {
 
 class _JumpButtonState extends State<JumpButton> {
   bool _isPressed = false;
-  static const double _buttonSize = 60;
+  static const double _buttonSize = Constants.jumpButtonSize;
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +141,8 @@ class Crosshair extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        width: 20,
-        height: 20,
+        width: Constants.crosshairSize,
+        height: Constants.crosshairSize,
         child: CustomPaint(painter: CrosshairPainter()),
       ),
     );
@@ -154,11 +155,11 @@ class CrosshairPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 2
+      ..strokeWidth = Constants.crosshairStroke
       ..strokeCap = StrokeCap.round;
 
     final center = Offset(size.width / 2, size.height / 2);
-    const crossSize = 8.0;
+    const crossSize = Constants.crosshairCrossSize;
 
     canvas.drawLine(
       Offset(center.dx, center.dy - crossSize),

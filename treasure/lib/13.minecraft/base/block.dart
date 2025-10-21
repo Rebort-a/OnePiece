@@ -4,21 +4,95 @@ import 'constant.dart';
 import 'vector.dart';
 
 /// 方块类型
-enum BlockType { grass, dirt, stone, wood, leaf, glass, air }
+/// 方块类型枚举（扩展常见方块类型）
+enum BlockType {
+  // 基础地形方块
+  bedrock, // 基岩
+  stone, // 石头
+  dirt, // 泥土
+  grass, // 草方块
+  sand, // 沙子
+  // 矿石
+  coalOre, // 煤矿石
+  ironOre, // 铁矿石
+  goldOre, // 金矿石
+  diamondOre, // 钻石矿石
+  // 植物相关
+  wood, // 树干
+  leaf, // 树叶
+  sapling, // 树苗
+  // 液体
+  water, // 水
+  // 人造方块
+  glass, // 玻璃
+  planks, // 木板
+  // 特殊类型
+  air, // 空气
+}
 
+/// 方块类型属性扩展
 extension BlockTypeProperties on BlockType {
+  /// 方块颜色（含透明度）
   Color get color => {
-    BlockType.grass: const Color(0xFF4CAF50),
-    BlockType.dirt: const Color(0xFF8D6E63),
-    BlockType.stone: const Color(0xFF9E9E9E),
-    BlockType.wood: const Color(0xFFFF9800),
-    BlockType.leaf: const Color(0x884CAF50),
-    BlockType.glass: const Color(0x88FFFFFF),
-    BlockType.air: const Color(0x00000000),
+    BlockType.bedrock: const Color(0xFF424242), // 深灰色
+    BlockType.stone: const Color(0xFF9E9E9E), // 灰色
+    BlockType.dirt: const Color(0xFF8D6E63), // 棕褐色
+    BlockType.grass: const Color(0xFF4CAF50), // 绿色
+    BlockType.sand: const Color(0xFFFFF3E0), // 浅黄色
+    BlockType.coalOre: const Color(0xFF212121), // 近黑色（带煤点）
+    BlockType.ironOre: const Color(0xFFB0BEC5), // 浅灰棕色（带铁矿点）
+    BlockType.goldOre: const Color(0xFFFFD700), // 金黄色（带金矿点）
+    BlockType.diamondOre: const Color(0xFF00BCD4), // 亮蓝色（带钻石点）
+    BlockType.wood: const Color(0xFFFF9800), // 棕色（树干）
+    BlockType.leaf: const Color(0xCC4CAF50), // 半透明绿色（树叶）
+    BlockType.sapling: const Color(0xFF795548), // 深棕色（树苗）
+    BlockType.water: const Color(0x882196F3), // 半透明蓝色（水）
+    BlockType.glass: const Color(0xCCFFFFFF), // 半透明白色（玻璃）
+    BlockType.planks: const Color(0xFF8D6E63), // 棕褐色（木板）
+    BlockType.air: const Color(0x00000000), // 全透明（空气）
   }[this]!;
 
+  /// 是否为固体（是否占据物理空间）
   bool get isSolid => this != BlockType.air;
-  bool get isTransparent => this == BlockType.glass || this == BlockType.leaf;
+
+  /// 是否透明（是否能透过看到后方）
+  bool get isTransparent => [
+    BlockType.leaf,
+    BlockType.water,
+    BlockType.glass,
+    BlockType.air,
+  ].contains(this);
+
+  /// 是否为液体（特殊物理特性）
+  bool get isLiquid => this == BlockType.water;
+
+  /// 是否为矿石（可被开采获得资源）
+  bool get isOre => [
+    BlockType.coalOre,
+    BlockType.ironOre,
+    BlockType.goldOre,
+    BlockType.diamondOre,
+  ].contains(this);
+
+  /// 硬度（影响开采难度，值越高越难开采）
+  double get hardness => {
+    BlockType.bedrock: double.infinity, // 不可破坏
+    BlockType.stone: 1.5,
+    BlockType.dirt: 0.5,
+    BlockType.grass: 0.6,
+    BlockType.sand: 0.5,
+    BlockType.coalOre: 3.0,
+    BlockType.ironOre: 3.0,
+    BlockType.goldOre: 3.0,
+    BlockType.diamondOre: 3.0,
+    BlockType.wood: 2.0,
+    BlockType.leaf: 0.2,
+    BlockType.sapling: 0.1,
+    BlockType.water: 100.0, // 无法直接破坏
+    BlockType.glass: 0.3,
+    BlockType.planks: 2.0,
+    BlockType.air: 0.0,
+  }[this]!;
 }
 
 /// 方块面数据
@@ -96,7 +170,7 @@ class Block {
 
   /// 获取可见的面（剔除背向相机的面）
   List<BlockFace> getVisibleFaces(Vector3 cameraPosition) {
-    if (!type.isSolid) return [];
+    if (penetrable) return [];
 
     return BlockFace.faces.where((face) {
       final faceCenter = _getFaceCenter(face.indices);

@@ -103,7 +103,7 @@ class Player {
   void jump() {
     if (isGrounded) {
       isGrounded = false;
-      velocity = velocity.appointY(Constants.jumpStrength);
+      velocity = velocity.appointY(Constants.jumpVelocity);
     }
   }
 

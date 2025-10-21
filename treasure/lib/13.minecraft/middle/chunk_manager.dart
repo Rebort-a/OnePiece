@@ -10,9 +10,7 @@ class ChunkManager {
   static const int renderDistance = 4;
 
   final Map<String, Chunk> _loadedChunks = {};
-  final WorldGenerator worldGenerator;
-
-  ChunkManager(this.worldGenerator);
+  final WorldGenerator _worldGenerator = WorldGenerator();
 
   /// 获取玩家周围的区块
   List<Chunk> getChunksAroundPlayer(Vector3 playerPos) {
@@ -46,7 +44,7 @@ class ChunkManager {
     }
 
     // 生成区块方块
-    final blocks = worldGenerator.generateChunk(chunkX, chunkZ);
+    final blocks = _worldGenerator.generateChunk(chunkX, chunkZ);
     // 创建区块（使用Vector3Int作为坐标）
     final chunkCoord = Vector3Int(chunkX, 0, chunkZ); // Y轴固定为0层（无垂直区块划分）
     final chunk = Chunk(chunkCoord);

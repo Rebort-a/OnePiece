@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
-// 数学精度
-const double epsilon = 0.001;
+import 'constant.dart';
 
 /// 二维向量
 class Vector2 {
@@ -22,7 +21,7 @@ class Vector2 {
   double get magnitudeSquare => x * x + y * y;
   double get magnitude => math.sqrt(magnitudeSquare);
   Vector2 get normalized =>
-      magnitude > epsilon ? this / magnitude : Vector2.zero;
+      magnitude > Constants.epsilon ? this / magnitude : Vector2.zero;
 
   double distanceTo(Vector2 other) => (this - other).magnitude;
 
@@ -30,7 +29,7 @@ class Vector2 {
 
   double cross(Vector2 other) => x * other.y - y * other.x;
 
-  bool get isZero => x.abs() < epsilon && y.abs() < epsilon;
+  bool get isZero => x.abs() < Constants.epsilon && y.abs() < Constants.epsilon;
 }
 
 /// 单位二维向量 - 始终保持长度为1
@@ -41,7 +40,7 @@ class UnitVector2 extends Vector2 {
   // 从分量创建单位向量，自动进行单位化
   factory UnitVector2(double x, double y) {
     final vector = Vector2(x, y);
-    if (vector.magnitude < epsilon) {
+    if (vector.magnitude < Constants.epsilon) {
       return UnitVector2.up;
     }
     final normalized = vector.normalized;
@@ -120,7 +119,7 @@ class Vector3 {
   double get magnitudeSquare => x * x + y * y + z * z;
   double get magnitude => math.sqrt(magnitudeSquare);
   Vector3 get normalized =>
-      magnitude > epsilon ? this / magnitude : Vector3.zero;
+      magnitude > Constants.epsilon ? this / magnitude : Vector3.zero;
 
   double distanceTo(Vector3 other) => (this - other).magnitude;
   double dot(Vector3 other) => x * other.x + y * other.y + z * other.z;
@@ -146,14 +145,16 @@ class Vector3 {
     return Vector3(x * vec.x - y * vec.y, x * vec.y + y * vec.x, z);
   }
 
-  bool equals(Vector3 other, [double epsilon = epsilon]) {
+  bool equals(Vector3 other, [double epsilon = Constants.epsilon]) {
     return (x - other.x).abs() < epsilon &&
         (y - other.y).abs() < epsilon &&
         (z - other.z).abs() < epsilon;
   }
 
   bool get isZero =>
-      x.abs() < epsilon && y.abs() < epsilon && z.abs() < epsilon;
+      x.abs() < Constants.epsilon &&
+      y.abs() < Constants.epsilon &&
+      z.abs() < Constants.epsilon;
 
   @override
   String toString() => 'Vector3($x, $y, $z)';
@@ -167,7 +168,7 @@ class Vector3Unit extends Vector3 {
   // 从分量创建单位向量，自动进行单位化
   factory Vector3Unit(double x, double y, double z) {
     final vector = Vector3(x, y, z);
-    if (vector.magnitude < epsilon) {
+    if (vector.magnitude < Constants.epsilon) {
       return Vector3Unit.forward;
     }
     final normalized = vector.normalized;
@@ -266,7 +267,9 @@ class Vector3Int {
   // 单位化
   Vector3 get normalized {
     final mag = magnitude;
-    return mag > epsilon ? Vector3(x / mag, y / mag, z / mag) : Vector3.zero;
+    return mag > Constants.epsilon
+        ? Vector3(x / mag, y / mag, z / mag)
+        : Vector3.zero;
   }
 
   // 向量运算

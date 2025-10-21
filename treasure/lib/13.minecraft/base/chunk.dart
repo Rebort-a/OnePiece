@@ -1,10 +1,11 @@
 import 'block.dart';
+import 'constant.dart';
 import 'vector.dart';
 import 'octree.dart';
 
 /// 区块类
 class Chunk {
-  static const int chunkSize = 16; // 区块边长（固定16）
+  static const int chunkSize = Constants.chunkSize; // 区块边长（固定16）
   final Vector3Int chunkCoord; // 区块坐标（如(0,0,0)、(1,0,0)等）
   final BlockOctree octree; // 区块内的八叉树（范围与区块匹配）
 
@@ -47,15 +48,22 @@ class Chunk {
   /// 获取区块内指定位置的方块
   Block? getBlock(Vector3 position) => octree.getBlock(position);
 
+  void removeBlockByPos(Vector3 position) {
+    Block? block = getBlock(position);
+    if (block != null) {
+      removeBlock(block);
+    }
+  }
+
   /// 获取整个区块内的所有方块
   List<Block> getAllBlocksInChunk() {
-    final worldMin = Vector3(
-      chunkCoord.x * chunkSize.toDouble(),
-      chunkCoord.y * chunkSize.toDouble(),
-      chunkCoord.z * chunkSize.toDouble(),
+    final worldMin = Vector3Int(
+      chunkCoord.x * chunkSize,
+      chunkCoord.y * chunkSize,
+      chunkCoord.z * chunkSize,
     );
-    final worldMax = worldMin + Vector3.all(chunkSize.toDouble());
-    return octree.queryRange(worldMin, worldMax);
+    final worldMax = worldMin + Vector3Int.all(chunkSize);
+    return octree.queryRange(worldMin.toVector3(), worldMax.toVector3());
   }
 
   /// 获取指定位置和半径内的方块

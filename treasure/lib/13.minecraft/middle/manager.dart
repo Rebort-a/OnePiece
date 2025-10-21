@@ -6,7 +6,6 @@ import '../base/player.dart';
 import '../base/vector.dart';
 import 'chunk_manager.dart';
 import 'control_manager.dart';
-import 'world_generator.dart';
 
 /// 游戏状态
 class GameState {
@@ -25,6 +24,7 @@ class GameState {
 class Manager with ChangeNotifier implements TickerProvider {
   late final Ticker _ticker;
   late double _lastTime;
+  late double _deltaTime;
 
   late final Player player;
   late final ControlManager controlManager;
@@ -44,9 +44,9 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 初始化游戏
   void _initialize() {
-    chunkManager = ChunkManager(WorldGenerator());
     player = Player(position: Vector3(0, 20, 5));
     controlManager = ControlManager(player);
+    chunkManager = ChunkManager();
 
     _updateVisibleBlocks();
     _startGameLoop();
@@ -55,6 +55,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   /// 开始游戏循环
   void _startGameLoop() {
     _lastTime = 0;
+    _deltaTime = 0;
     _ticker = createTicker(_update);
     _ticker.start();
   }
@@ -62,11 +63,13 @@ class Manager with ChangeNotifier implements TickerProvider {
   /// 游戏更新
   void _update(Duration elapsed) {
     final currentTime = elapsed.inMilliseconds / 1000.0;
-    final deltaTime = (currentTime - _lastTime).clamp(
+    _deltaTime = currentTime - _lastTime;
+    _lastTime = currentTime;
+
+    final double deltaTime = _deltaTime.clamp(
       Constants.minDeltaTime,
       Constants.maxDeltaTime,
     );
-    _lastTime = currentTime;
 
     // 更新输入和物理
     controlManager.updatePlayerMovement(deltaTime);
@@ -82,10 +85,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 更新物理
   void _updatePhysics(double deltaTime) {
-    final nearbyBlocks = chunkManager.getNearbyBlocks(
-      player.position,
-      Constants.renderDistance * 1.5,
-    );
+    final nearbyBlocks = chunkManager.getNearbyBlocks(player.position);
     player.update(deltaTime, nearbyBlocks);
   }
 
@@ -109,33 +109,7 @@ class Manager with ChangeNotifier implements TickerProvider {
   void _updateVisibleBlocks() {
     chunkManager.getChunksAroundPlayer(player.position);
 
-    _visibleBlocks =
-        chunkManager
-            .getNearbyBlocks(player.position)
-            .where((block) => !block.penetrable && _isBlockInView(block))
-            .toList()
-          ..sort((a, b) => _getBlockDepth(b).compareTo(_getBlockDepth(a)));
-  }
-
-  /// 检查方块是否在视锥体内
-  bool _isBlockInView(Block block) {
-    final relativePos = block.position - player.position;
-    final rotatedPos = _rotateToViewSpace(relativePos);
-    return rotatedPos.z > Constants.nearClip;
-  }
-
-  /// 获取方块深度
-  double _getBlockDepth(Block block) {
-    return (block.position - player.position).magnitude;
-  }
-
-  /// 旋转到视图空间
-  Vector3 _rotateToViewSpace(Vector3 point) {
-    final forward = player.orientation.normalized;
-    final right = Vector3.up.cross(forward).normalized;
-    final up = forward.cross(right).normalized;
-
-    return Vector3(point.dot(right), point.dot(up), point.dot(forward));
+    _visibleBlocks = chunkManager.getNearbyBlocks(player.position);
   }
 
   @override
@@ -152,4 +126,6 @@ class Manager with ChangeNotifier implements TickerProvider {
   List<Block> get visibleBlocks => _visibleBlocks;
   FocusNode get focusNode => controlManager.focusNode;
   bool get isMoving => controlManager.isMoving;
+  String get debugInfo =>
+      'FPS: ${(1 / _deltaTime.clamp(0.001, 1000)).toStringAsFixed(0)}';
 }
