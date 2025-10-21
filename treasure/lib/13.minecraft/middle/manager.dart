@@ -98,8 +98,8 @@ class Manager with ChangeNotifier implements TickerProvider {
     );
 
     final shouldUpdate =
-        !_lastState.playerPosition.equals(player.position, 0.5) ||
-        !_lastState.playerOrientation.equals(player.orientation, 0.05);
+        !_lastState.playerPosition.equals(player.position) ||
+        !_lastState.playerOrientation.equals(player.orientation);
 
     _lastState = currentState;
     return shouldUpdate;
@@ -109,7 +109,10 @@ class Manager with ChangeNotifier implements TickerProvider {
   void _updateVisibleBlocks() {
     chunkManager.getChunksAroundPlayer(player.position);
 
-    _visibleBlocks = chunkManager.getNearbyBlocks(player.position);
+    _visibleBlocks = chunkManager.getNearbyBlocks(
+      player.position,
+      Constants.renderDistance,
+    );
   }
 
   @override

@@ -25,10 +25,6 @@ class ScenePainter extends CustomPainter {
         !oldDelegate.player.orientation.equals(player.orientation, 0.01);
   }
 
-  // ------------------------------
-  // 原 GameRenderer 的核心渲染逻辑
-  // ------------------------------
-
   /// 绘制完整游戏场景（背景 + 方块）
   void _render(Canvas canvas, Size size) {
     _drawSky(canvas, size);
@@ -61,8 +57,8 @@ class ScenePainter extends CustomPainter {
 
     // 按距离排序：远的方块先画，避免遮挡错误
     visibleBlocks.sort((a, b) {
-      final distA = (a.position - player.position).magnitude;
-      final distB = (b.position - player.position).magnitude;
+      final distA = (a.position - player.position).magnitudeSquare;
+      final distB = (b.position - player.position).magnitudeSquare;
       return distB.compareTo(distA);
     });
 
@@ -104,7 +100,7 @@ class ScenePainter extends CustomPainter {
 
   /// 获取方块面的深度（面中心到玩家的距离）
   double _getFaceDepth(BlockFace face, Vector3 blockPosition) {
-    return (face.center - player.position).magnitude;
+    return (face.center - player.position).magnitudeSquare;
   }
 
   /// 绘制单个方块面（投影 + 裁剪 + 多边形渲染）

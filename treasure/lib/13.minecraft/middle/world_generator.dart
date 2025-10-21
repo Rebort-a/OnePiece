@@ -2,8 +2,8 @@ import 'dart:math';
 
 import '../base/aabb.dart';
 import '../base/block.dart';
+import '../base/constant.dart';
 import '../base/vector.dart';
-import 'chunk_manager.dart';
 
 /// 世界生成器
 class WorldGenerator {
@@ -25,12 +25,12 @@ class WorldGenerator {
     final chunkSeed = _getChunkSeed(chunkX, chunkZ);
     final random = Random(chunkSeed);
 
-    final baseX = chunkX * ChunkManager.chunkSize;
-    final baseZ = chunkZ * ChunkManager.chunkSize;
+    final baseX = chunkX * Constants.chunkSize;
+    final baseZ = chunkZ * Constants.chunkSize;
 
     // 生成地形
-    for (int x = 0; x < ChunkManager.chunkSize; x++) {
-      for (int z = 0; z < ChunkManager.chunkSize; z++) {
+    for (int x = 0; x < Constants.chunkSize; x++) {
+      for (int z = 0; z < Constants.chunkSize; z++) {
         final worldX = baseX + x;
         final worldZ = baseZ + z;
 

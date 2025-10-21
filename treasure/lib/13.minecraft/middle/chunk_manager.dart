@@ -6,23 +6,30 @@ import 'world_generator.dart';
 
 /// 区块管理器
 class ChunkManager {
-  static const int chunkSize = 16;
-  static const int renderDistance = 4;
+  static const int distance = Constants.renderChunkDistance;
+  static const int distanceSquare = distance * distance;
 
   final Map<String, Chunk> _loadedChunks = {};
   final WorldGenerator _worldGenerator = WorldGenerator();
 
+  static Vector3Int getChunkCoord(Vector3 worldPos) {
+    return Vector3Int(
+      (worldPos.x / Constants.chunkSize).floor(),
+      (worldPos.y / Constants.chunkSize).floor(),
+      (worldPos.z / Constants.chunkSize).floor(),
+    );
+  }
+
   /// 获取玩家周围的区块
   List<Chunk> getChunksAroundPlayer(Vector3 playerPos) {
-    final playerChunkX = (playerPos.x / chunkSize).floor();
-    final playerChunkZ = (playerPos.z / chunkSize).floor();
+    final playerChunk = getChunkCoord(playerPos);
 
     final chunks = <Chunk>[];
 
-    for (int x = -renderDistance; x <= renderDistance; x++) {
-      for (int z = -renderDistance; z <= renderDistance; z++) {
-        final chunkX = playerChunkX + x;
-        final chunkZ = playerChunkZ + z;
+    for (int x = -distance; x <= distance; x++) {
+      for (int z = -distance; z <= distance; z++) {
+        final chunkX = playerChunk.x + x;
+        final chunkZ = playerChunk.z + z;
 
         final chunk = _getOrCreateChunk(chunkX, chunkZ);
         if (chunk != null) {
@@ -31,7 +38,7 @@ class ChunkManager {
       }
     }
 
-    _unloadDistantChunks(playerChunkX, playerChunkZ);
+    _unloadDistantChunks(playerChunk.x, playerChunk.z);
 
     return chunks;
   }
@@ -65,7 +72,7 @@ class ChunkManager {
       final distanceX = (chunk.chunkCoord.x - centerX).abs();
       final distanceZ = (chunk.chunkCoord.z - centerZ).abs();
 
-      if (distanceX > renderDistance + 1 || distanceZ > renderDistance + 1) {
+      if (distanceX > distance + 1 || distanceZ > distance + 1) {
         keysToRemove.add(key);
       }
     });
@@ -87,23 +94,23 @@ class ChunkManager {
   /// 获取玩家附近的方块（优化版本）
   List<Block> getNearbyBlocks(
     Vector3 playerPos, [
-    double radius = Constants.renderDistance,
+    double radius = Constants.colliderDistance,
   ]) {
     final nearbyBlocks = <Block>[];
-    final playerChunkX = (playerPos.x / chunkSize).floor();
-    final playerChunkZ = (playerPos.z / chunkSize).floor();
+    final playerChunk = getChunkCoord(playerPos);
 
     for (int x = -1; x <= 1; x++) {
       for (int z = -1; z <= 1; z++) {
-        final chunkX = playerChunkX + x;
-        final chunkZ = playerChunkZ + z;
+        final chunkX = playerChunk.x + x;
+        final chunkZ = playerChunk.z + z;
         final key = '$chunkX,$chunkZ';
 
         final chunk = _loadedChunks[key];
         if (chunk != null) {
           // 从八叉树查询区块内的方块
           for (final block in chunk.getAllBlocksInChunk()) {
-            if ((block.position - playerPos).magnitude <= radius) {
+            if ((block.position - playerPos).magnitudeSquare <=
+                radius * radius) {
               nearbyBlocks.add(block);
             }
           }
