@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../base/vector.dart';
-import '../base/constant.dart';
+import 'vector.dart';
+import 'constant.dart';
 
 /// 移动端控制组件
 class MobileControls extends StatelessWidget {

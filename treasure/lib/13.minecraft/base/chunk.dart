@@ -11,7 +11,7 @@ class Chunk {
 
   Chunk(this.chunkCoord)
     : octree = BlockOctree(
-        worldSize: chunkSize.toDouble(), // 八叉树范围与区块大小一致（16x16x16）
+        worldSize: chunkSize, // 八叉树范围与区块大小一致（16x16x16）
         center: Vector3(
           chunkCoord.x * chunkSize + chunkSize / 2,
           chunkCoord.y * chunkSize + chunkSize / 2,

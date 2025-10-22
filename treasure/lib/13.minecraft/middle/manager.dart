@@ -1,24 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../base/block.dart';
 import '../base/constant.dart';
 import '../base/player.dart';
 import '../base/vector.dart';
 import 'chunk_manager.dart';
+import 'common.dart';
 import 'control_manager.dart';
-
-/// 游戏状态
-class GameState {
-  final Vector3 playerPosition;
-  final Vector3 playerOrientation;
-  final List<Block> visibleBlocks;
-
-  const GameState({
-    required this.playerPosition,
-    required this.playerOrientation,
-    required this.visibleBlocks,
-  });
-}
 
 /// 游戏管理器
 class Manager with ChangeNotifier implements TickerProvider {
@@ -26,17 +13,15 @@ class Manager with ChangeNotifier implements TickerProvider {
   late double _lastTime;
   late double _deltaTime;
 
-  late final Player player;
-  late final ControlManager controlManager;
-  late final ChunkManager chunkManager;
+  late final Player _player;
+  late final ControlManager _controlManager;
+  late final ChunkManager _chunkManager;
 
-  GameState _lastState = const GameState(
-    playerPosition: Vector3.zero,
-    playerOrientation: Vector3.zero,
-    visibleBlocks: [],
+  SceneInfo _lastInfo = const SceneInfo(
+    position: Vector3.zero,
+    orientation: Vector3.zero,
+    blocks: [],
   );
-
-  List<Block> _visibleBlocks = [];
 
   Manager() {
     _initialize();
@@ -44,10 +29,10 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 初始化游戏
   void _initialize() {
-    player = Player(position: Vector3(0, 20, 5));
-    controlManager = ControlManager(player);
-    chunkManager = ChunkManager();
-
+    _player = Player(position: Vector3(0, 50, 0));
+    _controlManager = ControlManager(_player);
+    _chunkManager = ChunkManager();
+    _chunkManager.updateChunks(_player.position);
     _updateVisibleBlocks();
     _startGameLoop();
   }
@@ -71,11 +56,21 @@ class Manager with ChangeNotifier implements TickerProvider {
       Constants.maxDeltaTime,
     );
 
-    // 更新输入和物理
-    controlManager.updatePlayerMovement(deltaTime);
-    _updatePhysics(deltaTime);
+    // 更新玩家输入
+    _controlManager.updatePlayerMovement(deltaTime);
+    // 更新区块加载状态
+    _chunkManager.updateChunks(_player.position);
+    // 分批处理加载队列
+    _chunkManager.processLoadQueue();
 
-    // 更新渲染状态
+    // 获取碰撞检测所需方块
+    final nearbyBlocks = _chunkManager.getBlocksNearPlayer(
+      _player.position,
+      Constants.colliderDistance,
+    );
+    _player.update(deltaTime, nearbyBlocks);
+
+    // 恢复旧版的更新阈值，减少无效渲染更新
     if (_shouldUpdateRenderState()) {
       _updateVisibleBlocks();
     }
@@ -83,35 +78,21 @@ class Manager with ChangeNotifier implements TickerProvider {
     notifyListeners();
   }
 
-  /// 更新物理
-  void _updatePhysics(double deltaTime) {
-    final nearbyBlocks = chunkManager.getNearbyBlocks(player.position);
-    player.update(deltaTime, nearbyBlocks);
-  }
-
-  /// 检查是否需要更新渲染状态
   bool _shouldUpdateRenderState() {
-    final currentState = GameState(
-      playerPosition: player.position,
-      playerOrientation: player.orientation,
-      visibleBlocks: _visibleBlocks,
-    );
-
-    final shouldUpdate =
-        !_lastState.playerPosition.equals(player.position) ||
-        !_lastState.playerOrientation.equals(player.orientation);
-
-    _lastState = currentState;
-    return shouldUpdate;
+    return !(_lastInfo.position == _player.position) ||
+        !(_lastInfo.orientation == _player.orientation);
   }
 
   /// 更新可见方块
   void _updateVisibleBlocks() {
-    chunkManager.getChunksAroundPlayer(player.position);
-
-    _visibleBlocks = chunkManager.getNearbyBlocks(
-      player.position,
+    final blocks = _chunkManager.getBlocksNearPlayer(
+      _player.position,
       Constants.renderDistance,
+    );
+    _lastInfo = SceneInfo(
+      position: _player.position,
+      orientation: _player.orientation,
+      blocks: blocks,
     );
   }
 
@@ -121,14 +102,14 @@ class Manager with ChangeNotifier implements TickerProvider {
   @override
   void dispose() {
     _ticker.stop();
-    controlManager.dispose();
+    _controlManager.dispose();
     super.dispose();
   }
 
   // 公开属性
-  List<Block> get visibleBlocks => _visibleBlocks;
-  FocusNode get focusNode => controlManager.focusNode;
-  bool get isMoving => controlManager.isMoving;
+  FocusNode get focusNode => _controlManager.focusNode;
+  SceneInfo get sceneInfo => _lastInfo;
+  ControlManager get controlManager => _controlManager;
   String get debugInfo =>
       'FPS: ${(1 / _deltaTime.clamp(0.001, 1000)).toStringAsFixed(0)}';
 }

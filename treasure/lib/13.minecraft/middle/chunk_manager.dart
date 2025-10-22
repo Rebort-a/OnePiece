@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'dart:math' as math;
+
 import '../base/block.dart';
 import '../base/chunk.dart';
 import '../base/constant.dart';
@@ -9,8 +12,15 @@ class ChunkManager {
   static const int distance = Constants.renderChunkDistance;
   static const int distanceSquare = distance * distance;
 
-  final Map<String, Chunk> _loadedChunks = {};
-  final WorldGenerator _worldGenerator = WorldGenerator();
+  final Map<Vector3Int, Chunk> _loadedChunks = HashMap();
+
+  final Queue<Vector3Int> _chunkLoadQueue = Queue();
+
+  late final WorldGenerator _worldGenerator;
+
+  ChunkManager() {
+    _worldGenerator = WorldGenerator(math.Random().nextInt(1000));
+  }
 
   static Vector3Int getChunkCoord(Vector3 worldPos) {
     return Vector3Int(
@@ -20,104 +30,107 @@ class ChunkManager {
     );
   }
 
-  /// 获取玩家周围的区块
-  List<Chunk> getChunksAroundPlayer(Vector3 playerPos) {
+  /// 更新区块加载
+  void updateChunks(Vector3 playerPos) {
     final playerChunk = getChunkCoord(playerPos);
+    _unloadDistantChunks(playerChunk);
+    _loadChunksAroundPlayer(playerChunk);
+  }
 
-    final chunks = <Chunk>[];
+  /// 卸载远处区块
+  void _unloadDistantChunks(Vector3Int playerChunk) {
+    final chunksToRemove = <Vector3Int>[];
+    for (final chunkCoord in _loadedChunks.keys) {
+      // 分开计算轴方向的距离差
+      final dx = (chunkCoord.x - playerChunk.x).abs();
+      final dz = (chunkCoord.z - playerChunk.z).abs();
 
+      // 只要有一个轴方向超出范围，就需要卸载
+      if (dx > distance || dz > distance) {
+        chunksToRemove.add(chunkCoord);
+      }
+    }
+    for (final coord in chunksToRemove) {
+      _loadedChunks.remove(coord);
+    }
+  }
+
+  /// 加载周围区块
+  void _loadChunksAroundPlayer(Vector3Int playerChunk) {
     for (int x = -distance; x <= distance; x++) {
       for (int z = -distance; z <= distance; z++) {
-        final chunkX = playerChunk.x + x;
-        final chunkZ = playerChunk.z + z;
-
-        final chunk = _getOrCreateChunk(chunkX, chunkZ);
-        if (chunk != null) {
-          chunks.add(chunk);
-        }
-      }
-    }
-
-    _unloadDistantChunks(playerChunk.x, playerChunk.z);
-
-    return chunks;
-  }
-
-  Chunk? _getOrCreateChunk(int chunkX, int chunkZ) {
-    final key = '$chunkX,$chunkZ';
-
-    if (_loadedChunks.containsKey(key)) {
-      return _loadedChunks[key];
-    }
-
-    // 生成区块方块
-    final blocks = _worldGenerator.generateChunk(chunkX, chunkZ);
-    // 创建区块（使用Vector3Int作为坐标）
-    final chunkCoord = Vector3Int(chunkX, 0, chunkZ); // Y轴固定为0层（无垂直区块划分）
-    final chunk = Chunk(chunkCoord);
-
-    // 将生成的方块添加到区块的八叉树中
-    for (final block in blocks) {
-      chunk.addBlock(block);
-    }
-
-    _loadedChunks[key] = chunk;
-    return chunk;
-  }
-
-  void _unloadDistantChunks(int centerX, int centerZ) {
-    final keysToRemove = <String>[];
-
-    _loadedChunks.forEach((key, chunk) {
-      final distanceX = (chunk.chunkCoord.x - centerX).abs();
-      final distanceZ = (chunk.chunkCoord.z - centerZ).abs();
-
-      if (distanceX > distance + 1 || distanceZ > distance + 1) {
-        keysToRemove.add(key);
-      }
-    });
-
-    for (final key in keysToRemove) {
-      _loadedChunks.remove(key);
-    }
-  }
-
-  /// 获取玩家附近的所有方块
-  List<Block> getAllBlocks() {
-    final blocks = <Block>[];
-    for (final chunk in _loadedChunks.values) {
-      blocks.addAll(chunk.getAllBlocksInChunk());
-    }
-    return blocks;
-  }
-
-  /// 获取玩家附近的方块（优化版本）
-  List<Block> getNearbyBlocks(
-    Vector3 playerPos, [
-    double radius = Constants.colliderDistance,
-  ]) {
-    final nearbyBlocks = <Block>[];
-    final playerChunk = getChunkCoord(playerPos);
-
-    for (int x = -1; x <= 1; x++) {
-      for (int z = -1; z <= 1; z++) {
-        final chunkX = playerChunk.x + x;
-        final chunkZ = playerChunk.z + z;
-        final key = '$chunkX,$chunkZ';
-
-        final chunk = _loadedChunks[key];
-        if (chunk != null) {
-          // 从八叉树查询区块内的方块
-          for (final block in chunk.getAllBlocksInChunk()) {
-            if ((block.position - playerPos).magnitudeSquare <=
-                radius * radius) {
-              nearbyBlocks.add(block);
-            }
+        for (int y = -distance; y <= distance; y++) {
+          final chunkCoord = Vector3Int(
+            playerChunk.x + x,
+            playerChunk.y + y,
+            playerChunk.z + z,
+          );
+          if (!_loadedChunks.containsKey(chunkCoord) &&
+              !_chunkLoadQueue.contains(chunkCoord)) {
+            _scheduleChunkLoad(chunkCoord);
           }
         }
       }
     }
+  }
 
-    return nearbyBlocks;
+  /// 调度区块加载
+  void _scheduleChunkLoad(Vector3Int chunkCoord) {
+    if (!_chunkLoadQueue.contains(chunkCoord)) {
+      _chunkLoadQueue.addLast(chunkCoord);
+    }
+  }
+
+  /// 处理加载队列
+  void processLoadQueue() {
+    if (_chunkLoadQueue.isNotEmpty) {
+      final chunkCoord = _chunkLoadQueue.removeFirst();
+      _loadChunk(chunkCoord);
+    }
+  }
+
+  /// 加载单个区块
+  void _loadChunk(Vector3Int chunkCoord) {
+    if (!_loadedChunks.containsKey(chunkCoord)) {
+      final chunk = Chunk(chunkCoord);
+      _worldGenerator.generateChunk(chunk);
+      _loadedChunks[chunkCoord] = chunk;
+    }
+  }
+
+  /// 获取渲染范围内的区块
+  List<Chunk> getChunksInRenderRange(Vector3 playerPos) {
+    final playerChunk = getChunkCoord(playerPos);
+    final chunks = <Chunk>[];
+    for (final chunk in _loadedChunks.values) {
+      if ((chunk.chunkCoord - playerChunk).magnitudeSquare <= distanceSquare) {
+        chunks.add(chunk);
+      }
+    }
+    return chunks;
+  }
+
+  /// 获取玩家附近方块
+  List<Block> getBlocksNearPlayer(Vector3 playerPos, double radius) {
+    final chunks = getChunksInRenderRange(playerPos);
+
+    final min = Vector3(
+      playerPos.x - radius,
+      playerPos.y - radius,
+      playerPos.z - radius,
+    );
+    final max = Vector3(
+      playerPos.x + radius,
+      playerPos.y + radius,
+      playerPos.z + radius,
+    );
+
+    final List<Block> blocks = [];
+    for (final chunk in chunks) {
+      final chunkBlocks = chunk.octree.queryRange(min, max);
+      blocks.addAll(chunkBlocks);
+    }
+
+    return blocks.toList();
   }
 }

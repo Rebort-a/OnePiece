@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../middle/manager.dart';
 import 'scene_render.dart';
-import 'widget.dart';
+import '../base/widget.dart';
 
 /// 主游戏页面
 class MinecraftPage extends StatelessWidget {
@@ -39,11 +39,7 @@ class MinecraftPage extends StatelessWidget {
           animation: manager,
           builder: (context, child) {
             return CustomPaint(
-              painter: ScenePainter(
-                manager.player,
-                manager.visibleBlocks,
-                manager.debugInfo,
-              ),
+              painter: ScenePainter(manager.sceneInfo, manager.debugInfo),
               size: constraints.biggest,
             );
           },

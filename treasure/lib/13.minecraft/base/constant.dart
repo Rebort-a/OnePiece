@@ -35,7 +35,7 @@ class Constants {
 
   // 区块参数
   static const int chunkSize = 16;
-  static const int renderChunkDistance = 2;
+  static const int renderChunkDistance = 1;
 
   // 八叉树参数
   static const int maxBlocksPerNode = 4;

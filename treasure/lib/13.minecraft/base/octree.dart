@@ -69,7 +69,7 @@ class OctreeNode {
     if (!_contains(block.position)) return false;
 
     // 移除重复位置的方块
-    _blocks.removeWhere((b) => b.position.equals(block.position));
+    _blocks.removeWhere((b) => b.position == block.position);
 
     // 优先插入子节点
     if (_children != null) {
@@ -129,7 +129,7 @@ class OctreeNode {
 
     // 在当前节点查找
     for (final block in _blocks) {
-      if (block.position.equals(position)) return block;
+      if (block.position == position) return block;
     }
 
     // 在子节点查找
@@ -224,7 +224,7 @@ class BlockOctree {
 
   BlockOctree({
     required Vector3 center,
-    required double worldSize,
+    required int worldSize,
     int maxBlocksPerNode = Constants.maxBlocksPerNode,
     double minHalfSize = Constants.minHalfSize,
   }) : root = OctreeNode(

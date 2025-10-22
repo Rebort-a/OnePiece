@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../base/block.dart';
 import '../base/constant.dart';
-import '../base/player.dart';
 import '../base/vector.dart';
+import '../middle/common.dart';
 
 class ScenePainter extends CustomPainter {
-  final Player player;
-  final List<Block> blocks;
+  final SceneInfo sceneInfo;
   final String debugInfo;
 
   // 构造函数：直接接收玩家和方块数据，无需中间Renderer
-  ScenePainter(this.player, this.blocks, this.debugInfo);
+  ScenePainter(this.sceneInfo, this.debugInfo);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -20,9 +19,9 @@ class ScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ScenePainter oldDelegate) {
-    // 保留原有的重绘判断逻辑：玩家位置/朝向变化时重绘
-    return !oldDelegate.player.position.equals(player.position, 0.1) ||
-        !oldDelegate.player.orientation.equals(player.orientation, 0.01);
+    // 玩家位置/朝向变化时重绘
+    return !(oldDelegate.sceneInfo.position == sceneInfo.position) ||
+        !(oldDelegate.sceneInfo.orientation == sceneInfo.orientation);
   }
 
   /// 绘制完整游戏场景（背景 + 方块）
@@ -57,8 +56,8 @@ class ScenePainter extends CustomPainter {
 
     // 按距离排序：远的方块先画，避免遮挡错误
     visibleBlocks.sort((a, b) {
-      final distA = (a.position - player.position).magnitudeSquare;
-      final distB = (b.position - player.position).magnitudeSquare;
+      final distA = (a.position - sceneInfo.position).magnitudeSquare;
+      final distB = (b.position - sceneInfo.position).magnitudeSquare;
       return distB.compareTo(distA);
     });
 
@@ -67,23 +66,23 @@ class ScenePainter extends CustomPainter {
     }
   }
 
-  /// 筛选可见方块（非穿透性 + 在视野内）
+  /// 筛选可见方块
   List<Block> _getVisibleBlocks() {
-    return blocks.where((block) {
+    return sceneInfo.blocks.where((block) {
+      // 穿透性剔除
       if (block.penetrable) return false;
 
-      final relativePos = block.position - player.position;
+      // 近裁剪面剔除
+      final relativePos = block.position - sceneInfo.position;
       final rotatedPos = _rotateToViewSpace(relativePos);
-
-      // 仅保留在近裁剪面之后的方块
-      return rotatedPos.z > Constants.nearClip;
+      return rotatedPos.z + Constants.blockSizeHalf > Constants.nearClip;
     }).toList();
   }
 
   /// 绘制单个方块（处理面的可见性 + 深度排序）
   void _drawBlock(Canvas canvas, Size size, Block block) {
     // 直接复用 Block 类的 getVisibleFaces 方法
-    final visibleFaces = block.getVisibleFaces(player.position);
+    final visibleFaces = block.getVisibleFaces(sceneInfo.position);
 
     // 按深度排序（保持原逻辑）
     visibleFaces.sort(
@@ -100,7 +99,7 @@ class ScenePainter extends CustomPainter {
 
   /// 获取方块面的深度（面中心到玩家的距离）
   double _getFaceDepth(BlockFace face, Vector3 blockPosition) {
-    return (face.center - player.position).magnitudeSquare;
+    return (face.center - sceneInfo.position).magnitudeSquare;
   }
 
   /// 绘制单个方块面（投影 + 裁剪 + 多边形渲染）
@@ -131,7 +130,7 @@ class ScenePainter extends CustomPainter {
   /// 检查面是否至少有一个顶点在视野内（近裁剪面之后）
   bool _hasVisibleVertex(List<Vector3> vertices) {
     for (final vertex in vertices) {
-      final relativePoint = vertex - player.position;
+      final relativePoint = vertex - sceneInfo.position;
       final rotatedPoint = _rotateToViewSpace(relativePoint);
       if (rotatedPoint.z > Constants.nearClip) return true;
     }
@@ -186,7 +185,7 @@ class ScenePainter extends CustomPainter {
 
   /// 3D点投影到2D屏幕（透视投影）
   Offset _projectPoint(Vector3 point, Size size) {
-    final relativePoint = point - player.position;
+    final relativePoint = point - sceneInfo.position;
     final rotatedPoint = _rotateToViewSpace(relativePoint);
 
     // 处理近裁剪面：避免除以0或负数（导致投影异常）
@@ -203,7 +202,7 @@ class ScenePainter extends CustomPainter {
 
   /// 将3D点旋转到玩家视图空间（对齐玩家朝向）
   Vector3 _rotateToViewSpace(Vector3 point) {
-    final forward = player.orientation.normalized;
+    final forward = sceneInfo.orientation.normalized;
     final right = Vector3.up.cross(forward).normalized;
     final up = forward.cross(right).normalized;
 
@@ -301,13 +300,13 @@ class ScenePainter extends CustomPainter {
 
     final textSpan = TextSpan(
       text:
-          'Position: (${player.position.x.toStringAsFixed(1)}, '
-          '${player.position.y.toStringAsFixed(1)}, '
-          '${player.position.z.toStringAsFixed(1)})\n'
-          'Orientation: (${player.orientation.x.toStringAsFixed(2)}, '
-          '${player.orientation.y.toStringAsFixed(2)}, '
-          '${player.orientation.z.toStringAsFixed(2)})\n'
-          'Blocks: ${blocks.length}\n'
+          'Position: (${sceneInfo.position.x.toStringAsFixed(1)}, '
+          '${sceneInfo.position.y.toStringAsFixed(1)}, '
+          '${sceneInfo.position.z.toStringAsFixed(1)})\n'
+          'Orientation: (${sceneInfo.orientation.x.toStringAsFixed(2)}, '
+          '${sceneInfo.orientation.y.toStringAsFixed(2)}, '
+          '${sceneInfo.orientation.z.toStringAsFixed(2)})\n'
+          'Blocks: ${sceneInfo.blocks.length}\n'
           '$debugInfo',
       style: textStyle,
     );

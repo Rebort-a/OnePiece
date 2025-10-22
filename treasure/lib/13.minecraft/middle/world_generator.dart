@@ -1,154 +1,164 @@
-import 'dart:math';
+import 'dart:math' as math;
 
-import '../base/aabb.dart';
 import '../base/block.dart';
 import '../base/constant.dart';
+import '../base/chunk.dart';
 import '../base/vector.dart';
 
 /// 世界生成器
 class WorldGenerator {
-  final Random _random = Random();
-  final Map<String, int> _chunkSeeds = {};
+  final Map<Vector3Int, int> _chunkSeeds = {};
+  final int index;
 
-  /// 为区块生成种子
-  int _getChunkSeed(int chunkX, int chunkZ) {
-    final key = '$chunkX,$chunkZ';
-    if (!_chunkSeeds.containsKey(key)) {
-      _chunkSeeds[key] = _random.nextInt(0x7FFFFFFF);
+  WorldGenerator(this.index);
+
+  /// 生成区块种子
+  int _getChunkSeed(Chunk chunk) {
+    final chunkCoord = chunk.chunkCoord;
+
+    if (!_chunkSeeds.containsKey(chunkCoord)) {
+      final baseSeed = math.Random(index).nextInt(0x7FFFFFFF);
+      _chunkSeeds[chunkCoord] =
+          (baseSeed ^ chunkCoord.x ^ chunkCoord.y ^ chunkCoord.z) & 0x7FFFFFFF;
     }
-    return _chunkSeeds[key]!;
+    return _chunkSeeds[chunkCoord]!;
   }
 
-  /// 生成单个区块的方块列表（供ChunkManager添加到八叉树）
-  List<Block> generateChunk(int chunkX, int chunkZ) {
-    final blocks = <Block>[];
-    final chunkSeed = _getChunkSeed(chunkX, chunkZ);
-    final random = Random(chunkSeed);
+  /// 生成区块
+  void generateChunk(Chunk chunk) {
+    final chunkSeed = _getChunkSeed(chunk);
+    final random = math.Random(chunkSeed);
+    final chunkSize = Constants.chunkSize;
+    final worldHeightMin = Constants.worldHeightMin;
 
-    final baseX = chunkX * Constants.chunkSize;
-    final baseZ = chunkZ * Constants.chunkSize;
+    final worldXBase = chunk.chunkCoord.x * chunkSize;
+    final worldZBase = chunk.chunkCoord.z * chunkSize;
 
-    // 生成地形
-    for (int x = 0; x < Constants.chunkSize; x++) {
-      for (int z = 0; z < Constants.chunkSize; z++) {
-        final worldX = baseX + x;
-        final worldZ = baseZ + z;
+    // 生成高度图
+    final heightMap = _generateHeightMap(worldXBase, worldZBase, chunkSize);
 
-        final height = _calculateHeight(worldX, worldZ, random);
+    // 生成方块
+    for (int x = 0; x < chunkSize; x++) {
+      for (int z = 0; z < chunkSize; z++) {
+        final worldX = worldXBase + x;
+        final worldZ = worldZBase + z;
+        final surfaceY = heightMap[x][z];
 
-        // 生成从基岩到地表的地形
-        for (int y = -2; y <= height; y++) {
-          BlockType type;
-          if (y == height) {
-            type = BlockType.grass;
-          } else if (y >= height - 3) {
-            type = BlockType.dirt;
-          } else {
-            type = BlockType.stone;
-          }
-
-          blocks.add(
+        // 从底部到地表生成方块
+        for (int worldY = worldHeightMin; worldY <= surfaceY; worldY++) {
+          final blockType = _getBlockType(worldY, surfaceY);
+          chunk.addBlock(
             Block(
               position: Vector3(
                 worldX.toDouble(),
-                y.toDouble(),
+                worldY.toDouble(),
                 worldZ.toDouble(),
               ),
-              type: type,
+              type: blockType,
             ),
           );
         }
 
-        // 偶尔生成树木
-        if (random.nextDouble() < 0.02 && height > 0) {
+        // 生成树木
+        if (random.nextDouble() < Constants.treeProbability &&
+            surfaceY > worldHeightMin) {
           _generateTree(
-            blocks,
+            chunk,
             worldX.toDouble(),
-            height + 1,
+            surfaceY + 1,
             worldZ.toDouble(),
             random,
           );
         }
       }
     }
-
-    return blocks;
   }
 
-  /// 计算地形高度（简化版噪声）
-  int _calculateHeight(int x, int z, Random random) {
-    final noise1 = _simpleNoise(x * 0.01, z * 0.01, random) * 8;
-    final noise2 = _simpleNoise(x * 0.05, z * 0.05, random) * 4;
-    final noise3 = _simpleNoise(x * 0.1, z * 0.1, random) * 2;
-
-    final height = (noise1 + noise2 + noise3).round();
-    return height.clamp(0, 20);
+  /// 获取方块类型
+  BlockType _getBlockType(int worldY, int surfaceY) {
+    if (worldY == surfaceY) return BlockType.grass;
+    if (worldY >= surfaceY - 3) return BlockType.dirt;
+    return BlockType.stone;
   }
 
-  /// 简化的噪声函数
-  double _simpleNoise(double x, double z, Random random) {
-    final seed =
-        (((x * 73856093).toInt()) ^ ((z * 19349663)).toInt()) & 0x7FFFFFFF;
-    final localRandom = Random(seed);
-    return localRandom.nextDouble() * 2 - 1;
+  /// 生成高度图
+  List<List<int>> _generateHeightMap(
+    int worldXBase,
+    int worldZBase,
+    int chunkSize,
+  ) {
+    return List.generate(chunkSize, (x) {
+      return List.generate(chunkSize, (z) {
+        final worldX = worldXBase + x;
+        final worldZ = worldZBase + z;
+        final heightOffset = _calculateTerrainHeight(worldX, worldZ);
+        return Constants.worldHeightMin + heightOffset;
+      });
+    });
+  }
+
+  /// 简化噪声计算
+  int _calculateTerrainHeight(int worldX, int worldZ) {
+    final noise1 = _simpleNoise(worldX * 0.01, worldZ * 0.01) * 8;
+    final noise2 = _simpleNoise(worldX * 0.05, worldZ * 0.05) * 4;
+    final noise3 = _simpleNoise(worldX * 0.1, worldZ * 0.1) * 2;
+
+    final totalHeight = (noise1 + noise2 + noise3).round();
+    return totalHeight.clamp(
+      0,
+      Constants.worldHeightMax - Constants.worldHeightMin,
+    );
+  }
+
+  /// 轻量噪声函数
+  static double _simpleNoise(double x, double z) {
+    // 简化哈希计算，减少位运算
+    final seed = ((x * 73856093).toInt() ^ (z * 19349663).toInt()) & 0x7FFFFFFF;
+    final random = math.Random(seed);
+    return random.nextDouble() * 2 - 1;
   }
 
   /// 生成树木
-  void _generateTree(
-    List<Block> blocks,
+  static void _generateTree(
+    Chunk chunk,
     double x,
     int baseY,
     double z,
-    Random random,
+    math.Random random,
   ) {
-    final trunkHeight = 3 + random.nextInt(2);
+    final trunkHeight =
+        Constants.minTrunkHeight +
+        random.nextInt(Constants.maxTrunkHeight - Constants.minTrunkHeight + 1);
 
     // 树干
-    for (int y = 0; y < trunkHeight; y++) {
-      blocks.add(
+    for (int yOffset = 0; yOffset < trunkHeight; yOffset++) {
+      chunk.addBlock(
         Block(
-          position: Vector3(x, (baseY + y).toDouble(), z),
+          position: Vector3(x, (baseY + yOffset).toDouble(), z),
           type: BlockType.wood,
         ),
       );
     }
 
-    // 树冠（注意：原代码中树冠使用了grass类型，实际应改为树叶类型，这里保持原逻辑）
-    final canopyStart = baseY + trunkHeight;
-    for (int dx = -2; dx <= 2; dx++) {
-      for (int dz = -2; dz <= 2; dz++) {
-        for (int dy = 0; dy < 3; dy++) {
-          if ((dx.abs() + dz.abs() + dy) <= 3) {
-            blocks.add(
+    // 树冠
+    final canopyStartY = baseY + trunkHeight;
+    for (int xOffset = -2; xOffset <= 2; xOffset++) {
+      for (int zOffset = -2; zOffset <= 2; zOffset++) {
+        for (int yOffset = 0; yOffset < 3; yOffset++) {
+          if ((xOffset.abs() + zOffset.abs() + yOffset) <= 3) {
+            chunk.addBlock(
               Block(
                 position: Vector3(
-                  x + dx,
-                  (canopyStart + dy).toDouble(),
-                  z + dz,
+                  x + xOffset,
+                  (canopyStartY + yOffset).toDouble(),
+                  z + zOffset,
                 ),
-                type: BlockType.grass,
+                type: BlockType.leaf,
               ),
             );
           }
         }
       }
     }
-  }
-
-  /// 计算世界边界（无限地图）
-  AABB calculateWorldBounds() {
-    return AABB(
-      Vector3(-double.infinity, -64.0, -double.infinity),
-      Vector3(double.infinity, 256.0, double.infinity),
-    );
-  }
-
-  // 保持向后兼容的方法
-  List<Block> generateTerrain() {
-    return generateChunk(0, 0);
-  }
-
-  AABB calculateWorldBoundsFromBlocks(List<Block> blocks) {
-    return calculateWorldBounds();
   }
 }
