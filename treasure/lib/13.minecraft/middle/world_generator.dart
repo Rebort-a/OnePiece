@@ -49,11 +49,7 @@ class WorldGenerator {
           final blockType = _getBlockType(worldY, surfaceY);
           chunk.addBlock(
             Block(
-              position: Vector3(
-                worldX.toDouble(),
-                worldY.toDouble(),
-                worldZ.toDouble(),
-              ),
+              position: Vector3Int(worldX, worldY, worldZ),
               type: blockType,
             ),
           );
@@ -62,13 +58,7 @@ class WorldGenerator {
         // 生成树木
         if (random.nextDouble() < Constants.treeProbability &&
             surfaceY > worldHeightMin) {
-          _generateTree(
-            chunk,
-            worldX.toDouble(),
-            surfaceY + 1,
-            worldZ.toDouble(),
-            random,
-          );
+          _generateTree(chunk, worldX, surfaceY + 1, worldZ, random);
         }
       }
     }
@@ -121,9 +111,9 @@ class WorldGenerator {
   /// 生成树木
   static void _generateTree(
     Chunk chunk,
-    double x,
+    int x,
     int baseY,
-    double z,
+    int z,
     math.Random random,
   ) {
     final trunkHeight =
@@ -134,7 +124,7 @@ class WorldGenerator {
     for (int yOffset = 0; yOffset < trunkHeight; yOffset++) {
       chunk.addBlock(
         Block(
-          position: Vector3(x, (baseY + yOffset).toDouble(), z),
+          position: Vector3Int(x, (baseY + yOffset), z),
           type: BlockType.wood,
         ),
       );
@@ -148,9 +138,9 @@ class WorldGenerator {
           if ((xOffset.abs() + zOffset.abs() + yOffset) <= 3) {
             chunk.addBlock(
               Block(
-                position: Vector3(
+                position: Vector3Int(
                   x + xOffset,
-                  (canopyStartY + yOffset).toDouble(),
+                  (canopyStartY + yOffset),
                   z + zOffset,
                 ),
                 type: BlockType.leaf,

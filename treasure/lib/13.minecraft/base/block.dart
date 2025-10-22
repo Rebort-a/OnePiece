@@ -4,7 +4,6 @@ import 'constant.dart';
 import 'vector.dart';
 
 /// 方块类型
-/// 方块类型枚举（扩展常见方块类型）
 enum BlockType {
   // 基础地形方块
   bedrock, // 基岩
@@ -97,63 +96,51 @@ extension BlockTypeProperties on BlockType {
 
 /// 方块面数据
 class BlockFace {
-  static final faces = [
-    BlockFace(
-      [0, 1, 2, 3],
-      const Vector3(0, 0, -1),
-      Vector3(0, 0, -Constants.blockSizeHalf),
-    ), // 前
-    BlockFace(
-      [4, 5, 6, 7],
-      const Vector3(0, 0, 1),
-      Vector3(0, 0, Constants.blockSizeHalf),
-    ), // 后
-    BlockFace(
-      [1, 5, 6, 2],
-      const Vector3(1, 0, 0),
-      Vector3(Constants.blockSizeHalf, 0, 0),
-    ), // 右
-    BlockFace(
-      [4, 0, 3, 7],
-      const Vector3(-1, 0, 0),
-      Vector3(-Constants.blockSizeHalf, 0, 0),
-    ), // 左
-    BlockFace(
-      [3, 2, 6, 7],
-      const Vector3(0, 1, 0),
-      Vector3(0, Constants.blockSizeHalf, 0),
-    ), // 上
-    BlockFace(
-      [0, 4, 5, 1],
-      const Vector3(0, -1, 0),
-      Vector3(0, -Constants.blockSizeHalf, 0),
-    ), // 下
+  // 静态面模板（包含索引和法向量，中心点由Block实例计算）
+  static const List<BlockFace> _faceTemplates = [
+    BlockFace([0, 1, 2, 3], Vector3(0, 0, -1)), // 前
+    BlockFace([7, 6, 5, 4], Vector3(0, 0, 1)), // 后
+    BlockFace([1, 5, 6, 2], Vector3(1, 0, 0)), // 右
+    BlockFace([4, 0, 3, 7], Vector3(-1, 0, 0)), // 左
+    BlockFace([3, 2, 6, 7], Vector3(0, 1, 0)), // 上
+    BlockFace([0, 4, 5, 1], Vector3(0, -1, 0)), // 下
   ];
 
   final List<int> indices;
   final Vector3 normal;
   final Vector3 center;
 
-  const BlockFace(this.indices, this.normal, this.center);
+  const BlockFace(
+    this.indices,
+    this.normal, [
+    this.center = const Vector3(0, 0, 0),
+  ]);
 }
 
 /// 游戏方块
 class Block {
-  final Vector3 position;
+  final Vector3Int position;
   final BlockType type;
   final BoxCollider collider;
   final List<Vector3> vertices;
+  final List<BlockFace> _faces;
+
+  Vector3? _lastCameraPosition;
+  List<BlockFace>? _cachedVisibleFaces;
 
   Block({required this.position, required this.type})
     : collider = BoxCollider(
-        position: position,
+        position: position.toVector3(),
         size: Vector3.all(Constants.blockSize),
       ),
-      vertices = _calculateVertices(position);
+      vertices = _calculateVertices(position),
+      _faces = _initializeFaces(position, _calculateVertices(position)) {
+    // 初始化时计算一次所有面的中心点，避免重复计算
+  }
 
   bool get penetrable => type == BlockType.air;
 
-  static List<Vector3> _calculateVertices(Vector3 position) {
+  static List<Vector3> _calculateVertices(Vector3Int position) {
     final half = Constants.blockSizeHalf;
     final p = position;
     return [
@@ -168,22 +155,47 @@ class Block {
     ];
   }
 
-  /// 获取可见的面（剔除背向相机的面）
-  List<BlockFace> getVisibleFaces(Vector3 cameraPosition) {
-    if (penetrable) return [];
-
-    return BlockFace.faces.where((face) {
-      final faceCenter = _getFaceCenter(face.indices);
-      final toCamera = (cameraPosition - faceCenter).normalized;
-      return face.normal.dot(toCamera) > 0; // 面朝向相机
+  // 初始化方块的所有面（计算每个面的中心点）
+  static List<BlockFace> _initializeFaces(
+    Vector3Int position,
+    List<Vector3> vertices,
+  ) {
+    return BlockFace._faceTemplates.map((template) {
+      // 计算当前面的中心点
+      final center = _calculateFaceCenter(vertices, template.indices);
+      return BlockFace(template.indices, template.normal, center);
     }).toList();
   }
 
-  Vector3 _getFaceCenter(List<int> indices) {
+  // 计算单个面的中心点
+  static Vector3 _calculateFaceCenter(
+    List<Vector3> vertices,
+    List<int> indices,
+  ) {
     Vector3 sum = Vector3.zero;
     for (final index in indices) {
       sum += vertices[index];
     }
     return sum / indices.length.toDouble();
+  }
+
+  /// 获取可见的面（剔除背向相机的面）
+  List<BlockFace> getVisibleFaces(Vector3 cameraPosition) {
+    if (_lastCameraPosition == cameraPosition && _cachedVisibleFaces != null) {
+      return _cachedVisibleFaces!;
+    }
+
+    _lastCameraPosition = cameraPosition;
+
+    if (penetrable) return [];
+
+    final result = _faces.where((face) {
+      // 使用预计算的面中心点和法向量进行可见性判断
+      final toCamera = (cameraPosition - face.center).normalized;
+      return face.normal.dot(toCamera) > 0; // 面朝向相机则可见
+    }).toList();
+
+    _cachedVisibleFaces = result;
+    return result;
   }
 }

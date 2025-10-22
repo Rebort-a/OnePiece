@@ -59,8 +59,10 @@ class ScenePainter extends CustomPainter {
 
     // 按距离排序：远的方块先画，避免遮挡错误
     visibleBlocks.sort((a, b) {
-      final distA = (a.position - sceneInfo.position).magnitudeSquare;
-      final distB = (b.position - sceneInfo.position).magnitudeSquare;
+      final distA =
+          (a.position.toVector3() - sceneInfo.position).magnitudeSquare;
+      final distB =
+          (b.position.toVector3() - sceneInfo.position).magnitudeSquare;
       return distB.compareTo(distA);
     });
 
@@ -76,7 +78,7 @@ class ScenePainter extends CustomPainter {
       if (block.penetrable) return false;
 
       // 近裁剪面剔除
-      final relativePos = block.position - sceneInfo.position;
+      final relativePos = block.position.toVector3() - sceneInfo.position;
       final rotatedPos = _rotateToViewSpace(relativePos);
       return rotatedPos.z + Constants.blockSizeHalf > Constants.nearClip;
     }).toList();
@@ -91,8 +93,8 @@ class ScenePainter extends CustomPainter {
     visibleFaces.sort(
       (a, b) => _getFaceDepth(
         b,
-        block.position,
-      ).compareTo(_getFaceDepth(a, block.position)),
+        block.position.toVector3(),
+      ).compareTo(_getFaceDepth(a, block.position.toVector3())),
     );
 
     for (final face in visibleFaces) {

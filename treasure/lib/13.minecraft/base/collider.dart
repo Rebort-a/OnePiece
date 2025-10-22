@@ -1,3 +1,4 @@
+import 'constant.dart';
 import 'vector.dart';
 
 /// 碰撞体类型
@@ -53,7 +54,9 @@ class BoxCollider implements Collider {
 
   /// 计算与另一包围盒的重叠量
   double _calculateOverlap(double min1, double max1, double min2, double max2) {
-    if (max1 <= min2 || min1 >= max2) return 0;
+    if (max1 <= min2 + Constants.epsilon || min1 >= max2 - Constants.epsilon) {
+      return 0;
+    }
     final overlap1 = max1 - min2;
     final overlap2 = max2 - min1;
     return overlap1 < overlap2 ? -overlap1 : overlap2;

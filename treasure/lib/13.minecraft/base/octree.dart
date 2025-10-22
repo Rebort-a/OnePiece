@@ -20,9 +20,9 @@ class OctreeNode {
   });
 
   /// 检查位置是否在节点范围内
-  bool _contains(Vector3 position) {
-    final min = center.x - halfSize;
-    final max = center.x + halfSize;
+  bool _contains(Vector3Int position) {
+    final min = center.x - halfSize - Constants.epsilon;
+    final max = center.x + halfSize + Constants.epsilon;
     if (position.x < min || position.x > max) {
       return false;
     }
@@ -124,7 +124,7 @@ class OctreeNode {
   }
 
   /// 查询指定位置方块
-  Block? getBlock(Vector3 position) {
+  Block? getBlock(Vector3Int position) {
     if (!_contains(position)) return null;
 
     // 在当前节点查找
@@ -178,7 +178,7 @@ class OctreeNode {
   }
 
   /// 检查点是否在范围内
-  bool _isPointInRange(Vector3 point, Vector3 min, Vector3 max) {
+  bool _isPointInRange(Vector3Int point, Vector3 min, Vector3 max) {
     return point.x >= min.x &&
         point.x <= max.x &&
         point.y >= min.y &&
@@ -237,7 +237,20 @@ class BlockOctree {
   // 代理方法
   bool insertBlock(Block block) => root.insertBlock(block);
   bool removeBlock(Block block) => root.removeBlock(block);
-  Block? getBlock(Vector3 position) => root.getBlock(position);
+  Block? getBlock(Vector3Int position) => root.getBlock(position);
   List<Block> queryRange(Vector3 min, Vector3 max) => root.queryRange(min, max);
-  void clear() => root._blocks.clear();
+
+  void clear() {
+    _clearRecursive(root);
+  }
+
+  void _clearRecursive(OctreeNode node) {
+    node._blocks.clear();
+    if (node._children != null) {
+      for (final child in node._children!) {
+        _clearRecursive(child);
+      }
+      node._children = null;
+    }
+  }
 }

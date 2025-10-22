@@ -46,9 +46,9 @@ class Chunk {
   bool removeBlock(Block block) => octree.removeBlock(block);
 
   /// 获取区块内指定位置的方块
-  Block? getBlock(Vector3 position) => octree.getBlock(position);
+  Block? getBlock(Vector3Int position) => octree.getBlock(position);
 
-  void removeBlockByPos(Vector3 position) {
+  void removeBlockByPos(Vector3Int position) {
     Block? block = getBlock(position);
     if (block != null) {
       removeBlock(block);

@@ -7,20 +7,28 @@ class Matrix {
 
   // 构造函数
   Matrix.zero() : _values = List.filled(16, 0.0);
+
   Matrix.identity() : _values = List.filled(16, 0.0) {
     _values[0] = 1.0; // c0r0
     _values[5] = 1.0; // c1r1
     _values[10] = 1.0; // c2r2
     _values[15] = 1.0; // c3r3
   }
-  Matrix.fromList(List<double> list) : _values = List.from(list) {
-    assert(list.length == 16, "Matrix must have 16 elements");
+
+  Matrix.fromList(List<double> list) : _values = List.filled(16, 0.0) {
+    final copyLength = list.length < 16 ? list.length : 16;
+    for (int i = 0; i < copyLength; i++) {
+      _values[i] = list[i];
+    }
   }
 
   // 索引访问（column: 0-3, row: 0-3）
   double operator [](int index) => _values[index];
+
   void operator []=(int index, double value) => _values[index] = value;
+
   double getColumnRow(int column, int row) => _values[column * 4 + row];
+
   void setColumnRow(int column, int row, double value) =>
       _values[column * 4 + row] = value;
 
@@ -112,8 +120,8 @@ class Matrix {
     final s = math.sin(radians);
     final mat = Matrix.identity();
     mat.setColumnRow(0, 0, c);
-    mat.setColumnRow(0, 2, -s);
-    mat.setColumnRow(2, 0, s);
+    mat.setColumnRow(0, 2, s);
+    mat.setColumnRow(2, 0, -s);
     mat.setColumnRow(2, 2, c);
     return mat;
   }
@@ -152,9 +160,7 @@ class Matrix {
   // 生成视图矩阵（相机变换的逆矩阵）
   static Matrix lookAt(Vector3 eye, Vector3 target, Vector3 up) {
     final forward = (target - eye).normalized;
-
-    // 修正：使用正确的叉乘顺序
-    final right = up.normalized.cross(forward).normalized;
+    final right = forward.cross(up).normalized;
     final correctedUp = forward.cross(right).normalized;
 
     // 旋转矩阵（相机朝向）
@@ -205,22 +211,19 @@ class Matrix {
     final t = 1 - c;
 
     return Matrix.fromList([
-      t * x * x + c,
-      t * x * y - s * z,
-      t * x * z + s * y,
+      t * x * x + c, // c0r0
+      t * x * y + s * z, // c0r1
+      t * x * z - s * y, // c0r2
       0,
-      t * x * y + s * z,
-      t * y * y + c,
-      t * y * z - s * x,
+      t * x * y - s * z, // c1r0
+      t * y * y + c, // c1r1
+      t * y * z + s * x, // c1r2
       0,
-      t * x * z - s * y,
-      t * y * z + s * x,
-      t * z * z + c,
+      t * x * z + s * y, // c2r0
+      t * y * z - s * x, // c2r1
+      t * z * z + c, // c2r2
       0,
-      0,
-      0,
-      0,
-      1,
+      0, 0, 0, 1,
     ]);
   }
 
@@ -263,7 +266,7 @@ class Matrix {
 
     return Matrix.fromList([
       w, 0, 0, 0,
-      0, h, 0, 0, // ✅ 不翻转Y轴
+      0, h, 0, 0, // 不翻转Y轴
       0, 0, range, 1,
       0, 0, -range * near, 0,
     ]);
