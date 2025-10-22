@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'constant.dart';
 import 'vector.dart';
 
 /// 轴对齐包围盒
@@ -5,6 +8,15 @@ class AABB {
   final Vector3 min, max;
 
   AABB(this.min, this.max);
+
+  /// 从方块位置创建AABB
+  factory AABB.fromBlockPosition(Vector3 position) {
+    final halfSize = Constants.blockSizeHalf;
+    return AABB(
+      position - Vector3.all(halfSize),
+      position + Vector3.all(halfSize),
+    );
+  }
 
   /// 检查与另一AABB是否相交
   bool intersects(AABB other) =>
@@ -31,18 +43,28 @@ class AABB {
     (min.z + max.z) * 0.5,
   );
 
-  /// 将包围盒分割为8个子盒（用于八叉树）
-  List<AABB> split() {
-    final center = this.center;
-    return [
-      AABB(Vector3(min.x, min.y, min.z), Vector3(center.x, center.y, center.z)),
-      AABB(Vector3(center.x, min.y, min.z), Vector3(max.x, center.y, center.z)),
-      AABB(Vector3(min.x, center.y, min.z), Vector3(center.x, max.y, center.z)),
-      AABB(Vector3(center.x, center.y, min.z), Vector3(max.x, max.y, center.z)),
-      AABB(Vector3(min.x, min.y, center.z), Vector3(center.x, center.y, max.z)),
-      AABB(Vector3(center.x, min.y, center.z), Vector3(max.x, center.y, max.z)),
-      AABB(Vector3(min.x, center.y, center.z), Vector3(center.x, max.y, max.z)),
-      AABB(Vector3(center.x, center.y, center.z), Vector3(max.x, max.y, max.z)),
-    ];
+  /// 获取包围盒尺寸
+  Vector3 get size => max - min;
+
+  /// 获取包围盒半尺寸
+  Vector3 get extents => size * 0.5;
+
+  /// 扩展包围盒以包含点
+  AABB expandToInclude(Vector3 point) {
+    return AABB(
+      Vector3(
+        math.min(min.x, point.x),
+        math.min(min.y, point.y),
+        math.min(min.z, point.z),
+      ),
+      Vector3(
+        math.max(max.x, point.x),
+        math.max(max.y, point.y),
+        math.max(max.z, point.z),
+      ),
+    );
   }
+
+  @override
+  String toString() => 'AABB(min: $min, max: $max)';
 }

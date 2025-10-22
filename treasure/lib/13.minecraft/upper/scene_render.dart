@@ -1,15 +1,18 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../base/block.dart';
 import '../base/constant.dart';
+import '../base/matrix.dart';
 import '../base/vector.dart';
 import '../middle/common.dart';
 
+/// 场景渲染器
 class ScenePainter extends CustomPainter {
   final SceneInfo sceneInfo;
   final String debugInfo;
 
-  // 构造函数：直接接收玩家和方块数据，无需中间Renderer
   ScenePainter(this.sceneInfo, this.debugInfo);
 
   @override
@@ -28,7 +31,7 @@ class ScenePainter extends CustomPainter {
   void _render(Canvas canvas, Size size) {
     _drawSky(canvas, size);
     _drawBlocks(canvas, size);
-    _drawDebugInfo(canvas, size);
+    _drawDebugInfo(canvas, size); // 添加调试信息
   }
 
   void _drawSky(Canvas canvas, Size size) {
@@ -127,7 +130,7 @@ class ScenePainter extends CustomPainter {
     _drawPolygon(canvas, block, clippedPoints, face.normal);
   }
 
-  /// 检查面是否至少有一个顶点在视野内（近裁剪面之后）
+  /// 检查面是否至少有一个顶点在视野内
   bool _hasVisibleVertex(List<Vector3> vertices) {
     for (final vertex in vertices) {
       final relativePoint = vertex - sceneInfo.position;
@@ -183,21 +186,34 @@ class ScenePainter extends CustomPainter {
     );
   }
 
-  /// 3D点投影到2D屏幕（透视投影）
+  /// 3D到2D投影
   Offset _projectPoint(Vector3 point, Size size) {
-    final relativePoint = point - sceneInfo.position;
-    final rotatedPoint = _rotateToViewSpace(relativePoint);
+    final viewMatrix = Matrix.lookAtLH(
+      sceneInfo.position,
+      sceneInfo.position + sceneInfo.orientation.normalized,
+      Vector3.up,
+    );
 
-    // 处理近裁剪面：避免除以0或负数（导致投影异常）
-    final zValue = rotatedPoint.z;
-    final divisor = zValue > Constants.nearClip ? zValue : Constants.nearClip;
-    final scale = Constants.focalLength / divisor;
+    final projectionMatrix = Matrix.perspectiveLH(
+      60 * math.pi / 180,
+      size.width / size.height,
+      0.1,
+      1000.0,
+    );
 
-    // 屏幕中心为原点，转换为屏幕坐标（x向右，y向上）
-    final x = size.width / 2 + rotatedPoint.x * scale;
-    final y = size.height / 2 - rotatedPoint.y * scale;
+    final vpMatrix = projectionMatrix.multiply(viewMatrix);
+    final worldPoint = Vector4(point.x, point.y, point.z, 1.0);
+    final clipPoint = vpMatrix.multiplyVector4(worldPoint);
 
-    return Offset(x, y);
+    if (clipPoint.w <= 0) return Offset.infinite;
+
+    final ndcX = clipPoint.x / clipPoint.w;
+    final ndcY = clipPoint.y / clipPoint.w;
+
+    final screenX = (ndcX * 0.5 + 0.5) * size.width;
+    final screenY = (1.0 - (ndcY * 0.5 + 0.5)) * size.height;
+
+    return Offset(screenX, screenY);
   }
 
   /// 将3D点旋转到玩家视图空间（对齐玩家朝向）
