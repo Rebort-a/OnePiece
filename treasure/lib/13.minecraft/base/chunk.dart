@@ -11,14 +11,14 @@ class Chunk {
 
   Chunk(this.chunkCoord)
     : octree = BlockOctree(
-        worldSize: chunkSize, // 八叉树范围与区块大小一致（16x16x16）
+        worldSize: chunkSize,
         center: Vector3(
           chunkCoord.x * chunkSize + chunkSize / 2,
           chunkCoord.y * chunkSize + chunkSize / 2,
           chunkCoord.z * chunkSize + chunkSize / 2,
-        ), // 八叉树中心与区块中心一致
-        maxBlocksPerNode: 4, // 适合小范围区块的阈值（减少节点冗余）
-        minHalfSize: 1.0, // 最小半边长1（支持1x1x1的方块精度）
+        ),
+        maxBlocksPerNode: Constants.maxBlocksPerNode,
+        minHalfSize: Constants.minHalfSize,
       );
 
   /// 添加方块到区块（直接操作八叉树，避免数据不一致）

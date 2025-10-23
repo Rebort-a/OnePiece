@@ -1,5 +1,5 @@
-import 'constant.dart';
 import 'vector.dart';
+import 'aabb.dart';
 
 /// 碰撞体类型
 enum ColliderType { box }
@@ -12,70 +12,59 @@ abstract class Collider {
   bool containsPoint(Vector3 point);
 }
 
-/// 方块碰撞体
-class BoxCollider implements Collider {
-  @override
-  final Vector3 position;
-  final Vector3 size;
+/// 方块碰撞体（继承AABB）
+class BoxCollider extends AABB implements Collider {
+  BoxCollider({required Vector3 position, required Vector3 size})
+    : super(
+        position - (size * 0.5), // 计算min
+        position + (size * 0.5), // 计算max
+      );
 
-  BoxCollider({required this.position, required this.size});
+  /// 整数版本构造函数
+  factory BoxCollider.fromInt({
+    required Vector3Int position,
+    required Vector3Int size,
+  }) {
+    return BoxCollider(position: position.toVector3(), size: size.toVector3());
+  }
 
-  Vector3 get _halfSize => size * 0.5;
+  /// 从AABB创建
+  BoxCollider.fromAABB(AABB aabb) : super(aabb.min, aabb.max);
 
   @override
   ColliderType get colliderType => ColliderType.box;
 
-  // 边界计算
-  double get minX => position.x - _halfSize.x;
-  double get maxX => position.x + _halfSize.x;
-  double get minY => position.y - _halfSize.y;
-  double get maxY => position.y + _halfSize.y;
-  double get minZ => position.z - _halfSize.z;
-  double get maxZ => position.z + _halfSize.z;
+  @override
+  Vector3 get position => center;
+
+  // 边界计算属性（直接使用继承的min/max）
+  double get minX => min.x;
+  double get maxX => max.x;
+  double get minY => min.y;
+  double get maxY => max.y;
+  double get minZ => min.z;
+  double get maxZ => max.z;
 
   @override
   bool checkCollision(Collider other) {
-    if (other is! BoxCollider) return false;
-
-    return (minX <= other.maxX && maxX >= other.minX) &&
-        (minY <= other.maxY && maxY >= other.minY) &&
-        (minZ <= other.maxZ && maxZ >= other.minZ);
+    if (other is BoxCollider) {
+      return intersects(other);
+    }
+    return false;
   }
 
   @override
   bool containsPoint(Vector3 point) {
-    return point.x >= minX &&
-        point.x <= maxX &&
-        point.y >= minY &&
-        point.y <= maxY &&
-        point.z >= minZ &&
-        point.z <= maxZ;
+    return contains(point);
   }
 
-  /// 计算与另一包围盒的重叠量
-  double _calculateOverlap(double min1, double max1, double min2, double max2) {
-    if (max1 <= min2 + Constants.epsilon || min1 >= max2 - Constants.epsilon) {
-      return 0;
-    }
-    final overlap1 = max1 - min2;
-    final overlap2 = max2 - min1;
-    return overlap1 < overlap2 ? -overlap1 : overlap2;
+  /// 检查是否包含整数点
+  bool containsIntPoint(Vector3Int point) {
+    return contains(point.toVector3());
   }
 
   /// 解析与另一碰撞体的碰撞
   Vector3 resolveCollision(BoxCollider other, Vector3 oldPosition) {
-    final overlapX = _calculateOverlap(minX, maxX, other.minX, other.maxX);
-    final overlapY = _calculateOverlap(minY, maxY, other.minY, other.maxY);
-    final overlapZ = _calculateOverlap(minZ, maxZ, other.minZ, other.maxZ);
-
-    // 选择最小重叠方向进行解析
-    if (overlapX.abs() <= overlapY.abs() && overlapX.abs() <= overlapZ.abs()) {
-      return Vector3(overlapX, 0, 0);
-    } else if (overlapY.abs() <= overlapX.abs() &&
-        overlapY.abs() <= overlapZ.abs()) {
-      return Vector3(0, overlapY, 0);
-    } else {
-      return Vector3(0, 0, overlapZ);
-    }
+    return calculateOverlap(other);
   }
 }

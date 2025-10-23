@@ -73,7 +73,7 @@ class Player {
     // 检测与方块的碰撞
     isGrounded = false;
     for (final block in blocks) {
-      if (block.penetrable) continue;
+      if (block.type.isPenetrate) continue;
 
       if (collider.checkCollision(block.collider)) {
         _handleCollision(block.collider, oldPosition);

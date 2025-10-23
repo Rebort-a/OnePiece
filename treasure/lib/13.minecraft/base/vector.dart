@@ -464,3 +464,125 @@ class Vector4 implements Vector<Vector4> {
   @override
   int get hashCode => Object.hash(x, y, z, w);
 }
+
+/// 四维整数向量
+class Vector4Int {
+  final int x, y, z, w;
+
+  /// 位置构造函数：初始化四维整数分量
+  const Vector4Int(this.x, this.y, this.z, this.w);
+
+  /// 工厂构造函数：创建所有分量相等的四维向量
+  factory Vector4Int.all(int value) => Vector4Int(value, value, value, value);
+
+  // -------------------------- 常用静态向量常量 --------------------------
+  /// 全零向量 (0, 0, 0, 0)
+  static const Vector4Int zero = Vector4Int(0, 0, 0, 0);
+
+  /// 全一向量 (1, 1, 1, 1)
+  static const Vector4Int one = Vector4Int(1, 1, 1, 1);
+
+  /// x轴正方向 (1, 0, 0, 0)
+  static const Vector4Int right = Vector4Int(1, 0, 0, 0);
+
+  /// x轴负方向 (-1, 0, 0, 0)
+  static const Vector4Int left = Vector4Int(-1, 0, 0, 0);
+
+  /// y轴正方向 (0, 1, 0, 0)
+  static const Vector4Int up = Vector4Int(0, 1, 0, 0);
+
+  /// y轴负方向 (0, -1, 0, 0)
+  static const Vector4Int down = Vector4Int(0, -1, 0, 0);
+
+  /// z轴正方向 (0, 0, 1, 0)
+  static const Vector4Int forwardZ = Vector4Int(0, 0, 1, 0);
+
+  /// z轴负方向 (0, 0, -1, 0)
+  static const Vector4Int backwardZ = Vector4Int(0, 0, -1, 0);
+
+  /// w轴正方向 (0, 0, 0, 1)
+  static const Vector4Int forwardW = Vector4Int(0, 0, 0, 1);
+
+  /// w轴负方向 (0, 0, 0, -1)
+  static const Vector4Int backwardW = Vector4Int(0, 0, 0, -1);
+
+  // -------------------------- 分量修改方法 --------------------------
+  /// 修改x分量，返回新向量
+  Vector4Int appointX(int newX) => Vector4Int(newX, y, z, w);
+
+  /// 修改y分量，返回新向量
+  Vector4Int appointY(int newY) => Vector4Int(x, newY, z, w);
+
+  /// 修改z分量，返回新向量
+  Vector4Int appointZ(int newZ) => Vector4Int(x, y, newZ, w);
+
+  /// 修改w分量，返回新向量
+  Vector4Int appointW(int newW) => Vector4Int(x, y, z, newW);
+
+  // -------------------------- 向量运算运算符 --------------------------
+  /// 向量加法：this + other
+  Vector4Int operator +(Vector4Int other) =>
+      Vector4Int(x + other.x, y + other.y, z + other.z, w + other.w);
+
+  /// 向量减法：this - other
+  Vector4Int operator -(Vector4Int other) =>
+      Vector4Int(x - other.x, y - other.y, z - other.z, w - other.w);
+
+  /// 标量乘法：向量 × 整数标量
+  Vector4Int operator *(int scalar) =>
+      Vector4Int(x * scalar, y * scalar, z * scalar, w * scalar);
+
+  /// 标量整数除法：向量 ÷ 整数标量（向下取整）
+  Vector4Int operator ~/(int scalar) =>
+      Vector4Int(x ~/ scalar, y ~/ scalar, z ~/ scalar, w ~/ scalar);
+
+  /// 负向量：-this
+  Vector4Int operator -() => Vector4Int(-x, -y, -z, -w);
+
+  // -------------------------- 向量属性计算 --------------------------
+  /// 模长的平方（避免开方，性能更优）
+  int get magnitudeSquare => x * x + y * y + z * z + w * w;
+
+  /// 向量模长（返回浮点型）
+  double get magnitude => math.sqrt(magnitudeSquare);
+
+  /// 单位化向量（返回四维浮点向量 Vector4）
+  Vector4 get normalized {
+    final mag = magnitude;
+    return mag > Vector.epsilon
+        ? Vector4(x / mag, y / mag, z / mag, w / mag)
+        : Vector4.zero;
+  }
+
+  // -------------------------- 向量运算方法 --------------------------
+  /// 与四维浮点向量 Vector4 的点积运算
+  double dot(Vector4 other) =>
+      x * other.x + y * other.y + z * other.z + w * other.w;
+
+  /// 转换为四维浮点向量 Vector4
+  Vector4 toVector4() =>
+      Vector4(x.toDouble(), y.toDouble(), z.toDouble(), w.toDouble());
+
+  // -------------------------- 工具属性与方法 --------------------------
+  /// 判断是否为零向量（所有分量均为0）
+  bool get isZero => x == 0 && y == 0 && z == 0 && w == 0;
+
+  /// 字符串格式化输出
+  @override
+  String toString() => 'Vector4Int($x, $y, $z, $w)';
+
+  /// 相等性判断（精确匹配整数分量）
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Vector4Int &&
+          runtimeType == other.runtimeType &&
+          x == other.x &&
+          y == other.y &&
+          z == other.z &&
+          w == other.w;
+
+  /// 哈希值计算（组合四个分量）
+  @override
+  int get hashCode => Object.hash(x, y, z, w);
+}

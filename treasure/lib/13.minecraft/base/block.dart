@@ -51,8 +51,8 @@ extension BlockTypeProperties on BlockType {
     BlockType.air: const Color(0x00000000), // 全透明（空气）
   }[this]!;
 
-  /// 是否为固体（是否占据物理空间）
-  bool get isSolid => this != BlockType.air;
+  bool get isPenetrate =>
+      [BlockType.air, BlockType.water, BlockType.leaf].contains(this);
 
   /// 是否透明（是否能透过看到后方）
   bool get isTransparent => [
@@ -117,7 +117,7 @@ class BlockFace {
   ]);
 }
 
-/// 游戏方块
+/// 方块
 class Block {
   final Vector3Int position;
   final BlockType type;
@@ -129,16 +129,14 @@ class Block {
   List<BlockFace>? _cachedVisibleFaces;
 
   Block({required this.position, required this.type})
-    : collider = BoxCollider(
-        position: position.toVector3(),
-        size: Vector3.all(Constants.blockSize),
+    : collider = BoxCollider.fromInt(
+        position: position,
+        size: Vector3Int.all(Constants.blockSize),
       ),
       vertices = _calculateVertices(position),
       _faces = _initializeFaces(position, _calculateVertices(position)) {
     // 初始化时计算一次所有面的中心点，避免重复计算
   }
-
-  bool get penetrable => type == BlockType.air;
 
   static List<Vector3> _calculateVertices(Vector3Int position) {
     final half = Constants.blockSizeHalf;
@@ -160,23 +158,14 @@ class Block {
     Vector3Int position,
     List<Vector3> vertices,
   ) {
+    final blockCenter = position.toVector3();
+    final half = Constants.blockSizeHalf;
+
     return BlockFace._faceTemplates.map((template) {
-      // 计算当前面的中心点
-      final center = _calculateFaceCenter(vertices, template.indices);
+      // 面中心 = 方块中心 + 法向量 × 半边长（法向量已包含方向信息）
+      final center = blockCenter + template.normal * half;
       return BlockFace(template.indices, template.normal, center);
     }).toList();
-  }
-
-  // 计算单个面的中心点
-  static Vector3 _calculateFaceCenter(
-    List<Vector3> vertices,
-    List<int> indices,
-  ) {
-    Vector3 sum = Vector3.zero;
-    for (final index in indices) {
-      sum += vertices[index];
-    }
-    return sum / indices.length.toDouble();
   }
 
   /// 获取可见的面（剔除背向相机的面）
@@ -187,7 +176,11 @@ class Block {
 
     _lastCameraPosition = cameraPosition;
 
-    if (penetrable) return [];
+    // 透明方块不进行背面剔除，返回所有面
+    if (type.isTransparent) {
+      _cachedVisibleFaces = _faces;
+      return _faces;
+    }
 
     final result = _faces.where((face) {
       // 使用预计算的面中心点和法向量进行可见性判断
@@ -198,4 +191,6 @@ class Block {
     _cachedVisibleFaces = result;
     return result;
   }
+
+  List<BlockFace> get faces => _faces;
 }

@@ -56,8 +56,8 @@ class ControlManager {
       _lastTouchPos = details.localPosition;
 
       player.rotateView(
-        -delta.dx * Constants.touchSensitivity,
-        delta.dy * Constants.touchSensitivity,
+        delta.dx * Constants.touchSensitivity,
+        -delta.dy * Constants.touchSensitivity,
       );
     }
   }

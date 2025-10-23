@@ -228,7 +228,7 @@ class Matrix {
   }
 
   // 在 Matrix 类中添加正确的左手坐标系视图矩阵
-  static Matrix lookAtLH(Vector3 eye, Vector3 target, Vector3 up) {
+  static Matrix lookAtLH(Vector3 eye, Vector3 target, Vector3Unit up) {
     final forward = (target - eye).normalized; // z轴（向里）
     final right = up.cross(forward).normalized; // x轴（向右）
     final newUp = forward.cross(right).normalized; // y轴（向上）
@@ -270,5 +270,145 @@ class Matrix {
       0, 0, range, 1,
       0, 0, -range * near, 0,
     ]);
+  }
+}
+
+/// 4x4 整数矩阵（列主序存储）
+/// 适用于整数精度的坐标变换、网格计算等场景
+class MatrixInt {
+  // 存储4x4矩阵元素（列主序：[c0r0, c0r1, c0r2, c0r3, c1r0, ..., c3r3]）
+  final List<int> _values;
+
+  // -------------------------- 构造函数 --------------------------
+  /// 全零矩阵
+  MatrixInt.zero() : _values = List.filled(16, 0);
+
+  /// 单位矩阵（对角线为1，其余为0）
+  MatrixInt.identity() : _values = List.filled(16, 0) {
+    _values[0] = 1; // c0r0
+    _values[5] = 1; // c1r1
+    _values[10] = 1; // c2r2
+    _values[15] = 1; // c3r3
+  }
+
+  /// 从整数列表初始化矩阵（不足16个元素补0，超出部分忽略）
+  MatrixInt.fromList(List<int> list) : _values = List.filled(16, 0) {
+    final copyLength = list.length < 16 ? list.length : 16;
+    for (int i = 0; i < copyLength; i++) {
+      _values[i] = list[i];
+    }
+  }
+
+  // -------------------------- 元素访问 --------------------------
+  /// 通过索引访问元素（0-15，列主序）
+  int operator [](int index) => _values[index];
+
+  /// 通过索引设置元素（0-15，列主序）
+  void operator []=(int index, int value) => _values[index] = value;
+
+  /// 通过列和行访问元素（column: 0-3, row: 0-3）
+  int getColumnRow(int column, int row) => _values[column * 4 + row];
+
+  /// 通过列和行设置元素（column: 0-3, row: 0-3）
+  void setColumnRow(int column, int row, int value) =>
+      _values[column * 4 + row] = value;
+
+  // -------------------------- 矩阵运算 --------------------------
+  /// 矩阵乘法（this * other，结果为整数矩阵）
+  /// 注意：整数乘法可能导致溢出，需自行确保数值范围
+  MatrixInt multiply(MatrixInt other) {
+    final result = MatrixInt.zero();
+    for (int col = 0; col < 4; col++) {
+      for (int row = 0; row < 4; row++) {
+        int sum = 0;
+        for (int i = 0; i < 4; i++) {
+          sum += getColumnRow(i, row) * other.getColumnRow(col, i);
+        }
+        result.setColumnRow(col, row, sum);
+      }
+    }
+    return result;
+  }
+
+  /// 与三维整数向量相乘（齐次坐标 w=1，结果为整数向量）
+  /// 适用于整数坐标变换（无透视除法，直接取整数结果）
+  Vector3Int multiplyVector3Int(Vector3Int vector) {
+    final x =
+        vector.x * _values[0] +
+        vector.y * _values[4] +
+        vector.z * _values[8] +
+        1 * _values[12];
+    final y =
+        vector.x * _values[1] +
+        vector.y * _values[5] +
+        vector.z * _values[9] +
+        1 * _values[13];
+    final z =
+        vector.x * _values[2] +
+        vector.y * _values[6] +
+        vector.z * _values[10] +
+        1 * _values[14];
+    // 整数矩阵通常用于仿射变换（无透视），故不做除法
+    return Vector3Int(x, y, z);
+  }
+
+  /// 转置矩阵（行和列互换）
+  MatrixInt transpose() {
+    final result = MatrixInt.zero();
+    for (int col = 0; col < 4; col++) {
+      for (int row = 0; row < 4; row++) {
+        result.setColumnRow(row, col, getColumnRow(col, row));
+      }
+    }
+    return result;
+  }
+
+  // -------------------------- 常用变换矩阵 --------------------------
+  /// 生成整数平移矩阵（基于三维整数偏移量）
+  static MatrixInt translation(Vector3Int offset) {
+    final mat = MatrixInt.identity();
+    mat.setColumnRow(3, 0, offset.x); // 平移X
+    mat.setColumnRow(3, 1, offset.y); // 平移Y
+    mat.setColumnRow(3, 2, offset.z); // 平移Z
+    return mat;
+  }
+
+  /// 生成整数缩放矩阵（基于三维整数缩放因子）
+  static MatrixInt scaling(Vector3Int scale) {
+    final mat = MatrixInt.identity();
+    mat.setColumnRow(0, 0, scale.x); // X轴缩放
+    mat.setColumnRow(1, 1, scale.y); // Y轴缩放
+    mat.setColumnRow(2, 2, scale.z); // Z轴缩放
+    return mat;
+  }
+
+  Vector4Int multiplyVector4Int(Vector4Int v) {
+    final x =
+        v.x * _values[0] +
+        v.y * _values[4] +
+        v.z * _values[8] +
+        v.w * _values[12];
+    final y =
+        v.x * _values[1] +
+        v.y * _values[5] +
+        v.z * _values[9] +
+        v.w * _values[13];
+    final z =
+        v.x * _values[2] +
+        v.y * _values[6] +
+        v.z * _values[10] +
+        v.w * _values[14];
+    final w =
+        v.x * _values[3] +
+        v.y * _values[7] +
+        v.z * _values[11] +
+        v.w * _values[15];
+    return Vector4Int(x, y, z, w);
+  }
+
+  // -------------------------- 工具方法 --------------------------
+  /// 转换为浮点矩阵（用于需要浮点运算的场景）
+  Matrix toMatrix() {
+    return Matrix.fromList(_values.map((v) => v.toDouble()).toList());
   }
 }

@@ -89,9 +89,24 @@ class WorldGenerator {
 
   /// 简化噪声计算
   int _calculateTerrainHeight(int worldX, int worldZ) {
-    final noise1 = _simpleNoise(worldX * 0.01, worldZ * 0.01) * 8;
-    final noise2 = _simpleNoise(worldX * 0.05, worldZ * 0.05) * 4;
-    final noise3 = _simpleNoise(worldX * 0.1, worldZ * 0.1) * 2;
+    final noise1 =
+        _simpleNoise(
+          worldX * Constants.terrainNoiseScale1,
+          worldZ * Constants.terrainNoiseScale1,
+        ) *
+        Constants.terrainNoiseAmplitude1;
+    final noise2 =
+        _simpleNoise(
+          worldX * Constants.terrainNoiseScale2,
+          worldZ * Constants.terrainNoiseScale2,
+        ) *
+        Constants.terrainNoiseAmplitude2;
+    final noise3 =
+        _simpleNoise(
+          worldX * Constants.terrainNoiseScale3,
+          worldZ * Constants.terrainNoiseScale3,
+        ) *
+        Constants.terrainNoiseAmplitude3;
 
     final totalHeight = (noise1 + noise2 + noise3).round();
     return totalHeight.clamp(
@@ -103,7 +118,10 @@ class WorldGenerator {
   /// 轻量噪声函数
   static double _simpleNoise(double x, double z) {
     // 简化哈希计算，减少位运算
-    final seed = ((x * 73856093).toInt() ^ (z * 19349663).toInt()) & 0x7FFFFFFF;
+    final seed =
+        ((x * Constants.noiseHashMultiplier1).toInt() ^
+            (z * Constants.noiseHashMultiplier2).toInt()) &
+        Constants.maxRandomSeed;
     final random = math.Random(seed);
     return random.nextDouble() * 2 - 1;
   }
@@ -132,10 +150,19 @@ class WorldGenerator {
 
     // 树冠
     final canopyStartY = baseY + trunkHeight;
-    for (int xOffset = -2; xOffset <= 2; xOffset++) {
-      for (int zOffset = -2; zOffset <= 2; zOffset++) {
-        for (int yOffset = 0; yOffset < 3; yOffset++) {
-          if ((xOffset.abs() + zOffset.abs() + yOffset) <= 3) {
+    for (
+      int xOffset = -Constants.treeCanopyRadius;
+      xOffset <= Constants.treeCanopyRadius;
+      xOffset++
+    ) {
+      for (
+        int zOffset = -Constants.treeCanopyRadius;
+        zOffset <= Constants.treeCanopyRadius;
+        zOffset++
+      ) {
+        for (int yOffset = 0; yOffset < Constants.treeCanopyHeight; yOffset++) {
+          if ((xOffset.abs() + zOffset.abs() + yOffset) <=
+              Constants.treeCanopyDensity) {
             chunk.addBlock(
               Block(
                 position: Vector3Int(

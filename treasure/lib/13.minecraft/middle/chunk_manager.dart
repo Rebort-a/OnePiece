@@ -7,18 +7,17 @@ import '../base/constant.dart';
 import '../base/vector.dart';
 import 'world_generator.dart';
 
-/// 区块管理器 - 添加加载优化
+/// 区块管理器
 class ChunkManager {
   static const int distance = Constants.renderChunkDistance;
   static const int distanceSquare = distance * distance;
-
+  final Map<Vector3Int, Chunk> _archivedBlocks = HashMap();
   final Map<Vector3Int, Chunk> _loadedChunks = HashMap();
   final Queue<Vector3Int> _chunkLoadQueue = Queue();
   late final WorldGenerator _worldGenerator;
 
   // 性能优化
   Vector3Int _lastPlayerChunk = Vector3Int.zero;
-  int _framesSinceLastUpdate = 0;
 
   ChunkManager() {
     _worldGenerator = WorldGenerator(math.Random().nextInt(1000));
@@ -32,58 +31,41 @@ class ChunkManager {
     );
   }
 
-  /// 优化区块更新频率
+  /// 区块更新
   void updateChunks(Vector3 playerPos) {
     final playerChunk = getChunkCoord(playerPos);
 
-    // 每4帧检查一次区块更新，减少CPU开销
-    _framesSinceLastUpdate++;
-    if (_framesSinceLastUpdate < 4 &&
-        (playerChunk - _lastPlayerChunk).magnitudeSquare < 4) {
+    if (playerChunk == _lastPlayerChunk) {
       return;
     }
 
-    _framesSinceLastUpdate = 0;
     _lastPlayerChunk = playerChunk;
 
-    _unloadDistantChunks(playerChunk);
-    _loadChunksAroundPlayer(playerChunk);
-  }
+    // 生成需要保留的区块列表（按加载优先级排序）
+    final aroundChunks = _getAroundChunks(playerChunk);
 
-  /// 卸载远处区块
-  void _unloadDistantChunks(Vector3Int playerChunk) {
-    final chunksToRemove = <Vector3Int>[];
-    for (final chunkCoord in _loadedChunks.keys) {
-      final dx = (chunkCoord.x - playerChunk.x).abs();
-      final dz = (chunkCoord.z - playerChunk.z).abs();
-
-      if (dx > distance || dz > distance) {
-        chunksToRemove.add(chunkCoord);
-      }
-    }
-    for (final coord in chunksToRemove) {
+    // 1. 卸载不在需要保留列表中的区块
+    final chunksToUnload = _loadedChunks.keys
+        .where((coord) => !aroundChunks.contains(coord))
+        .toList();
+    for (final coord in chunksToUnload) {
       _loadedChunks.remove(coord);
     }
-  }
 
-  /// 加载周围区块（优化加载顺序）
-  void _loadChunksAroundPlayer(Vector3Int playerChunk) {
-    // 优先加载玩家前方的区块
-    final loadOrder = _getChunkLoadOrder(playerChunk);
-
-    for (final chunkCoord in loadOrder) {
+    // 2. 加载需要但未加载的区块
+    for (final chunkCoord in aroundChunks) {
       if (!_loadedChunks.containsKey(chunkCoord) &&
           !_chunkLoadQueue.contains(chunkCoord)) {
-        _scheduleChunkLoad(chunkCoord);
+        _chunkLoadQueue.addLast(chunkCoord);
       }
     }
   }
 
-  /// 获取区块加载顺序（玩家前方优先）
-  List<Vector3Int> _getChunkLoadOrder(Vector3Int playerChunk) {
-    final chunks = <Vector3Int>[];
+  /// 获取玩家周围区块
+  Set<Vector3Int> _getAroundChunks(Vector3Int playerChunk) {
+    final Set<Vector3Int> chunks = {};
 
-    // 按距离和方向排序
+    // 一次遍历生成所有在距离范围内的区块
     for (int x = -distance; x <= distance; x++) {
       for (int z = -distance; z <= distance; z++) {
         for (int y = -distance; y <= distance; y++) {
@@ -93,70 +75,39 @@ class ChunkManager {
             playerChunk.z + z,
           );
 
-          // 计算到玩家的距离（用于排序）
-          final distanceSq = (chunkCoord - playerChunk).magnitudeSquare;
-          if (distanceSq <= distanceSquare) {
-            chunks.add(chunkCoord);
-          }
+          chunks.add(chunkCoord);
         }
       }
     }
 
-    // 按距离排序，近的优先
-    chunks.sort((a, b) {
-      final distA = (a - playerChunk).magnitudeSquare;
-      final distB = (b - playerChunk).magnitudeSquare;
-      return distA.compareTo(distB);
-    });
-
     return chunks;
   }
 
-  /// 调度区块加载
-  void _scheduleChunkLoad(Vector3Int chunkCoord) {
-    if (!_chunkLoadQueue.contains(chunkCoord)) {
-      _chunkLoadQueue.addLast(chunkCoord);
-    }
-  }
-
-  /// 处理加载队列（每帧限制数量）
+  /// 处理加载队列
   void processLoadQueue() {
-    // 每帧最多加载1个区块，避免卡顿
+    // 每次最多加载1个区块，避免卡顿
     if (_chunkLoadQueue.isNotEmpty) {
       final chunkCoord = _chunkLoadQueue.removeFirst();
       _loadChunk(chunkCoord);
     }
   }
 
-  /// 检查是否有待加载区块
-  bool get hasPendingChunks => _chunkLoadQueue.isNotEmpty;
-
   /// 加载单个区块
   void _loadChunk(Vector3Int chunkCoord) {
     if (!_loadedChunks.containsKey(chunkCoord)) {
-      final chunk = Chunk(chunkCoord);
-      _worldGenerator.generateChunk(chunk);
-      _loadedChunks[chunkCoord] = chunk;
-    }
-  }
-
-  /// 获取渲染范围内的区块
-  List<Chunk> getChunksInRenderRange(Vector3 playerPos) {
-    final playerChunk = getChunkCoord(playerPos);
-    final chunks = <Chunk>[];
-
-    for (final chunk in _loadedChunks.values) {
-      if ((chunk.chunkCoord - playerChunk).magnitudeSquare <= distanceSquare) {
-        chunks.add(chunk);
+      if (_archivedBlocks.containsKey(chunkCoord)) {
+        _loadedChunks[chunkCoord] = _archivedBlocks[chunkCoord]!;
+      } else {
+        final chunk = Chunk(chunkCoord);
+        _worldGenerator.generateChunk(chunk);
+        _archivedBlocks[chunkCoord] = chunk;
+        _loadedChunks[chunkCoord] = chunk;
       }
     }
-    return chunks;
   }
 
   /// 获取玩家附近方块
   List<Block> getBlocksNearPlayer(Vector3 playerPos, double radius) {
-    final chunks = getChunksInRenderRange(playerPos);
-
     final min = Vector3(
       playerPos.x - radius,
       playerPos.y - radius,
@@ -169,11 +120,14 @@ class ChunkManager {
     );
 
     final List<Block> blocks = [];
-    for (final chunk in chunks) {
+    for (final chunk in _loadedChunks.values) {
       final chunkBlocks = chunk.octree.queryRange(min, max);
       blocks.addAll(chunkBlocks);
     }
 
     return blocks;
   }
+
+  /// 检查是否有待加载区块
+  bool get hasPendingChunks => _chunkLoadQueue.isNotEmpty;
 }

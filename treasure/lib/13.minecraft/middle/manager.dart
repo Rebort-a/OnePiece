@@ -58,10 +58,6 @@ class Manager with ChangeNotifier implements TickerProvider {
 
     // 更新玩家输入
     _controlManager.updatePlayerMovement(deltaTime);
-    // 更新区块加载状态
-    _chunkManager.updateChunks(_player.position);
-    // 分批处理加载队列
-    _chunkManager.processLoadQueue();
 
     // 获取碰撞检测所需方块
     final nearbyBlocks = _chunkManager.getBlocksNearPlayer(
@@ -70,15 +66,21 @@ class Manager with ChangeNotifier implements TickerProvider {
     );
     _player.update(deltaTime, nearbyBlocks);
 
-    // 恢复旧版的更新阈值，减少无效渲染更新
-    if (_shouldUpdateRenderState()) {
-      _updateVisibleBlocks();
-    }
+    // 分批处理加载队列
+    _chunkManager.processLoadQueue();
 
-    notifyListeners();
+    // 恢复旧版的更新阈值，减少无效渲染更新
+    if (_shouldUpdate()) {
+      // 更新区块加载状态
+      _chunkManager.updateChunks(_player.position);
+
+      _updateVisibleBlocks();
+
+      notifyListeners();
+    }
   }
 
-  bool _shouldUpdateRenderState() {
+  bool _shouldUpdate() {
     return !(_lastInfo.position == _player.position) ||
         !(_lastInfo.orientation == _player.orientation);
   }

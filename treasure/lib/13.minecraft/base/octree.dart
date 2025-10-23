@@ -198,10 +198,9 @@ class OctreeNode {
       totalBlocks += child._blocks.length;
     }
 
-    final mergeThreshold = (maxBlocksPerNode / 3).ceil().clamp(
-      1,
-      maxBlocksPerNode,
-    );
+    final mergeThreshold = (maxBlocksPerNode / Constants.mergeThresholdDivisor)
+        .ceil()
+        .clamp(Constants.mergeThresholdMin, maxBlocksPerNode);
     if (totalBlocks <= mergeThreshold) {
       _merge();
     }

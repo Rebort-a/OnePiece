@@ -9,13 +9,19 @@ class AABB {
 
   AABB(this.min, this.max);
 
-  /// 从方块位置创建AABB
+  /// 从坐标位置创建AABB
   factory AABB.fromBlockPosition(Vector3 position) {
     final halfSize = Constants.blockSizeHalf;
     return AABB(
       position - Vector3.all(halfSize),
       position + Vector3.all(halfSize),
     );
+  }
+
+  /// 从中心点和尺寸创建 AABB
+  factory AABB.fromCenterAndSize(Vector3 center, Vector3 size) {
+    final halfSize = size * 0.5;
+    return AABB(center - halfSize, center + halfSize);
   }
 
   /// 检查与另一AABB是否相交
@@ -63,6 +69,53 @@ class AABB {
         math.max(max.z, point.z),
       ),
     );
+  }
+
+  /// 计算与另一AABB的重叠量
+  double _calculateAxisOverlap(
+    double min1,
+    double max1,
+    double min2,
+    double max2,
+  ) {
+    if (max1 <= min2 + Constants.epsilon || min1 >= max2 - Constants.epsilon) {
+      return 0;
+    }
+    final overlap1 = max1 - min2;
+    final overlap2 = max2 - min1;
+    return overlap1 < overlap2 ? -overlap1 : overlap2;
+  }
+
+  /// 计算与另一AABB的重叠向量
+  Vector3 calculateOverlap(AABB other) {
+    final overlapX = _calculateAxisOverlap(
+      min.x,
+      max.x,
+      other.min.x,
+      other.max.x,
+    );
+    final overlapY = _calculateAxisOverlap(
+      min.y,
+      max.y,
+      other.min.y,
+      other.max.y,
+    );
+    final overlapZ = _calculateAxisOverlap(
+      min.z,
+      max.z,
+      other.min.z,
+      other.max.z,
+    );
+
+    // 选择最小重叠方向
+    if (overlapX.abs() <= overlapY.abs() && overlapX.abs() <= overlapZ.abs()) {
+      return Vector3(overlapX, 0, 0);
+    } else if (overlapY.abs() <= overlapX.abs() &&
+        overlapY.abs() <= overlapZ.abs()) {
+      return Vector3(0, overlapY, 0);
+    } else {
+      return Vector3(0, 0, overlapZ);
+    }
   }
 
   @override
