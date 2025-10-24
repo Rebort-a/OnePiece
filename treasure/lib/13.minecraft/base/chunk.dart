@@ -5,9 +5,9 @@ import 'octree.dart';
 
 /// 区块类
 class Chunk {
-  static const int chunkSize = Constants.chunkSize; // 区块边长（固定16）
-  final Vector3Int chunkCoord; // 区块坐标（如(0,0,0)、(1,0,0)等）
-  final BlockOctree octree; // 区块内的八叉树（范围与区块匹配）
+  static const int chunkSize = Constants.chunkSize;
+  final Vector3Int chunkCoord;
+  final BlockOctree octree;
 
   Chunk(this.chunkCoord)
     : octree = BlockOctree(
@@ -21,7 +21,7 @@ class Chunk {
         minHalfSize: Constants.minHalfSize,
       );
 
-  /// 添加方块到区块（直接操作八叉树，避免数据不一致）
+  /// 添加方块到区块
   bool addBlock(Block block) {
     // 检查方块是否在当前区块范围内
     final worldMin = Vector3Int(

@@ -179,12 +179,13 @@ class OctreeNode {
 
   /// 检查点是否在范围内
   bool _isPointInRange(Vector3Int point, Vector3 min, Vector3 max) {
-    return point.x >= min.x &&
-        point.x <= max.x &&
-        point.y >= min.y &&
-        point.y <= max.y &&
-        point.z >= min.z &&
-        point.z <= max.z;
+    final position = point.toVector3();
+    return position.x >= min.x &&
+        position.x <= max.x &&
+        position.y >= min.y &&
+        position.y <= max.y &&
+        position.z >= min.z &&
+        position.z <= max.z;
   }
 
   /// 尝试合并子节点

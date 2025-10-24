@@ -1,94 +1,154 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../base/aabb.dart';
 import '../base/block.dart';
 import '../base/constant.dart';
+import '../base/face_merger.dart';
 import '../base/matrix.dart';
+import '../base/occlusion_culler.dart';
 import '../base/vector.dart';
+import '../base/frustum.dart';
 import '../middle/common.dart';
 
 /// 渲染调试配置
 class RenderDebugConfig {
-  /// 是否启用近裁剪面剔除
+  /// 近裁剪面剔除
   bool enableNearClip = true;
 
-  /// 是否启用背面剔除
+  /// 背面剔除
   bool enableBackfaceCulling = true;
 
-  /// 是否启用深度排序
+  /// 深度排序
   bool enableDepthSorting = true;
 
-  /// 是否启用屏幕裁剪
+  /// 屏幕裁剪
   bool enableScreenClipping = true;
 
-  /// 是否显示调试信息
-  bool showDebugInfo = false;
+  /// 视锥体裁剪
+  bool enableFrustumCulling = true;
 
-  /// 是否显示面法向量
+  /// 遮挡剔除
+  bool enableOcclusionCulling = true;
+
+  // 合并渲染
+  bool enableFaceMerging = true;
+
+  /// 调试信息
+  bool showDebugInfo = true;
+
+  /// 面法向量
   bool showFaceNormals = false;
 
-  /// 是否显示顶点坐标
+  /// 顶点坐标
   bool showVertexPositions = false;
+
+  /// 视锥体
+  bool showFrustum = false;
 }
 
-/// 场景渲染器（重构版）
+/// 场景渲染器
 class ScenePainter extends CustomPainter {
   final SceneInfo sceneInfo;
   final String debugInfo;
-  final RenderDebugConfig debugConfig;
+  final OcclusionCuller occlusionCuller;
+  late Frustum _frustum;
+  final RenderDebugConfig debugConfig = RenderDebugConfig();
 
-  ScenePainter(this.sceneInfo, this.debugInfo, {RenderDebugConfig? debugConfig})
-    : debugConfig = debugConfig ?? RenderDebugConfig();
+  ScenePainter(this.sceneInfo, this.debugInfo)
+    : occlusionCuller = OcclusionCuller() {
+    _updateFrustum(Size(800, 600));
+  }
+
+  int _totalBlocks = 0;
+  int _frustumCulled = 0;
+  int _occlusionCulled = 0;
+  int _renderedFaces = 0;
+  int _mergedFaces = 0;
 
   @override
   void paint(Canvas canvas, Size size) {
+    _resetStats();
+    _updateFrustum(size);
+    _updateOcclusionCuller();
+
     _renderScene(canvas, size);
   }
 
   @override
   bool shouldRepaint(covariant ScenePainter oldDelegate) {
     return oldDelegate.sceneInfo.position != sceneInfo.position ||
-        oldDelegate.sceneInfo.orientation != sceneInfo.orientation ||
-        oldDelegate.debugConfig != debugConfig;
+        oldDelegate.sceneInfo.orientation != sceneInfo.orientation;
   }
 
-  // ===========================================================================
-  // 主渲染流程
-  // ===========================================================================
-
-  /// 主渲染入口
   void _renderScene(Canvas canvas, Size size) {
-    // 步骤1: 绘制天空背景
     _drawSkyBackground(canvas, size);
-
-    // 步骤2: 渲染所有3D几何体
     _render3DGeometry(canvas, size);
 
-    // 步骤3: 绘制调试信息
     if (debugConfig.showDebugInfo) {
       _drawDebugOverlay(canvas, size);
     } else {
       _drawPositionDisplay(canvas, size);
     }
-  }
 
-  /// 渲染3D几何体
-  void _render3DGeometry(Canvas canvas, Size size) {
-    // 2.1 获取可见方块
-    final visibleBlocks = _getVisibleBlocks();
-    if (visibleBlocks.isEmpty) return;
-
-    // 2.2 深度排序
-    final sortedBlocks = _sortBlocksByDepth(visibleBlocks);
-
-    // 2.3 渲染每个方块
-    for (final block in sortedBlocks) {
-      _renderSingleBlock(canvas, size, block);
+    if (debugConfig.showFrustum) {
+      _drawFrustum(canvas, size);
     }
   }
 
-  // ===========================================================================
-  // 步骤1: 背景渲染
-  // ===========================================================================
+  void _resetStats() {
+    _totalBlocks = 0;
+    _frustumCulled = 0;
+    _occlusionCulled = 0;
+    _renderedFaces = 0;
+    _mergedFaces = 0;
+  }
+
+  void _updateFrustum(Size size) {
+    final viewMatrix = Matrix.lookAtLH(
+      sceneInfo.position,
+      sceneInfo.position + sceneInfo.orientation.normalized,
+      Vector3Unit.up,
+    );
+    final projectionMatrix = Matrix.perspectiveLH(
+      Constants.fieldOfView * math.pi / 180,
+      size.width / size.height,
+      Constants.nearClip,
+      Constants.farClip,
+    );
+    final vpMatrix = projectionMatrix.multiply(viewMatrix);
+    _frustum = Frustum.fromViewProjectionMatrix(vpMatrix);
+  }
+
+  void _updateOcclusionCuller() {
+    occlusionCuller.clear();
+
+    // 改进的遮挡物选择策略
+    final potentialOccluders = sceneInfo.blocks.where((block) {
+      final blockPos = block.position.toVector3();
+      final toBlock = blockPos - sceneInfo.position;
+      final distance = toBlock.magnitudeSquare;
+
+      // 1. 距离检查：选择渲染距离内的方块
+      if (distance > Constants.renderDistance * 0.8) {
+        return false;
+      }
+
+      // 2. 方向检查：放宽条件，允许部分前方的方块作为遮挡物
+      final dotProduct = toBlock.dot(sceneInfo.orientation.normalized);
+
+      return dotProduct > -1.0;
+    }).toList();
+
+    final selectedOccluders = potentialOccluders.take(32).toList();
+
+    for (final block in selectedOccluders) {
+      final aabb = AABB(
+        block.position.toVector3() - Vector3.all(Constants.blockSizeHalf),
+        block.position.toVector3() + Vector3.all(Constants.blockSizeHalf),
+      );
+      occlusionCuller.addOccluder(aabb);
+    }
+  }
 
   /// 绘制天空背景
   void _drawSkyBackground(Canvas canvas, Size size) {
@@ -107,23 +167,85 @@ class ScenePainter extends CustomPainter {
     );
   }
 
-  // ===========================================================================
-  // 步骤2: 可见性处理
-  // ===========================================================================
+  void _render3DGeometry(Canvas canvas, Size size) {
+    final visibleBlocks = _getVisibleBlocks();
+    if (visibleBlocks.isEmpty) return;
 
-  /// 获取可见方块（应用近裁剪面剔除）
-  List<Block> _getVisibleBlocks() {
-    return sceneInfo.blocks.where((block) {
-      if (!debugConfig.enableNearClip) return true;
-
-      // 近裁剪面剔除：检查方块是否在近裁剪面之后
-      final relativePos = block.position.toVector3() - sceneInfo.position;
-      final viewSpacePos = _transformToViewSpace(relativePos);
-      return viewSpacePos.z + Constants.blockSizeHalf > Constants.nearClip;
-    }).toList();
+    if (debugConfig.enableFaceMerging) {
+      _renderWithFaceMerging(canvas, size, visibleBlocks);
+    } else {
+      _renderIndividualBlocks(canvas, size, visibleBlocks);
+    }
   }
 
-  /// 按深度排序方块（从远到近）
+  void _renderWithFaceMerging(Canvas canvas, Size size, List<Block> blocks) {
+    // 合并面
+    final mergedFaces = FaceMerger.mergeFaces(blocks, sceneInfo.position);
+    _mergedFaces = mergedFaces.length;
+
+    // 深度排序
+    final sortedFaces = _sortMergedFacesByDepth(mergedFaces);
+
+    // 渲染合并后的面
+    for (final face in sortedFaces) {
+      _renderMergedFace(canvas, size, face);
+      _renderedFaces++;
+    }
+  }
+
+  void _renderIndividualBlocks(Canvas canvas, Size size, List<Block> blocks) {
+    final sortedBlocks = _sortBlocksByDepth(blocks);
+
+    for (final block in sortedBlocks) {
+      _renderSingleBlock(canvas, size, block);
+    }
+  }
+
+  List<Block> _getVisibleBlocks() {
+    _totalBlocks = sceneInfo.blocks.length;
+    final List<Block> visibleBlocks = [];
+
+    for (final block in sceneInfo.blocks) {
+      final blockAABB = AABB(
+        block.position.toVector3() - Vector3.all(Constants.blockSizeHalf),
+        block.position.toVector3() + Vector3.all(Constants.blockSizeHalf),
+      );
+
+      // 视锥体裁剪
+      if (debugConfig.enableFrustumCulling) {
+        if (!_frustum.intersectsAABB(blockAABB)) {
+          _frustumCulled++;
+          continue;
+        }
+      }
+
+      // 遮挡剔除
+      if (debugConfig.enableOcclusionCulling) {
+        final occlusionResult = occlusionCuller.checkOcclusion(
+          blockAABB,
+          sceneInfo.position,
+        );
+
+        if (occlusionResult == OcclusionResult.occluded) {
+          _occlusionCulled++;
+          continue;
+        }
+      }
+
+      if (debugConfig.enableNearClip) {
+        final relativePos = block.position.toVector3() - sceneInfo.position;
+        final viewSpacePos = _transformToViewSpace(relativePos);
+        if (viewSpacePos.z + Constants.blockSizeHalf <= Constants.nearClip) {
+          continue;
+        }
+      }
+
+      visibleBlocks.add(block);
+    }
+
+    return visibleBlocks;
+  }
+
   List<Block> _sortBlocksByDepth(List<Block> blocks) {
     if (!debugConfig.enableDepthSorting) return blocks;
 
@@ -132,34 +254,51 @@ class ScenePainter extends CustomPainter {
           (a.position.toVector3() - sceneInfo.position).magnitudeSquare;
       final distB =
           (b.position.toVector3() - sceneInfo.position).magnitudeSquare;
-      return distB.compareTo(distA); // 远到近排序
+      return distB.compareTo(distA);
     });
     return blocks;
   }
 
-  // ===========================================================================
-  // 步骤3: 单个方块渲染
-  // ===========================================================================
+  List<MergedFace> _sortMergedFacesByDepth(List<MergedFace> faces) {
+    if (!debugConfig.enableDepthSorting) return faces;
 
-  /// 渲染单个方块
+    faces.sort((a, b) {
+      final distA = (a.bounds.center - sceneInfo.position).magnitudeSquare;
+      final distB = (b.bounds.center - sceneInfo.position).magnitudeSquare;
+      return distB.compareTo(distA);
+    });
+    return faces;
+  }
+
+  void _renderMergedFace(Canvas canvas, Size size, MergedFace face) {
+    final screenVertices = face.vertices
+        .map((vertex) => _project3DTo2D(vertex, size))
+        .where((vertex) => vertex != Offset.infinite)
+        .toList();
+
+    if (screenVertices.length < 3) return;
+
+    final clippedVertices = _clipToScreenBounds(screenVertices, size);
+    if (clippedVertices.length < 3) return;
+
+    _drawPolygonFace(canvas, face.blockType, clippedVertices, face.normal);
+  }
+
   void _renderSingleBlock(Canvas canvas, Size size, Block block) {
-    // 3.1 获取可见面
     final visibleFaces = _getVisibleFaces(block);
     if (visibleFaces.isEmpty) return;
 
-    // 3.2 按深度排序面
     final sortedFaces = _sortFacesByDepth(
       visibleFaces,
       block.position.toVector3(),
     );
 
-    // 3.3 渲染每个面
     for (final face in sortedFaces) {
       _renderBlockFace(canvas, size, block, face);
+      _renderedFaces++;
     }
   }
 
-  /// 获取可见面（应用背面剔除）
   List<BlockFace> _getVisibleFaces(Block block) {
     if (!debugConfig.enableBackfaceCulling) {
       return block.faces;
@@ -168,7 +307,6 @@ class ScenePainter extends CustomPainter {
     }
   }
 
-  /// 按深度排序面
   List<BlockFace> _sortFacesByDepth(
     List<BlockFace> faces,
     Vector3 blockPosition,
@@ -178,44 +316,28 @@ class ScenePainter extends CustomPainter {
     faces.sort((a, b) {
       final depthA = _calculateFaceDepth(a, blockPosition);
       final depthB = _calculateFaceDepth(b, blockPosition);
-      return depthB.compareTo(depthA); // 远到近排序
+      return depthB.compareTo(depthA);
     });
     return faces;
   }
 
-  /// 计算面深度
   double _calculateFaceDepth(BlockFace face, Vector3 blockPosition) {
     return (face.center - sceneInfo.position).magnitudeSquare;
   }
 
-  // ===========================================================================
-  // 步骤4: 单个面渲染
-  // ===========================================================================
-
-  /// 渲染方块面
   void _renderBlockFace(Canvas canvas, Size size, Block block, BlockFace face) {
-    // 4.1 获取面的3D顶点
-    final worldVertices = _getFaceVertices(block, face);
-
-    // 4.2 投影到2D屏幕
+    final worldVertices = face.vertices;
     final screenVertices = _projectVerticesToScreen(worldVertices, size);
-
-    // 4.3 裁剪到屏幕范围
     final clippedVertices = _clipToScreenBounds(screenVertices, size);
+
     if (clippedVertices.length < 3) return;
 
-    // 4.4 绘制多边形
-    _drawPolygonFace(canvas, block, clippedVertices, face.normal);
+    _drawPolygonFace(canvas, block.type, clippedVertices, face.normal);
 
-    // 4.5 绘制调试信息
+    // 绘制调试信息
     if (debugConfig.showFaceNormals) {
       _drawFaceNormal(canvas, size, face, block.position.toVector3());
     }
-  }
-
-  /// 获取面的3D顶点
-  List<Vector3> _getFaceVertices(Block block, BlockFace face) {
-    return face.indices.map((index) => block.vertices[index]).toList();
   }
 
   /// 投影顶点到屏幕空间
@@ -230,10 +352,6 @@ class ScenePainter extends CustomPainter {
     }
     return _clipPolygonToScreen(vertices, size);
   }
-
-  // ===========================================================================
-  // 核心数学运算
-  // ===========================================================================
 
   /// 3D点投影到2D屏幕（透视投影）
   // Offset _project3DTo2D(Vector3 point, Size size) {
@@ -308,28 +426,19 @@ class ScenePainter extends CustomPainter {
     );
   }
 
-  // ===========================================================================
-  // 绘制操作
-  // ===========================================================================
-
-  /// 绘制多边形面
   void _drawPolygonFace(
     Canvas canvas,
-    Block block,
+    BlockType blockType,
     List<Offset> vertices,
     Vector3 normal,
   ) {
     final path = Path()..addPolygon(vertices, true);
-
-    // 应用光照
-    final baseColor = block.type.color;
+    final baseColor = blockType.color;
     final shadedColor = _applyFaceLighting(baseColor, normal);
 
-    // 填充面
     canvas.drawPath(path, Paint()..color = shadedColor);
 
-    // 绘制边框（非透明方块）
-    if (block.type != BlockType.glass) {
+    if (blockType != BlockType.glass) {
       canvas.drawPath(
         path,
         Paint()
@@ -357,11 +466,53 @@ class ScenePainter extends CustomPainter {
     );
   }
 
+  void _drawFrustum(Canvas canvas, Size size) {
+    final viewMatrix = Matrix.lookAtLH(
+      sceneInfo.position,
+      sceneInfo.position + sceneInfo.orientation.normalized,
+      Vector3Unit.up,
+    );
+    final projectionMatrix = Matrix.perspectiveLH(
+      Constants.fieldOfView * math.pi / 180,
+      size.width / size.height,
+      Constants.nearClip,
+      Constants.farClip,
+    );
+    final vpMatrix = projectionMatrix.multiply(viewMatrix);
+    final invViewProj = vpMatrix.inverse();
+
+    final corners = _frustum.getCorners(invViewProj);
+    final screenCorners = corners
+        .map((corner) => _project3DTo2D(corner, size))
+        .toList();
+
+    if (screenCorners.any((corner) => corner == Offset.infinite)) return;
+
+    // 绘制视锥体边线
+    final lines = [
+      [0, 1], [1, 3], [3, 2], [2, 0], // 近平面
+      [4, 5], [5, 7], [7, 6], [6, 4], // 远平面
+      [0, 4], [1, 5], [2, 6], [3, 7], // 连接线
+    ];
+
+    for (final line in lines) {
+      if (line[0] < screenCorners.length && line[1] < screenCorners.length) {
+        canvas.drawLine(
+          screenCorners[line[0]],
+          screenCorners[line[1]],
+          Paint()
+            ..color = Colors.yellow.withValues(alpha: 0.5)
+            ..strokeWidth = 1
+            ..style = PaintingStyle.stroke,
+        );
+      }
+    }
+  }
+
   // ===========================================================================
-  // 调试功能
+  // 调试信息
   // ===========================================================================
 
-  /// 绘制调试信息覆盖层
   void _drawDebugOverlay(Canvas canvas, Size size) {
     final textStyle = const TextStyle(
       color: Colors.white,
@@ -374,12 +525,16 @@ class ScenePainter extends CustomPainter {
     final debugText =
         '''
 Position: (${sceneInfo.position.x.toStringAsFixed(1)}, ${sceneInfo.position.y.toStringAsFixed(1)}, ${sceneInfo.position.z.toStringAsFixed(1)})
-Orientation: (${sceneInfo.orientation.x.toStringAsFixed(2)}, ${sceneInfo.orientation.y.toStringAsFixed(2)}, ${sceneInfo.orientation.z.toStringAsFixed(2)})
-Blocks: ${sceneInfo.blocks.length} (Visible: ${_getVisibleBlocks().length})
-Near Clip: ${debugConfig.enableNearClip ? 'ON' : 'OFF'}
-Backface Cull: ${debugConfig.enableBackfaceCulling ? 'ON' : 'OFF'}
-Depth Sort: ${debugConfig.enableDepthSorting ? 'ON' : 'OFF'}
-Screen Clip: ${debugConfig.enableScreenClipping ? 'ON' : 'OFF'}
+Orientation: (${sceneInfo.orientation.x.toStringAsFixed(1)}, ${sceneInfo.orientation.y.toStringAsFixed(1)}, ${sceneInfo.orientation.z.toStringAsFixed(1)})
+Total Blocks: $_totalBlocks
+Frustum Culled: $_frustumCulled
+Occlusion Culled: $_occlusionCulled
+Occluders: ${occlusionCuller.occludersCount}
+Rendered Faces: $_renderedFaces
+Merged Faces: $_mergedFaces
+Frustum Cull: ${debugConfig.enableFrustumCulling ? 'ON' : 'OFF'}
+Occlusion Cull: ${debugConfig.enableOcclusionCulling ? 'ON' : 'OFF'}
+Face Merge: ${debugConfig.enableFaceMerging ? 'ON' : 'OFF'}
 $debugInfo
 ''';
 
@@ -469,10 +624,6 @@ Z: ${position.z.toStringAsFixed(1)}''';
         ..strokeWidth = 2,
     );
   }
-
-  // ===========================================================================
-  // 裁剪算法（Sutherland-Hodgman）
-  // ===========================================================================
 
   List<Offset> _clipPolygonToScreen(List<Offset> polygon, Size size) {
     final screen = Offset.zero & size;

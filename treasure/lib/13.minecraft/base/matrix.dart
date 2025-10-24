@@ -271,6 +271,215 @@ class Matrix {
       0, 0, -range * near, 0,
     ]);
   }
+
+  /// 计算矩阵的逆矩阵
+  Matrix inverse() {
+    // 使用伴随矩阵法计算逆矩阵
+    final det = determinant();
+    if (det.abs() < 1e-10) {
+      throw Exception("Matrix is singular and cannot be inverted");
+    }
+
+    return adjugate() * (1.0 / det);
+  }
+
+  /// 计算矩阵的行列式
+  double determinant() {
+    // 4x4 矩阵的行列式计算
+    final a00 = _values[0],
+        a01 = _values[4],
+        a02 = _values[8],
+        a03 = _values[12];
+    final a10 = _values[1],
+        a11 = _values[5],
+        a12 = _values[9],
+        a13 = _values[13];
+    final a20 = _values[2],
+        a21 = _values[6],
+        a22 = _values[10],
+        a23 = _values[14];
+    final a30 = _values[3],
+        a31 = _values[7],
+        a32 = _values[11],
+        a33 = _values[15];
+
+    return a00 * _det3x3(a11, a12, a13, a21, a22, a23, a31, a32, a33) -
+        a01 * _det3x3(a10, a12, a13, a20, a22, a23, a30, a32, a33) +
+        a02 * _det3x3(a10, a11, a13, a20, a21, a23, a30, a31, a33) -
+        a03 * _det3x3(a10, a11, a12, a20, a21, a22, a30, a31, a32);
+  }
+
+  /// 计算3x3矩阵的行列式
+  double _det3x3(
+    double a,
+    double b,
+    double c,
+    double d,
+    double e,
+    double f,
+    double g,
+    double h,
+    double i,
+  ) {
+    return a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+  }
+
+  /// 计算伴随矩阵（余子式矩阵的转置）
+  Matrix adjugate() {
+    final a00 = _values[0],
+        a01 = _values[4],
+        a02 = _values[8],
+        a03 = _values[12];
+    final a10 = _values[1],
+        a11 = _values[5],
+        a12 = _values[9],
+        a13 = _values[13];
+    final a20 = _values[2],
+        a21 = _values[6],
+        a22 = _values[10],
+        a23 = _values[14];
+    final a30 = _values[3],
+        a31 = _values[7],
+        a32 = _values[11],
+        a33 = _values[15];
+
+    // 计算所有2x2子矩阵的行列式
+    final b00 = a00 * a11 - a01 * a10;
+    final b01 = a00 * a12 - a02 * a10;
+    final b02 = a00 * a13 - a03 * a10;
+    final b03 = a01 * a12 - a02 * a11;
+    final b04 = a01 * a13 - a03 * a11;
+    final b05 = a02 * a13 - a03 * a12;
+    final b06 = a20 * a31 - a21 * a30;
+    final b07 = a20 * a32 - a22 * a30;
+    final b08 = a20 * a33 - a23 * a30;
+    final b09 = a21 * a32 - a22 * a31;
+    final b10 = a21 * a33 - a23 * a31;
+    final b11 = a22 * a33 - a23 * a32;
+
+    // 计算伴随矩阵（注意符号交替）
+    final det00 = (a11 * b11 - a12 * b10 + a13 * b09);
+    final det01 = -(a10 * b11 - a12 * b08 + a13 * b07);
+    final det02 = (a10 * b10 - a11 * b08 + a13 * b06);
+    final det03 = -(a10 * b09 - a11 * b07 + a12 * b06);
+
+    final det10 = -(a01 * b11 - a02 * b10 + a03 * b09);
+    final det11 = (a00 * b11 - a02 * b08 + a03 * b07);
+    final det12 = -(a00 * b10 - a01 * b08 + a03 * b06);
+    final det13 = (a00 * b09 - a01 * b07 + a02 * b06);
+
+    final det20 = (a01 * b05 - a02 * b04 + a03 * b03);
+    final det21 = -(a00 * b05 - a02 * b02 + a03 * b01);
+    final det22 = (a00 * b04 - a01 * b02 + a03 * b00);
+    final det23 = -(a00 * b03 - a01 * b01 + a02 * b00);
+
+    final det30 = -(a01 * b08 - a02 * b07 + a03 * b06);
+    final det31 = (a00 * b08 - a02 * b05 + a03 * b04);
+    final det32 = -(a00 * b07 - a01 * b05 + a03 * b03);
+    final det33 = (a00 * b06 - a01 * b04 + a02 * b03);
+
+    return Matrix.fromList([
+      det00,
+      det01,
+      det02,
+      det03,
+      det10,
+      det11,
+      det12,
+      det13,
+      det20,
+      det21,
+      det22,
+      det23,
+      det30,
+      det31,
+      det32,
+      det33,
+    ]);
+  }
+
+  /// 矩阵标量乘法
+  Matrix operator *(double scalar) {
+    final result = Matrix.zero();
+    for (int i = 0; i < 16; i++) {
+      result._values[i] = _values[i] * scalar;
+    }
+    return result;
+  }
+
+  /// 检查矩阵是否可逆
+  bool get isInvertible {
+    return determinant().abs() > 1e-10;
+  }
+
+  /// 计算矩阵的迹（对角元素之和）
+  double get trace {
+    return _values[0] + _values[5] + _values[10] + _values[15];
+  }
+
+  /// 计算转置逆矩阵（有时比先逆后转置更高效）
+  Matrix inverseTranspose() {
+    return inverse().transpose();
+  }
+
+  /// 快速逆矩阵计算（针对特殊类型的矩阵）
+  /// 适用于视图矩阵等正交矩阵
+  Matrix fastInverse() {
+    // 对于正交矩阵，逆矩阵等于转置矩阵
+    // 这里我们检查矩阵是否接近正交
+    final product = multiply(transpose());
+    final identity = Matrix.identity();
+
+    bool isOrthogonal = true;
+    for (int i = 0; i < 16 && isOrthogonal; i++) {
+      if ((product._values[i] - identity._values[i]).abs() > 1e-5) {
+        isOrthogonal = false;
+      }
+    }
+
+    if (isOrthogonal) {
+      return transpose();
+    } else {
+      return inverse();
+    }
+  }
+
+  /// 计算视图矩阵的逆（优化版本）
+  /// 视图矩阵的逆就是相机变换矩阵
+  Matrix inverseView() {
+    // 提取旋转部分（3x3左上角）
+    final r00 = _values[0], r01 = _values[4], r02 = _values[8];
+    final r10 = _values[1], r11 = _values[5], r12 = _values[9];
+    final r20 = _values[2], r21 = _values[6], r22 = _values[10];
+
+    // 提取平移部分
+    final t0 = _values[12], t1 = _values[13], t2 = _values[14];
+
+    // 对于正交矩阵，逆旋转就是转置
+    // 逆平移 = -R^T * T
+    final invT0 = -(r00 * t0 + r10 * t1 + r20 * t2);
+    final invT1 = -(r01 * t0 + r11 * t1 + r21 * t2);
+    final invT2 = -(r02 * t0 + r12 * t1 + r22 * t2);
+
+    return Matrix.fromList([
+      r00,
+      r01,
+      r02,
+      0,
+      r10,
+      r11,
+      r12,
+      0,
+      r20,
+      r21,
+      r22,
+      0,
+      invT0,
+      invT1,
+      invT2,
+      1,
+    ]);
+  }
 }
 
 /// 4x4 整数矩阵（列主序存储）

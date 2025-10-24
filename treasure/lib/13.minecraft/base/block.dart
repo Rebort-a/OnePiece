@@ -94,27 +94,36 @@ extension BlockTypeProperties on BlockType {
   }[this]!;
 }
 
+class FaceIdentify {
+  final List<int> indices;
+  final Vector3Unit normal;
+
+  const FaceIdentify(this.indices, this.normal);
+
+  // 静态面模板
+  static const List<FaceIdentify> hexahedron = [
+    FaceIdentify([0, 1, 2, 3], Vector3Unit.back), // 前
+    FaceIdentify([7, 6, 5, 4], Vector3Unit.forward), // 后
+    FaceIdentify([1, 5, 6, 2], Vector3Unit.right), // 右
+    FaceIdentify([4, 0, 3, 7], Vector3Unit.left), // 左
+    FaceIdentify([3, 2, 6, 7], Vector3Unit.up), // 上
+    FaceIdentify([0, 4, 5, 1], Vector3Unit.down), // 下
+  ];
+}
+
 /// 方块面数据
 class BlockFace {
-  // 静态面模板（包含索引和法向量，中心点由Block实例计算）
-  static const List<BlockFace> _faceTemplates = [
-    BlockFace([0, 1, 2, 3], Vector3(0, 0, -1)), // 前
-    BlockFace([7, 6, 5, 4], Vector3(0, 0, 1)), // 后
-    BlockFace([1, 5, 6, 2], Vector3(1, 0, 0)), // 右
-    BlockFace([4, 0, 3, 7], Vector3(-1, 0, 0)), // 左
-    BlockFace([3, 2, 6, 7], Vector3(0, 1, 0)), // 上
-    BlockFace([0, 4, 5, 1], Vector3(0, -1, 0)), // 下
-  ];
-
-  final List<int> indices;
-  final Vector3 normal;
+  final BlockType type;
   final Vector3 center;
+  final Vector3Unit normal;
+  final List<Vector3> vertices;
 
-  const BlockFace(
-    this.indices,
-    this.normal, [
-    this.center = const Vector3(0, 0, 0),
-  ]);
+  const BlockFace({
+    required this.type,
+    required this.center,
+    required this.normal,
+    required this.vertices,
+  });
 }
 
 /// 方块
@@ -122,8 +131,8 @@ class Block {
   final Vector3Int position;
   final BlockType type;
   final BoxCollider collider;
-  final List<Vector3> vertices;
-  final List<BlockFace> _faces;
+  final List<Vector3> _vertices;
+  late final List<BlockFace> _faces;
 
   Vector3? _lastCameraPosition;
   List<BlockFace>? _cachedVisibleFaces;
@@ -133,12 +142,11 @@ class Block {
         position: position,
         size: Vector3Int.all(Constants.blockSize),
       ),
-      vertices = _calculateVertices(position),
-      _faces = _initializeFaces(position, _calculateVertices(position)) {
-    // 初始化时计算一次所有面的中心点，避免重复计算
+      _vertices = _getVertices(position) {
+    _faces = _getFaces(position, type, _vertices);
   }
 
-  static List<Vector3> _calculateVertices(Vector3Int position) {
+  static List<Vector3> _getVertices(Vector3Int position) {
     final half = Constants.blockSizeHalf;
     final p = position;
     return [
@@ -154,17 +162,26 @@ class Block {
   }
 
   // 初始化方块的所有面（计算每个面的中心点）
-  static List<BlockFace> _initializeFaces(
+  static List<BlockFace> _getFaces(
     Vector3Int position,
+    BlockType type,
     List<Vector3> vertices,
   ) {
     final blockCenter = position.toVector3();
-    final half = Constants.blockSizeHalf;
+    final halfSize = Constants.blockSizeHalf;
 
-    return BlockFace._faceTemplates.map((template) {
-      // 面中心 = 方块中心 + 法向量 × 半边长（法向量已包含方向信息）
-      final center = blockCenter + template.normal * half;
-      return BlockFace(template.indices, template.normal, center);
+    return FaceIdentify.hexahedron.map((face) {
+      final faceCenter = blockCenter + face.normal * halfSize;
+      final faceVertices = face.indices
+          .map((index) => vertices[index])
+          .toList();
+
+      return BlockFace(
+        type: type,
+        center: faceCenter,
+        normal: face.normal,
+        vertices: faceVertices,
+      );
     }).toList();
   }
 
@@ -179,18 +196,17 @@ class Block {
     // 透明方块不进行背面剔除，返回所有面
     if (type.isTransparent) {
       _cachedVisibleFaces = _faces;
-      return _faces;
+    } else {
+      _cachedVisibleFaces = _faces.where((face) {
+        // 使用预计算的面中心点和法向量进行可见性判断
+        final toCamera = (cameraPosition - face.center).normalized;
+        return face.normal.dot(toCamera) > 0; // 面朝向相机则可见
+      }).toList();
     }
 
-    final result = _faces.where((face) {
-      // 使用预计算的面中心点和法向量进行可见性判断
-      final toCamera = (cameraPosition - face.center).normalized;
-      return face.normal.dot(toCamera) > 0; // 面朝向相机则可见
-    }).toList();
-
-    _cachedVisibleFaces = result;
-    return result;
+    return _cachedVisibleFaces!;
   }
 
+  List<Vector3> get vertices => _vertices;
   List<BlockFace> get faces => _faces;
 }

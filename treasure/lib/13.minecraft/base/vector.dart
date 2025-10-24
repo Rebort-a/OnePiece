@@ -264,10 +264,12 @@ class Vector3Unit extends Vector3 {
     return Vector3Unit(vector.x, vector.y, vector.z);
   }
 
-  // 预定义的单位向量
   static const Vector3Unit forward = Vector3Unit._(0, 0, 1);
+  static const Vector3Unit back = Vector3Unit._(0, 0, -1);
   static const Vector3Unit up = Vector3Unit._(0, 1, 0);
+  static const Vector3Unit down = Vector3Unit._(0, -1, 0);
   static const Vector3Unit right = Vector3Unit._(1, 0, 0);
+  static const Vector3Unit left = Vector3Unit._(-1, 0, 0);
 
   // 重写修改分量的方法
   @override

@@ -64,9 +64,6 @@ class Player {
       velocity = velocity.appointY(-Constants.maxFallSpeed);
     }
 
-    // 保存当前位置用于碰撞检测
-    final oldPosition = position;
-
     // 应用速度更新位置
     position += velocity * deltaTime;
 
@@ -76,14 +73,14 @@ class Player {
       if (block.type.isPenetrate) continue;
 
       if (collider.checkCollision(block.collider)) {
-        _handleCollision(block.collider, oldPosition);
+        _handleCollision(block.collider);
       }
     }
   }
 
   /// 处理碰撞
-  void _handleCollision(BoxCollider block, Vector3 oldPosition) {
-    final resolution = collider.resolveCollision(block, oldPosition);
+  void _handleCollision(BoxCollider block) {
+    final resolution = collider.resolveCollision(block);
 
     position += resolution;
 

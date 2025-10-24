@@ -9,15 +9,6 @@ class AABB {
 
   AABB(this.min, this.max);
 
-  /// 从坐标位置创建AABB
-  factory AABB.fromBlockPosition(Vector3 position) {
-    final halfSize = Constants.blockSizeHalf;
-    return AABB(
-      position - Vector3.all(halfSize),
-      position + Vector3.all(halfSize),
-    );
-  }
-
   /// 从中心点和尺寸创建 AABB
   factory AABB.fromCenterAndSize(Vector3 center, Vector3 size) {
     final halfSize = size * 0.5;
