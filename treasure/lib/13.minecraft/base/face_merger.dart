@@ -1,4 +1,3 @@
-// face_merger.dart
 import 'dart:collection';
 import 'dart:math' as math;
 
@@ -10,10 +9,10 @@ import 'vector.dart';
 /// 合并后的面
 class MergedFace {
   final BlockType blockType;
-  final Vector3 normal;
-  final Vector3 min;
-  final Vector3 max;
-  final List<Vector3> vertices;
+  final Vector3Int normal;
+  final Vector3Int min;
+  final Vector3Int max;
+  final List<Vector3Int> vertices;
 
   MergedFace({
     required this.blockType,
@@ -22,43 +21,43 @@ class MergedFace {
     required this.max,
   }) : vertices = _calculateVertices(min, max, normal);
 
-  static List<Vector3> _calculateVertices(
-    Vector3 min,
-    Vector3 max,
-    Vector3 normal,
+  static List<Vector3Int> _calculateVertices(
+    Vector3Int min,
+    Vector3Int max,
+    Vector3Int normal,
   ) {
     // 根据法线方向计算面的四个顶点
     if (normal.x.abs() > 0.5) {
       // X方向的面
       final x = normal.x > 0 ? max.x : min.x;
       return [
-        Vector3(x, min.y, min.z),
-        Vector3(x, max.y, min.z),
-        Vector3(x, max.y, max.z),
-        Vector3(x, min.y, max.z),
+        Vector3Int(x, min.y, min.z),
+        Vector3Int(x, max.y, min.z),
+        Vector3Int(x, max.y, max.z),
+        Vector3Int(x, min.y, max.z),
       ];
     } else if (normal.y.abs() > 0.5) {
       // Y方向的面
       final y = normal.y > 0 ? max.y : min.y;
       return [
-        Vector3(min.x, y, min.z),
-        Vector3(max.x, y, min.z),
-        Vector3(max.x, y, max.z),
-        Vector3(min.x, y, max.z),
+        Vector3Int(min.x, y, min.z),
+        Vector3Int(max.x, y, min.z),
+        Vector3Int(max.x, y, max.z),
+        Vector3Int(min.x, y, max.z),
       ];
     } else {
       // Z方向的面
       final z = normal.z > 0 ? max.z : min.z;
       return [
-        Vector3(min.x, min.y, z),
-        Vector3(max.x, min.y, z),
-        Vector3(max.x, max.y, z),
-        Vector3(min.x, max.y, z),
+        Vector3Int(min.x, min.y, z),
+        Vector3Int(max.x, min.y, z),
+        Vector3Int(max.x, max.y, z),
+        Vector3Int(min.x, max.y, z),
       ];
     }
   }
 
-  AABB get bounds => AABB(min, max);
+  AABBInt get bounds => AABBInt(min, max);
 
   @override
   String toString() {
@@ -66,12 +65,9 @@ class MergedFace {
   }
 }
 
-/// 面合并器 - 简化可靠版本
-/// 面合并器 - 修复版本
+/// 面合并器
 class FaceMerger {
-  static const double _epsilon = 0.001;
-
-  /// 合并相邻的方块面 - 修复版本，避免过度合并
+  /// 合并相邻的方块面
   static List<MergedFace> mergeFaces(
     List<Block> blocks,
     Vector3 cameraPosition,
@@ -86,14 +82,14 @@ class FaceMerger {
 
       for (final face in visibleFaces) {
         final normal = face.normal;
-        final blockPos = block.position.toVector3();
+        final blockPos = block.position;
 
         // 改进的分组键：法线 + 类型 + 区块坐标（避免远距离合并）
-        final chunkX = (blockPos.x / 4).floor(); // 每4个单位一个区块
-        final chunkZ = (blockPos.z / 4).floor();
+        final chunkX = blockPos.x ~/ 4;
+        final chunkZ = blockPos.z ~/ 4;
 
         final key =
-            '${_quantize(normal.x)},${_quantize(normal.y)},${_quantize(normal.z)},'
+            '${normal.x},${normal.y},${normal.z},'
             '${face.type.index},$chunkX,$chunkZ';
 
         if (!faceGroups.containsKey(key)) {
@@ -121,7 +117,7 @@ class FaceMerger {
   /// 保守合并策略 - 只合并直接相邻的面
   static List<MergedFace> _mergeFacesConservative(
     List<BlockFace> faces,
-    Vector3 normal,
+    Vector3Int normal,
     BlockType blockType,
     List<Block> allBlocks,
   ) {
@@ -164,7 +160,7 @@ class FaceMerger {
   static List<BlockFace> _findMergeGroup(
     BlockFace startFace,
     List<BlockFace> allFaces,
-    Vector3 normal,
+    Vector3Int normal,
     List<Block> allBlocks,
   ) {
     final group = <BlockFace>[startFace];
@@ -193,7 +189,7 @@ class FaceMerger {
   static bool _canMerge(
     BlockFace face1,
     BlockFace face2,
-    Vector3 normal,
+    Vector3Int normal,
     List<Block> allBlocks,
   ) {
     // 1. 检查是否在同一平面
@@ -212,18 +208,18 @@ class FaceMerger {
   static bool _areFacesCoplanar(
     BlockFace face1,
     BlockFace face2,
-    Vector3 normal,
+    Vector3Int normal,
   ) {
     final planePos1 = _getPlaneCoordinate(face1.center, normal);
     final planePos2 = _getPlaneCoordinate(face2.center, normal);
-    return (planePos1 - planePos2).abs() < _epsilon;
+    return (planePos1 - planePos2).abs() < Constants.epsilon;
   }
 
   /// 检查两个面是否相邻
   static bool _areFacesAdjacent(
     BlockFace face1,
     BlockFace face2,
-    Vector3 normal,
+    Vector3Int normal,
   ) {
     final bounds1 = _getFaceBounds(face1, normal);
     final bounds2 = _getFaceBounds(face2, normal);
@@ -232,14 +228,14 @@ class FaceMerger {
     final uAdjacent =
         (_approxEqual(bounds1.maxX, bounds2.minX) ||
             _approxEqual(bounds2.maxX, bounds1.minX)) &&
-        (bounds1.minY < bounds2.maxY - _epsilon &&
-            bounds1.maxY > bounds2.minY + _epsilon);
+        (bounds1.minY < bounds2.maxY - Constants.epsilon &&
+            bounds1.maxY > bounds2.minY + Constants.epsilon);
 
     final vAdjacent =
         (_approxEqual(bounds1.maxY, bounds2.minY) ||
             _approxEqual(bounds2.maxY, bounds1.minY)) &&
-        (bounds1.minX < bounds2.maxX - _epsilon &&
-            bounds1.maxX > bounds2.minX + _epsilon);
+        (bounds1.minX < bounds2.maxX - Constants.epsilon &&
+            bounds1.maxX > bounds2.minX + Constants.epsilon);
 
     return uAdjacent || vAdjacent;
   }
@@ -248,33 +244,33 @@ class FaceMerger {
   static bool _wouldMergeBeOccluded(
     BlockFace face1,
     BlockFace face2,
-    Vector3 normal,
+    Vector3Int normal,
     List<Block> allBlocks,
   ) {
     // 计算合并后的边界
     final bounds1 = _getFaceBounds3D(face1, normal);
     final bounds2 = _getFaceBounds3D(face2, normal);
 
-    final mergedMin = Vector3(
+    final mergedMin = Vector3Int(
       math.min(bounds1.item1.x, bounds2.item1.x),
       math.min(bounds1.item1.y, bounds2.item1.y),
       math.min(bounds1.item1.z, bounds2.item1.z),
     );
 
-    final mergedMax = Vector3(
+    final mergedMax = Vector3Int(
       math.max(bounds1.item2.x, bounds2.item2.x),
       math.max(bounds1.item2.y, bounds2.item2.y),
       math.max(bounds1.item2.z, bounds2.item2.z),
     );
 
     // 检查合并区域是否有其他方块（可能造成遮挡）
-    final mergedCenter = (mergedMin + mergedMax) * 0.5;
+    final mergedCenter = (mergedMin + mergedMax) ~/ 2;
     // 向法线方向偏移一点
 
     for (final block in allBlocks) {
-      final blockPos = block.position.toVector3();
-      final blockMin = blockPos - Vector3.all(Constants.blockSizeHalf);
-      final blockMax = blockPos + Vector3.all(Constants.blockSizeHalf);
+      final blockPos = block.position;
+      final blockMin = blockPos - Vector3Int.all(Constants.blockSizeHalf);
+      final blockMax = blockPos + Vector3Int.all(Constants.blockSizeHalf);
 
       // 如果方块在合并面的后方且可能遮挡，则不能合并
       if (_isBehindPlane(blockPos, mergedCenter, normal) &&
@@ -289,12 +285,12 @@ class FaceMerger {
   /// 合并面组
   static MergedFace? _mergeFaceGroup(
     List<BlockFace> faces,
-    Vector3 normal,
+    Vector3Int normal,
     BlockType blockType,
   ) {
     if (faces.isEmpty) return null;
 
-    Vector3? minVec, maxVec;
+    Vector3Int? minVec, maxVec;
 
     for (final face in faces) {
       final bounds = _getFaceBounds3D(face, normal);
@@ -303,12 +299,12 @@ class FaceMerger {
         minVec = bounds.item1;
         maxVec = bounds.item2;
       } else {
-        minVec = Vector3(
+        minVec = Vector3Int(
           math.min(minVec.x, bounds.item1.x),
           math.min(minVec.y, bounds.item1.y),
           math.min(minVec.z, bounds.item1.z),
         );
-        maxVec = Vector3(
+        maxVec = Vector3Int(
           math.max(maxVec.x, bounds.item2.x),
           math.max(maxVec.y, bounds.item2.y),
           math.max(maxVec.z, bounds.item2.z),
@@ -327,7 +323,7 @@ class FaceMerger {
   }
 
   /// 获取面的2D边界（用于网格合并）
-  static _Rectangle2D _getFaceBounds(BlockFace face, Vector3 normal) {
+  static _Rectangle2D _getFaceBounds(BlockFace face, Vector3Int normal) {
     if (normal.x.abs() > 0.5) {
       // X方向的面，使用Y和Z坐标
       final yValues = face.vertices.map((v) => v.y).toList();
@@ -359,54 +355,58 @@ class FaceMerger {
   }
 
   /// 获取面的3D边界
-  static Tuple<Vector3, Vector3> _getFaceBounds3D(
+  static Tuple<Vector3Int, Vector3Int> _getFaceBounds3D(
     BlockFace face,
-    Vector3 normal,
+    Vector3Int normal,
   ) {
     final vertices = face.vertices;
-    double minX = double.infinity,
-        minY = double.infinity,
-        minZ = double.infinity;
-    double maxX = -double.infinity,
-        maxY = -double.infinity,
-        maxZ = -double.infinity;
+    int minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0;
 
-    for (final vertex in vertices) {
-      minX = math.min(minX, vertex.x);
-      minY = math.min(minY, vertex.y);
-      minZ = math.min(minZ, vertex.z);
-      maxX = math.max(maxX, vertex.x);
-      maxY = math.max(maxY, vertex.y);
-      maxZ = math.max(maxZ, vertex.z);
+    if (vertices.isNotEmpty) {
+      minX = maxX = vertices[0].x;
+      minY = maxY = vertices[0].y;
+      minZ = maxZ = vertices[0].z;
+
+      for (int i = 1; i < vertices.length; i++) {
+        final vertex = vertices[i];
+        minX = math.min(minX, vertex.x);
+        maxX = math.max(maxX, vertex.x);
+        minY = math.min(minY, vertex.y);
+        maxY = math.max(maxY, vertex.y);
+        minZ = math.min(minZ, vertex.z);
+        maxZ = math.max(maxZ, vertex.z);
+      }
+    } else {
+      minX = minY = minZ = 0;
+      maxX = maxY = maxZ = 0;
     }
-
     // 根据法线方向调整边界，确保边界准确
     if (normal.x.abs() > 0.5) {
       final x = face.center.x;
-      return Tuple(Vector3(x, minY, minZ), Vector3(x, maxY, maxZ));
+      return Tuple(Vector3Int(x, minY, minZ), Vector3Int(x, maxY, maxZ));
     } else if (normal.y.abs() > 0.5) {
       final y = face.center.y;
-      return Tuple(Vector3(minX, y, minZ), Vector3(maxX, y, maxZ));
+      return Tuple(Vector3Int(minX, y, minZ), Vector3Int(maxX, y, maxZ));
     } else {
       final z = face.center.z;
-      return Tuple(Vector3(minX, minY, z), Vector3(maxX, maxY, z));
+      return Tuple(Vector3Int(minX, minY, z), Vector3Int(maxX, maxY, z));
     }
   }
 
   // 辅助方法
   static bool _isBehindPlane(
-    Vector3 point,
-    Vector3 planePoint,
-    Vector3 normal,
+    Vector3Int point,
+    Vector3Int planePoint,
+    Vector3Int normal,
   ) {
-    return (point - planePoint).dot(normal) < -_epsilon;
+    return (point - planePoint).dot(normal) < 0;
   }
 
   static bool _aabbIntersects(
-    Vector3 min1,
-    Vector3 max1,
-    Vector3 min2,
-    Vector3 max2,
+    Vector3Int min1,
+    Vector3Int max1,
+    Vector3Int min2,
+    Vector3Int max2,
   ) {
     return min1.x <= max2.x &&
         max1.x >= min2.x &&
@@ -416,25 +416,20 @@ class FaceMerger {
         max1.z >= min2.z;
   }
 
-  // 保留原有的辅助方法...
-  static double _getPlaneCoordinate(Vector3 point, Vector3 normal) {
-    if (normal.x.abs() > 0.5) return point.x;
-    if (normal.y.abs() > 0.5) return point.y;
+  static int _getPlaneCoordinate(Vector3Int point, Vector3Int normal) {
+    if (normal.x.abs() > 0) return point.x;
+    if (normal.y.abs() > 0) return point.y;
     return point.z;
   }
 
-  static double _quantize(double value) {
-    return (value * 100).roundToDouble() / 100;
-  }
-
-  static bool _approxEqual(double a, double b) {
-    return (a - b).abs() < _epsilon;
+  static bool _approxEqual(int a, int b) {
+    return (a - b).abs() < 0;
   }
 }
 
 /// 辅助类：2D矩形
 class _Rectangle2D {
-  final double minX, minY, maxX, maxY;
+  final int minX, minY, maxX, maxY;
 
   _Rectangle2D(this.minX, this.minY, this.maxX, this.maxY);
 

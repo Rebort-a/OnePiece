@@ -9,14 +9,14 @@ class Player {
   Vector3Unit orientation; // 朝向
   Vector3 velocity; // 速度
   bool isGrounded; // 是否在地面上
-  BoxCollider collider; // 碰撞盒
+  MovedBoxCollider collider; // 碰撞盒
 
   Player({required Vector3 position})
     : _position = position,
       orientation = Vector3Unit.forward,
       velocity = Vector3.zero,
       isGrounded = true,
-      collider = BoxCollider(
+      collider = MovedBoxCollider(
         position: position,
         size: Vector3(
           Constants.playerWidth,
@@ -38,7 +38,7 @@ class Player {
 
   set position(Vector3 value) {
     _position = value;
-    collider = BoxCollider(
+    collider = MovedBoxCollider(
       position: value,
       size: Vector3(
         Constants.playerWidth,
@@ -72,15 +72,15 @@ class Player {
     for (final block in blocks) {
       if (block.type.isPenetrate) continue;
 
-      if (collider.checkCollision(block.collider)) {
+      if (collider.checkFixedBox(block.collider)) {
         _handleCollision(block.collider);
       }
     }
   }
 
   /// 处理碰撞
-  void _handleCollision(BoxCollider block) {
-    final resolution = collider.resolveCollision(block);
+  void _handleCollision(FixedBoxCollider block) {
+    final resolution = collider.resolveFixedBox(block);
 
     position += resolution;
 

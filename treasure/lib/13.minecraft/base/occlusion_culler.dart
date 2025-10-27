@@ -23,7 +23,7 @@ class OcclusionCuller {
     _occluders.add(occluder);
   }
 
-  /// 检查AABB是否被遮挡（修复版本）
+  /// 检查AABB是否被遮挡
   OcclusionResult checkOcclusion(AABB bounds, Vector3 cameraPosition) {
     if (_occluders.isEmpty) {
       return OcclusionResult.visible;

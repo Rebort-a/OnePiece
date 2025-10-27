@@ -2,69 +2,64 @@ import 'vector.dart';
 import 'aabb.dart';
 
 /// 碰撞体类型
-enum ColliderType { box }
+enum ColliderType { fixedBox, movedBox }
 
-/// 碰撞体接口
-abstract class Collider {
-  ColliderType get colliderType;
-  Vector3 get position;
-  bool checkCollision(Collider other);
-  bool containsPoint(Vector3 point);
+class FixedBoxCollider {
+  ColliderType get colliderType => ColliderType.fixedBox;
+  final Vector3Int position;
+  final Vector3Int halfSize;
+  final AABBInt aabb;
+
+  FixedBoxCollider({required this.position, required this.halfSize})
+    : aabb = AABBInt.fromCenterAndHalfSize(position, halfSize);
 }
 
-/// 方块碰撞体
-class BoxCollider implements Collider {
-  // 将 AABB 作为成员变量（核心改动）
-  final AABB _aabb;
+class MovedBoxCollider {
+  ColliderType get colliderType => ColliderType.movedBox;
+  final Vector3 position;
+  final Vector3 size;
+  final AABB aabb;
 
-  // 构造函数：通过中心点和大小初始化 AABB 成员
-  BoxCollider({required Vector3 position, required Vector3 size})
-    : _aabb = AABB.fromCenterAndSize(position, size);
+  MovedBoxCollider({required this.position, required this.size})
+    : aabb = _calculateAABB(position, size);
 
-  // 整数版本构造函数
-  factory BoxCollider.fromInt({
-    required Vector3Int position,
-    required Vector3Int size,
-  }) {
-    return BoxCollider(position: position.toVector3(), size: size.toVector3());
+  /// 根据眼睛位置和尺寸计算AABB，使眼睛靠近顶部和前端
+  static AABB _calculateAABB(Vector3 position, Vector3 size) {
+    // 1. 左右方向（X轴）：对称分布
+    final halfWidth = size.x / 2.0;
+    final minX = position.x - halfWidth;
+    final maxX = position.x + halfWidth;
+
+    // 2. 上下方向（Y轴）：眼睛靠近顶部（顶部占比小，底部占比大）
+    // 例如：顶部占总高度的25%，底部占75%
+    const topRatio = 0.25; // 顶部距离占总高度比例
+    final bottomRatio = 1.0 - topRatio; // 底部距离占总高度比例
+    final topHalfY = size.y * topRatio; // 眼睛到顶部的距离
+    final bottomHalfY = size.y * bottomRatio; // 眼睛到底部的距离
+    final minY = position.y - bottomHalfY; // 碰撞体底部
+    final maxY = position.y + topHalfY; // 碰撞体顶部
+
+    // 3. 前后方向（Z轴）：眼睛靠近前端（前端占比小，后端占比大）
+    // 例如：前端占总深度的25%，后端占75%
+    const frontRatio = 0.25; // 前端距离占总深度比例
+    final backRatio = 1.0 - frontRatio; // 后端距离占总深度比例
+    final frontHalfZ = size.z * frontRatio; // 眼睛到前端的距离
+    final backHalfZ = size.z * backRatio; // 眼睛到后端的距离
+    final minZ = position.z - backHalfZ; // 碰撞体后端
+    final maxZ = position.z + frontHalfZ; // 碰撞体前端
+
+    // 构建AABB的min和max
+    final min = Vector3(minX, minY, minZ);
+    final max = Vector3(maxX, maxY, maxZ);
+    return AABB(min, max);
   }
 
-  // 暴露 AABB 的部分属性（按需提供，避免直接暴露成员）
-  AABB get aabb => _aabb; // 如需外部访问完整 AABB，可提供此 getter
-  Vector3 get min => _aabb.min;
-  Vector3 get max => _aabb.max;
-  Vector3 get size => _aabb.size;
-
-  @override
-  ColliderType get colliderType => ColliderType.box;
-
-  @override
-  Vector3 get position => _aabb.center; // 位置即 AABB 的中心点
-
-  @override
-  bool checkCollision(Collider other) {
-    // 仅处理与其他 BoxCollider 的碰撞，通过 AABB 成员检测重叠
-    if (other is BoxCollider) {
-      return _aabb.intersects(other._aabb);
-    }
-    return false;
+  bool checkFixedBox(FixedBoxCollider collider) {
+    return aabb.intersects(collider.aabb.toAABB());
   }
 
-  @override
-  bool containsPoint(Vector3 point) {
-    return _aabb.contains(point); // 委托给 AABB 成员
+  // 计算与另一个 Collider 的重叠量（用于碰撞响应）
+  Vector3 resolveFixedBox(FixedBoxCollider other) {
+    return aabb.calculateOverlap(other.aabb.toAABB());
   }
-
-  // 检查整数点是否在碰撞体内
-  bool containsIntPoint(Vector3Int point) {
-    return _aabb.contains(point.toVector3());
-  }
-
-  // 计算与另一个 BoxCollider 的重叠量（用于碰撞响应）
-  Vector3 resolveCollision(BoxCollider other) {
-    return _aabb.calculateOverlap(other._aabb);
-  }
-
-  @override
-  String toString() => 'BoxCollider(aabb: $_aabb)';
 }

@@ -1,83 +1,37 @@
+import 'package:treasure/13.minecraft/base/aabb.dart';
+
 import 'block.dart';
 import 'vector.dart';
 import 'constant.dart';
 
 /// 八叉树节点
 class OctreeNode {
-  final Vector3 center;
-  final double halfSize;
-  final int maxBlocksPerNode;
-  final double minHalfSize;
+  final Vector3Int center;
+  final int size;
 
+  final AABBInt _aabb;
   final List<Block> _blocks = [];
-  List<OctreeNode>? _children;
+  final List<OctreeNode> _children = [];
 
-  OctreeNode({
-    required this.center,
-    required this.halfSize,
-    required this.maxBlocksPerNode,
-    required this.minHalfSize,
-  });
+  OctreeNode({required this.center, required this.size})
+    : _aabb = AABBInt.fromCenterAndHalfSize(center, Vector3Int.all(size));
 
-  /// 检查位置是否在节点范围内
-  bool _contains(Vector3Int position) {
-    final min = center.x - halfSize - Constants.epsilon;
-    final max = center.x + halfSize + Constants.epsilon;
-    if (position.x < min || position.x > max) {
-      return false;
-    }
-    if (position.y < center.y - halfSize || position.y > center.y + halfSize) {
-      return false;
-    }
-    if (position.z < center.z - halfSize || position.z > center.z + halfSize) {
-      return false;
-    }
-    return true;
-  }
+  bool get _needSplit => _blocks.length > Constants.maxBlocksPerNode;
 
-  /// 分裂节点
-  void _split() {
-    if (_children != null || halfSize <= minHalfSize) return;
-
-    final childHalfSize = halfSize / 2;
-    _children = [];
-
-    // 生成8个子节点
-    for (final dx in [-1, 1]) {
-      for (final dy in [-1, 1]) {
-        for (final dz in [-1, 1]) {
-          final childCenter = Vector3(
-            center.x + dx * childHalfSize,
-            center.y + dy * childHalfSize,
-            center.z + dz * childHalfSize,
-          );
-          _children!.add(
-            OctreeNode(
-              center: childCenter,
-              halfSize: childHalfSize,
-              maxBlocksPerNode: maxBlocksPerNode,
-              minHalfSize: minHalfSize,
-            ),
-          );
-        }
-      }
-    }
-  }
+  bool get _canSplit => _children.isEmpty && size > Constants.blockSize;
 
   /// 插入方块
   bool insertBlock(Block block) {
     if (!_contains(block.position)) return false;
 
-    // 移除重复位置的方块
+    // 如果该位置有block，先移除
     _blocks.removeWhere((b) => b.position == block.position);
 
     // 优先插入子节点
-    if (_children != null) {
-      for (final child in _children!) {
-        if (child.insertBlock(block)) {
-          _tryMerge();
-          return true;
-        }
+    for (final child in _children) {
+      if (child.insertBlock(block)) {
+        _tryMerge();
+        return true;
       }
     }
 
@@ -85,22 +39,45 @@ class OctreeNode {
     _blocks.add(block);
 
     // 检查是否需要分裂
-    if (_blocks.length > maxBlocksPerNode && halfSize > minHalfSize) {
+    if (_needSplit && _canSplit) {
       _splitAndRedistribute();
     }
 
     return true;
   }
 
+  bool _contains(Vector3Int position) {
+    return _aabb.contains(position);
+  }
+
   /// 分裂并重新分配方块
   void _splitAndRedistribute() {
     _split();
-    final blocksToMove = List<Block>.from(_blocks);
-    _blocks.clear();
 
-    for (final block in blocksToMove) {
-      for (final child in _children!) {
+    for (final block in _blocks) {
+      for (final child in _children) {
         if (child.insertBlock(block)) break;
+      }
+    }
+
+    _blocks.clear();
+  }
+
+  /// 分裂节点
+  void _split() {
+    final int childHalfSize = size ~/ 2;
+
+    // 生成8个子节点
+    for (final dx in [-1, 1]) {
+      for (final dy in [-1, 1]) {
+        for (final dz in [-1, 1]) {
+          final childCenter = Vector3Int(
+            center.x + dx * childHalfSize,
+            center.y + dy * childHalfSize,
+            center.z + dz * childHalfSize,
+          );
+          _children.add(OctreeNode(center: childCenter, size: childHalfSize));
+        }
       }
     }
   }
@@ -111,12 +88,10 @@ class OctreeNode {
 
     if (_blocks.remove(block)) return true;
 
-    if (_children != null) {
-      for (final child in _children!) {
-        if (child.removeBlock(block)) {
-          _tryMerge();
-          return true;
-        }
+    for (final child in _children) {
+      if (child.removeBlock(block)) {
+        _tryMerge();
+        return true;
       }
     }
 
@@ -133,124 +108,103 @@ class OctreeNode {
     }
 
     // 在子节点查找
-    if (_children != null) {
-      for (final child in _children!) {
-        final found = child.getBlock(position);
-        if (found != null) return found;
-      }
+    for (final child in _children) {
+      final Block? found = child.getBlock(position);
+      if (found != null) return found;
     }
 
     return null;
   }
 
-  /// 范围查询
-  List<Block> queryRange(Vector3 min, Vector3 max) {
+  List<Block> getAllBlocks() {
     final result = <Block>[];
 
-    // 检查节点与查询范围是否相交
-    if (_isOutsideRange(min, max)) return result;
-
     // 添加当前节点中的方块
-    for (final block in _blocks) {
-      if (_isPointInRange(block.position, min, max)) {
-        result.add(block);
-      }
-    }
+    result.addAll(_blocks);
 
     // 递归查询子节点
-    if (_children != null) {
-      for (final child in _children!) {
-        result.addAll(child.queryRange(min, max));
-      }
+    for (final child in _children) {
+      result.addAll(child.blocks);
     }
 
     return result;
   }
 
-  /// 检查节点是否在查询范围外
-  bool _isOutsideRange(Vector3 min, Vector3 max) {
-    return center.x - halfSize > max.x ||
-        center.x + halfSize < min.x ||
-        center.y - halfSize > max.y ||
-        center.y + halfSize < min.y ||
-        center.z - halfSize > max.z ||
-        center.z + halfSize < min.z;
-  }
+  /// 范围查询
+  List<Block> queryRange(AABB queryAABB) {
+    final result = <Block>[];
 
-  /// 检查点是否在范围内
-  bool _isPointInRange(Vector3Int point, Vector3 min, Vector3 max) {
-    final position = point.toVector3();
-    return position.x >= min.x &&
-        position.x <= max.x &&
-        position.y >= min.y &&
-        position.y <= max.y &&
-        position.z >= min.z &&
-        position.z <= max.z;
+    // 检查节点与查询范围是否相交
+    if (!queryAABB.intersects(_aabb.toAABB())) return result;
+
+    // 添加当前节点中的方块
+    for (final block in _blocks) {
+      if (queryAABB.contains(block.position.toVector3())) {
+        result.add(block);
+      }
+    }
+
+    // 递归查询子节点
+    for (final child in _children) {
+      result.addAll(child.queryRange(queryAABB));
+    }
+
+    return result;
   }
 
   /// 尝试合并子节点
   void _tryMerge() {
-    if (_children == null) return;
+    if (_children.isEmpty) return;
 
     // 检查所有子节点是否都是叶子节点且总方块数较少
     int totalBlocks = 0;
-    for (final child in _children!) {
-      if (child._children != null) return; // 有非叶子节点，不合并
-      totalBlocks += child._blocks.length;
+    for (final child in _children) {
+      if (child._children.isEmpty) return; // 有非叶子节点，不合并
+      totalBlocks += child.blocks.length;
     }
 
-    final mergeThreshold = (maxBlocksPerNode / Constants.mergeThresholdDivisor)
-        .ceil()
-        .clamp(Constants.mergeThresholdMin, maxBlocksPerNode);
-    if (totalBlocks <= mergeThreshold) {
+    if (totalBlocks <= Constants.mergeThreshold) {
       _merge();
     }
   }
 
   /// 合并子节点
   void _merge() {
-    if (_children == null) return;
-
-    for (final child in _children!) {
-      _blocks.addAll(child._blocks);
+    for (final child in _children) {
+      _blocks.addAll(child.blocks);
+      child.clear();
     }
-    _children = null;
+    _children.clear();
   }
+
+  void clear() {
+    _children.clear();
+    _blocks.clear();
+  }
+
+  void clearRecursive() {
+    if (_children.isNotEmpty) {
+      for (final child in _children) {
+        child.clearRecursive();
+      }
+    }
+    clear();
+  }
+
+  List<Block> get blocks => _blocks;
 }
 
 /// 八叉树管理器
 class BlockOctree {
-  final OctreeNode root;
+  final OctreeNode _root;
 
-  BlockOctree({
-    required Vector3 center,
-    required int worldSize,
-    int maxBlocksPerNode = Constants.maxBlocksPerNode,
-    double minHalfSize = Constants.minHalfSize,
-  }) : root = OctreeNode(
-         center: center,
-         halfSize: worldSize / 2,
-         maxBlocksPerNode: maxBlocksPerNode,
-         minHalfSize: minHalfSize,
-       );
+  BlockOctree({required Vector3Int center, required int size})
+    : _root = OctreeNode(center: center, size: size);
 
   // 代理方法
-  bool insertBlock(Block block) => root.insertBlock(block);
-  bool removeBlock(Block block) => root.removeBlock(block);
-  Block? getBlock(Vector3Int position) => root.getBlock(position);
-  List<Block> queryRange(Vector3 min, Vector3 max) => root.queryRange(min, max);
-
-  void clear() {
-    _clearRecursive(root);
-  }
-
-  void _clearRecursive(OctreeNode node) {
-    node._blocks.clear();
-    if (node._children != null) {
-      for (final child in node._children!) {
-        _clearRecursive(child);
-      }
-      node._children = null;
-    }
-  }
+  bool insertBlock(Block block) => _root.insertBlock(block);
+  bool removeBlock(Block block) => _root.removeBlock(block);
+  Block? getBlock(Vector3Int position) => _root.getBlock(position);
+  List<Block> getAllBlocks() => _root.getAllBlocks();
+  List<Block> queryRange(AABB queryAABB) => _root.queryRange(queryAABB);
 }

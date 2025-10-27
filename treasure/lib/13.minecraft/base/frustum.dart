@@ -1,4 +1,3 @@
-// frustum.dart - 改进视锥体实现
 import 'dart:math' as math;
 
 import 'vector.dart';
@@ -141,7 +140,7 @@ class Frustum {
     return true;
   }
 
-  /// 判断AABB包围盒是否与视锥体相交（改进版本）
+  /// 判断AABB包围盒是否与视锥体相交
   bool intersectsAABB(AABB aabb) {
     final center = aabb.center;
     final extents = aabb.extents;

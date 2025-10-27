@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 
+import 'constant.dart';
+
 /// 向量模板接口
 abstract class Vector<T> {
-  static const double epsilon = 1e-5;
   T operator +(T other);
   T operator -(T other);
   T operator *(double scalar);
@@ -58,13 +59,13 @@ class Vector2 implements Vector<Vector2> {
 
   @override
   Vector2 get normalized =>
-      magnitude > Vector.epsilon ? this / magnitude : Vector2.zero;
+      magnitude > Constants.epsilon ? this / magnitude : Vector2.zero;
 
   @override
   double dot(Vector2 other) => x * other.x + y * other.y;
 
   @override
-  bool get isZero => x.abs() < Vector.epsilon && y.abs() < Vector.epsilon;
+  bool get isZero => x.abs() < Constants.epsilon && y.abs() < Constants.epsilon;
 
   @override
   String toString() => 'Vector2($x, $y)';
@@ -74,8 +75,8 @@ class Vector2 implements Vector<Vector2> {
       identical(this, other) ||
       other is Vector2 &&
           runtimeType == other.runtimeType &&
-          (x - other.x).abs() < Vector.epsilon &&
-          (y - other.y).abs() < Vector.epsilon;
+          (x - other.x).abs() < Constants.epsilon &&
+          (y - other.y).abs() < Constants.epsilon;
 
   @override
   int get hashCode => Object.hash(x, y);
@@ -89,7 +90,7 @@ class UnitVector2 extends Vector2 {
   // 从分量创建单位向量，自动进行单位化
   factory UnitVector2(double x, double y) {
     final vector = Vector2(x, y);
-    if (vector.magnitude < Vector.epsilon) {
+    if (vector.magnitude < Constants.epsilon) {
       return UnitVector2.up;
     }
     final normalized = vector.normalized;
@@ -146,8 +147,8 @@ class UnitVector2 extends Vector2 {
       identical(this, other) ||
       other is UnitVector2 &&
           runtimeType == other.runtimeType &&
-          (x - other.x).abs() < Vector.epsilon &&
-          (y - other.y).abs() < Vector.epsilon;
+          (x - other.x).abs() < Constants.epsilon &&
+          (y - other.y).abs() < Constants.epsilon;
 
   @override
   int get hashCode => Object.hash(x, y);
@@ -196,7 +197,7 @@ class Vector3 implements Vector<Vector3> {
 
   @override
   Vector3 get normalized =>
-      magnitude > Vector.epsilon ? this / magnitude : Vector3.zero;
+      magnitude > Constants.epsilon ? this / magnitude : Vector3.zero;
 
   @override
   double dot(Vector3 other) => x * other.x + y * other.y + z * other.z;
@@ -224,9 +225,9 @@ class Vector3 implements Vector<Vector3> {
 
   @override
   bool get isZero =>
-      x.abs() < Vector.epsilon &&
-      y.abs() < Vector.epsilon &&
-      z.abs() < Vector.epsilon;
+      x.abs() < Constants.epsilon &&
+      y.abs() < Constants.epsilon &&
+      z.abs() < Constants.epsilon;
 
   @override
   String toString() => 'Vector3($x, $y, $z)';
@@ -236,9 +237,9 @@ class Vector3 implements Vector<Vector3> {
       identical(this, other) ||
       other is Vector3 &&
           runtimeType == other.runtimeType &&
-          (x - other.x).abs() < Vector.epsilon &&
-          (y - other.y).abs() < Vector.epsilon &&
-          (z - other.z).abs() < Vector.epsilon;
+          (x - other.x).abs() < Constants.epsilon &&
+          (y - other.y).abs() < Constants.epsilon &&
+          (z - other.z).abs() < Constants.epsilon;
 
   @override
   int get hashCode => Object.hash(x, y, z);
@@ -252,7 +253,7 @@ class Vector3Unit extends Vector3 {
   // 从分量创建单位向量，自动进行单位化
   factory Vector3Unit(double x, double y, double z) {
     final vector = Vector3(x, y, z);
-    if (vector.magnitude < Vector.epsilon) {
+    if (vector.magnitude < Constants.epsilon) {
       return Vector3Unit.forward;
     }
     final normalized = vector.normalized;
@@ -311,9 +312,9 @@ class Vector3Unit extends Vector3 {
       identical(this, other) ||
       other is Vector3Unit &&
           runtimeType == other.runtimeType &&
-          (x - other.x).abs() < Vector.epsilon &&
-          (y - other.y).abs() < Vector.epsilon &&
-          (z - other.z).abs() < Vector.epsilon;
+          (x - other.x).abs() < Constants.epsilon &&
+          (y - other.y).abs() < Constants.epsilon &&
+          (z - other.z).abs() < Constants.epsilon;
 
   @override
   int get hashCode => Object.hash(x, y, z);
@@ -335,7 +336,7 @@ class Vector3Int {
   static const Vector3Int up = Vector3Int(0, 1, 0);
   static const Vector3Int down = Vector3Int(0, -1, 0);
   static const Vector3Int forward = Vector3Int(0, 0, 1);
-  static const Vector3Int backward = Vector3Int(0, 0, -1);
+  static const Vector3Int back = Vector3Int(0, 0, -1);
 
   // 修改单个分量并返回新向量
   Vector3Int appointX(int newX) => Vector3Int(newX, y, z);
@@ -355,6 +356,8 @@ class Vector3Int {
   Vector3Int operator ~/(int scalar) =>
       Vector3Int(x ~/ scalar, y ~/ scalar, z ~/ scalar);
 
+  Vector3 operator /(int scalar) => Vector3(x / scalar, y / scalar, z / scalar);
+
   Vector3Int operator -() => Vector3Int(-x, -y, -z);
 
   int get magnitudeSquare => x * x + y * y + z * z;
@@ -362,13 +365,15 @@ class Vector3Int {
   double get magnitude => math.sqrt(magnitudeSquare);
 
   Vector3 get normalized {
-    final mag = magnitude;
-    return mag > Vector.epsilon
-        ? Vector3(x / mag, y / mag, z / mag)
+    return magnitudeSquare > Constants.epsilon
+        ? Vector3(x / magnitudeSquare, y / magnitudeSquare, z / magnitudeSquare)
         : Vector3.zero;
   }
 
-  double dot(Vector3 other) => x * other.x + y * other.y + z * other.z;
+  int dot(Vector3Int other) => x * other.x + y * other.y + z * other.z;
+
+  double dotWithVector3(Vector3 other) =>
+      x * other.x + y * other.y + z * other.z;
 
   Vector3 cross(Vector3 other) => Vector3(
     y * other.z - z * other.y,
@@ -437,7 +442,7 @@ class Vector4 implements Vector<Vector4> {
 
   @override
   Vector4 get normalized =>
-      magnitude > Vector.epsilon ? this / magnitude : Vector4.zero;
+      magnitude > Constants.epsilon ? this / magnitude : Vector4.zero;
 
   @override
   double dot(Vector4 other) =>
@@ -445,10 +450,10 @@ class Vector4 implements Vector<Vector4> {
 
   @override
   bool get isZero =>
-      x.abs() < Vector.epsilon &&
-      y.abs() < Vector.epsilon &&
-      z.abs() < Vector.epsilon &&
-      w.abs() < Vector.epsilon;
+      x.abs() < Constants.epsilon &&
+      y.abs() < Constants.epsilon &&
+      z.abs() < Constants.epsilon &&
+      w.abs() < Constants.epsilon;
 
   @override
   String toString() => 'Vector4($x, $y, $z, $w)';
@@ -458,10 +463,10 @@ class Vector4 implements Vector<Vector4> {
       identical(this, other) ||
       other is Vector4 &&
           runtimeType == other.runtimeType &&
-          (x - other.x).abs() < Vector.epsilon &&
-          (y - other.y).abs() < Vector.epsilon &&
-          (z - other.z).abs() < Vector.epsilon &&
-          (w - other.w).abs() < Vector.epsilon;
+          (x - other.x).abs() < Constants.epsilon &&
+          (y - other.y).abs() < Constants.epsilon &&
+          (z - other.z).abs() < Constants.epsilon &&
+          (w - other.w).abs() < Constants.epsilon;
 
   @override
   int get hashCode => Object.hash(x, y, z, w);
@@ -551,7 +556,7 @@ class Vector4Int {
   /// 单位化向量（返回四维浮点向量 Vector4）
   Vector4 get normalized {
     final mag = magnitude;
-    return mag > Vector.epsilon
+    return mag > Constants.epsilon
         ? Vector4(x / mag, y / mag, z / mag, w / mag)
         : Vector4.zero;
   }

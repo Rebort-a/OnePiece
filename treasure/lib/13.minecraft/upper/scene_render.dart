@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../base/aabb.dart';
+
 import '../base/block.dart';
 import '../base/constant.dart';
 import '../base/face_merger.dart';
@@ -142,11 +142,7 @@ class ScenePainter extends CustomPainter {
     final selectedOccluders = potentialOccluders.take(32).toList();
 
     for (final block in selectedOccluders) {
-      final aabb = AABB(
-        block.position.toVector3() - Vector3.all(Constants.blockSizeHalf),
-        block.position.toVector3() + Vector3.all(Constants.blockSizeHalf),
-      );
-      occlusionCuller.addOccluder(aabb);
+      occlusionCuller.addOccluder(block.collider.aabb.toAABB());
     }
   }
 
@@ -206,11 +202,7 @@ class ScenePainter extends CustomPainter {
     final List<Block> visibleBlocks = [];
 
     for (final block in sceneInfo.blocks) {
-      final blockAABB = AABB(
-        block.position.toVector3() - Vector3.all(Constants.blockSizeHalf),
-        block.position.toVector3() + Vector3.all(Constants.blockSizeHalf),
-      );
-
+      final blockAABB = block.collider.aabb.toAABB();
       // 视锥体裁剪
       if (debugConfig.enableFrustumCulling) {
         if (!_frustum.intersectsAABB(blockAABB)) {
@@ -263,8 +255,10 @@ class ScenePainter extends CustomPainter {
     if (!debugConfig.enableDepthSorting) return faces;
 
     faces.sort((a, b) {
-      final distA = (a.bounds.center - sceneInfo.position).magnitudeSquare;
-      final distB = (b.bounds.center - sceneInfo.position).magnitudeSquare;
+      final distA =
+          (a.bounds.center.toVector3() - sceneInfo.position).magnitudeSquare;
+      final distB =
+          (b.bounds.center.toVector3() - sceneInfo.position).magnitudeSquare;
       return distB.compareTo(distA);
     });
     return faces;
@@ -272,7 +266,7 @@ class ScenePainter extends CustomPainter {
 
   void _renderMergedFace(Canvas canvas, Size size, MergedFace face) {
     final screenVertices = face.vertices
-        .map((vertex) => _project3DTo2D(vertex, size))
+        .map((vertex) => _project3DTo2D(vertex.toVector3(), size))
         .where((vertex) => vertex != Offset.infinite)
         .toList();
 
@@ -322,7 +316,7 @@ class ScenePainter extends CustomPainter {
   }
 
   double _calculateFaceDepth(BlockFace face, Vector3 blockPosition) {
-    return (face.center - sceneInfo.position).magnitudeSquare;
+    return (face.center.toVector3() - sceneInfo.position).magnitudeSquare;
   }
 
   void _renderBlockFace(Canvas canvas, Size size, Block block, BlockFace face) {
@@ -341,8 +335,10 @@ class ScenePainter extends CustomPainter {
   }
 
   /// 投影顶点到屏幕空间
-  List<Offset> _projectVerticesToScreen(List<Vector3> vertices, Size size) {
-    return vertices.map((vertex) => _project3DTo2D(vertex, size)).toList();
+  List<Offset> _projectVerticesToScreen(List<Vector3Int> vertices, Size size) {
+    return vertices
+        .map((vertex) => _project3DTo2D(vertex.toVector3(), size))
+        .toList();
   }
 
   /// 裁剪到屏幕边界
@@ -387,7 +383,7 @@ class ScenePainter extends CustomPainter {
     );
 
     final vpMatrix = projectionMatrix.multiply(viewMatrix);
-    final worldPoint = Vector4(point.x, point.y, point.z, 1.0);
+    final worldPoint = Vector4(point.x, point.y, point.z, 1);
     final clipPoint = vpMatrix.multiplyVector4(worldPoint);
 
     double ndcX, ndcY;
@@ -430,7 +426,7 @@ class ScenePainter extends CustomPainter {
     Canvas canvas,
     BlockType blockType,
     List<Offset> vertices,
-    Vector3 normal,
+    Vector3Int normal,
   ) {
     final path = Path()..addPolygon(vertices, true);
     final baseColor = blockType.color;
@@ -450,7 +446,7 @@ class ScenePainter extends CustomPainter {
   }
 
   /// 应用面光照
-  Color _applyFaceLighting(Color baseColor, Vector3 normal) {
+  Color _applyFaceLighting(Color baseColor, Vector3Int normal) {
     final brightness = switch ((normal.z, normal.y)) {
       (< 0, _) => Constants.lightingBackFace, // 背面
       (> 0, _) => Constants.lightingFrontFace, // 正面
@@ -613,8 +609,11 @@ Z: ${position.z.toStringAsFixed(1)}''';
     BlockFace face,
     Vector3 blockPosition,
   ) {
-    final faceCenter = _project3DTo2D(face.center, size);
-    final normalEnd = _project3DTo2D(face.center + face.normal * 0.5, size);
+    final faceCenter = _project3DTo2D(face.center.toVector3(), size);
+    final normalEnd = _project3DTo2D(
+      face.center.toVector3() + face.normal.toVector3() * 0.5,
+      size,
+    );
 
     canvas.drawLine(
       faceCenter,

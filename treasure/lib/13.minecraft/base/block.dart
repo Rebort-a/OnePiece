@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'collider.dart';
 import 'constant.dart';
+import 'face.dart';
 import 'vector.dart';
 
 /// 方块类型
@@ -72,51 +73,14 @@ extension BlockTypeProperties on BlockType {
     BlockType.goldOre,
     BlockType.diamondOre,
   ].contains(this);
-
-  /// 硬度（影响开采难度，值越高越难开采）
-  double get hardness => {
-    BlockType.bedrock: double.infinity, // 不可破坏
-    BlockType.stone: 1.5,
-    BlockType.dirt: 0.5,
-    BlockType.grass: 0.6,
-    BlockType.sand: 0.5,
-    BlockType.coalOre: 3.0,
-    BlockType.ironOre: 3.0,
-    BlockType.goldOre: 3.0,
-    BlockType.diamondOre: 3.0,
-    BlockType.wood: 2.0,
-    BlockType.leaf: 0.2,
-    BlockType.sapling: 0.1,
-    BlockType.water: 100.0, // 无法直接破坏
-    BlockType.glass: 0.3,
-    BlockType.planks: 2.0,
-    BlockType.air: 0.0,
-  }[this]!;
-}
-
-class FaceIdentify {
-  final List<int> indices;
-  final Vector3Unit normal;
-
-  const FaceIdentify(this.indices, this.normal);
-
-  // 静态面模板
-  static const List<FaceIdentify> hexahedron = [
-    FaceIdentify([0, 1, 2, 3], Vector3Unit.back), // 前
-    FaceIdentify([7, 6, 5, 4], Vector3Unit.forward), // 后
-    FaceIdentify([1, 5, 6, 2], Vector3Unit.right), // 右
-    FaceIdentify([4, 0, 3, 7], Vector3Unit.left), // 左
-    FaceIdentify([3, 2, 6, 7], Vector3Unit.up), // 上
-    FaceIdentify([0, 4, 5, 1], Vector3Unit.down), // 下
-  ];
 }
 
 /// 方块面数据
 class BlockFace {
   final BlockType type;
-  final Vector3 center;
-  final Vector3Unit normal;
-  final List<Vector3> vertices;
+  final Vector3Int center;
+  final Vector3Int normal;
+  final List<Vector3Int> vertices;
 
   const BlockFace({
     required this.type,
@@ -130,34 +94,34 @@ class BlockFace {
 class Block {
   final Vector3Int position;
   final BlockType type;
-  final BoxCollider collider;
-  final List<Vector3> _vertices;
+  final FixedBoxCollider collider;
+  final List<Vector3Int> _vertices;
   late final List<BlockFace> _faces;
 
   Vector3? _lastCameraPosition;
   List<BlockFace>? _cachedVisibleFaces;
 
   Block({required this.position, required this.type})
-    : collider = BoxCollider.fromInt(
+    : collider = FixedBoxCollider(
         position: position,
-        size: Vector3Int.all(Constants.blockSize),
+        halfSize: Vector3Int.all(Constants.blockSizeHalf),
       ),
       _vertices = _getVertices(position) {
     _faces = _getFaces(position, type, _vertices);
   }
 
-  static List<Vector3> _getVertices(Vector3Int position) {
+  static List<Vector3Int> _getVertices(Vector3Int position) {
     final half = Constants.blockSizeHalf;
     final p = position;
     return [
-      Vector3(p.x - half, p.y - half, p.z - half),
-      Vector3(p.x + half, p.y - half, p.z - half),
-      Vector3(p.x + half, p.y + half, p.z - half),
-      Vector3(p.x - half, p.y + half, p.z - half),
-      Vector3(p.x - half, p.y - half, p.z + half),
-      Vector3(p.x + half, p.y - half, p.z + half),
-      Vector3(p.x + half, p.y + half, p.z + half),
-      Vector3(p.x - half, p.y + half, p.z + half),
+      Vector3Int(p.x - half, p.y - half, p.z - half),
+      Vector3Int(p.x + half, p.y - half, p.z - half),
+      Vector3Int(p.x + half, p.y + half, p.z - half),
+      Vector3Int(p.x - half, p.y + half, p.z - half),
+      Vector3Int(p.x - half, p.y - half, p.z + half),
+      Vector3Int(p.x + half, p.y - half, p.z + half),
+      Vector3Int(p.x + half, p.y + half, p.z + half),
+      Vector3Int(p.x - half, p.y + half, p.z + half),
     ];
   }
 
@@ -165,13 +129,12 @@ class Block {
   static List<BlockFace> _getFaces(
     Vector3Int position,
     BlockType type,
-    List<Vector3> vertices,
+    List<Vector3Int> vertices,
   ) {
-    final blockCenter = position.toVector3();
     final halfSize = Constants.blockSizeHalf;
 
     return FaceIdentify.hexahedron.map((face) {
-      final faceCenter = blockCenter + face.normal * halfSize;
+      final faceCenter = position + face.normal * halfSize;
       final faceVertices = face.indices
           .map((index) => vertices[index])
           .toList();
@@ -199,14 +162,14 @@ class Block {
     } else {
       _cachedVisibleFaces = _faces.where((face) {
         // 使用预计算的面中心点和法向量进行可见性判断
-        final toCamera = (cameraPosition - face.center).normalized;
-        return face.normal.dot(toCamera) > 0; // 面朝向相机则可见
+        final toCamera = (cameraPosition - face.center.toVector3()).normalized;
+        return face.normal.dotWithVector3(toCamera) > 0; // 面朝向相机则可见
       }).toList();
     }
 
     return _cachedVisibleFaces!;
   }
 
-  List<Vector3> get vertices => _vertices;
+  List<Vector3Int> get vertices => _vertices;
   List<BlockFace> get faces => _faces;
 }
