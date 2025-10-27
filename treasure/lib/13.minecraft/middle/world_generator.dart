@@ -34,13 +34,19 @@ class WorldGenerator {
     final blockSize = Constants.blockSize;
     final blockSizeHalf = Constants.blockSizeHalf;
 
-    final worldHeightMin = blockSizeHalf;
-
+    final worldHeightMin = 0;
     final worldXBase = chunk.chunkCoord.x * chunkSize;
     final worldZBase = chunk.chunkCoord.z * chunkSize;
 
     // 生成高度图
-    final heightMap = _generateHeightMap(worldXBase, worldZBase, chunkSize);
+    final heightMap = _generateHeightMap(
+      worldXBase,
+      worldZBase,
+      chunkSize,
+      blockSize,
+      blockSizeHalf,
+      random,
+    );
 
     // 生成方块
     for (int x = blockSizeHalf; x < chunkSize; x += blockSize) {
@@ -55,7 +61,7 @@ class WorldGenerator {
           worldY <= surfaceY;
           worldY += blockSize
         ) {
-          final blockType = _getBlockType(worldY, surfaceY);
+          final blockType = _getBlockType(worldY, surfaceY, blockSize);
           chunk.addBlock(
             Block(
               position: Vector3Int(worldX, worldY, worldZ),
@@ -64,86 +70,92 @@ class WorldGenerator {
           );
         }
 
+        // 树木生成
         if (random.nextDouble() < 0.1 && surfaceY > 10) {
-          _generateTree(chunk, worldX, surfaceY, worldZ, random);
+          _generateTree(chunk, worldX, surfaceY, worldZ, random, blockSize);
         }
       }
     }
   }
 
   /// 获取方块类型
-  BlockType _getBlockType(int worldY, int surfaceY) {
+  static BlockType _getBlockType(int worldY, int surfaceY, int blockSize) {
     if (worldY == surfaceY) return BlockType.grass;
-    if (worldY >= surfaceY - 3 * Constants.blockSize) return BlockType.dirt;
+    if (worldY >= surfaceY - 3 * blockSize) return BlockType.dirt;
     return BlockType.stone;
   }
 
   /// 生成高度图
-  List<List<int>> _generateHeightMap(
+  static List<List<int>> _generateHeightMap(
     int worldXBase,
     int worldZBase,
     int chunkSize,
+    int blockSize,
+    int blockSizeHalf,
+    math.Random random,
   ) {
-    return List.generate(chunkSize, (x) {
-      return List.generate(chunkSize, (z) {
+    final heightMap = List.generate(
+      chunkSize,
+      (_) => List.filled(chunkSize, 0),
+    );
+
+    // 高度图采样点
+    for (int x = blockSizeHalf; x < chunkSize; x += blockSize) {
+      for (int z = blockSizeHalf; z < chunkSize; z += blockSize) {
         final worldX = worldXBase + x;
         final worldZ = worldZBase + z;
-        final heightOffset = _calculateTerrainHeight(worldX, worldZ);
-        return Constants.blockSizeHalf + heightOffset;
-      });
-    });
+
+        final heightOffset = _calculateTerrainHeight(
+          worldX,
+          worldZ,
+          random,
+          blockSize,
+        );
+
+        heightMap[x][z] = blockSizeHalf + heightOffset;
+      }
+    }
+
+    return heightMap;
   }
 
-  /// 简化噪声计算：综合多尺度噪声计算地形高度
-  int _calculateTerrainHeight(int worldX, int worldZ) {
-    // 大尺度地形噪声：缩放系数0.01，影响程度（振幅）8
+  /// 计算地形高度
+  static int _calculateTerrainHeight(
+    int worldX,
+    int worldZ,
+    math.Random random,
+    int blockSize,
+  ) {
+    final scale = 1.0 / blockSize;
     final noise1 =
-        _simpleNoise(
-          worldX * 0.01, // 地形噪声缩放系数1（大尺度地形）
-          worldZ * 0.01, // 地形噪声缩放系数1（大尺度地形）
-        ) *
-        8; // 地形噪声振幅1（大尺度地形影响程度）
-
-    // 中尺度地形噪声：缩放系数0.05，影响程度（振幅）4
+        _simpleNoise(worldX * 0.01 * scale, worldZ * 0.01 * scale, random) * 8;
     final noise2 =
-        _simpleNoise(
-          worldX * 0.05, // 地形噪声缩放系数2（中尺度地形）
-          worldZ * 0.05, // 地形噪声缩放系数2（中尺度地形）
-        ) *
-        4; // 地形噪声振幅2（中尺度地形影响程度）
-
-    // 小尺度细节噪声：缩放系数0.1，影响程度（振幅）2
+        _simpleNoise(worldX * 0.05 * scale, worldZ * 0.05 * scale, random) * 4;
     final noise3 =
-        _simpleNoise(
-          worldX * 0.1, // 地形噪声缩放系数3（小尺度细节）
-          worldZ * 0.1, // 地形噪声缩放系数3（小尺度细节）
-        ) *
-        2; // 地形噪声振幅3（小尺度细节影响程度）
+        _simpleNoise(worldX * 0.1 * scale, worldZ * 0.1 * scale, random) * 2;
 
     final totalHeight = (noise1 + noise2 + noise3).round();
+
     return totalHeight.clamp(0, 20 - Constants.blockSizeHalf);
   }
 
-  /// 轻量噪声函数：生成 [-1, 1) 范围的噪声值
-  static double _simpleNoise(double x, double z) {
-    // 简化哈希计算，使用指定的哈希乘数生成种子
+  /// 噪声函数
+  static double _simpleNoise(double x, double z, math.Random random) {
     final seed =
-        ((x * 73856093).toInt() ^ // 噪声哈希乘数1（用于噪声函数）
-            (z * 19349663).toInt()) & // 噪声哈希乘数2（用于噪声函数）
-        0x7FFFFFFF; // 最大随机种子值
-    final random = math.Random(seed);
-    return random.nextDouble() * 2 - 1;
+        (((x * 73856093).toInt()) ^ ((z * 19349663)).toInt()) & 0x7FFFFFFF;
+    final localRandom = math.Random(seed);
+    return localRandom.nextDouble() * 2 - 1;
   }
 
-  /// 生成树木：包含树干和树冠
+  /// 生成树木
   static void _generateTree(
     Chunk chunk,
     int x,
     int baseY,
     int z,
     math.Random random,
+    int blockSize,
   ) {
-    final blockSize = Constants.blockSize;
     // 树干高度范围：最小3个方块高度，最大4个方块高度（按方块尺寸换算）
     final minTrunkHeight = 3 * blockSize; // 树干最小高度（单位：方块数）
     final maxTrunkHeight = 4 * blockSize; // 树干最大高度（单位：方块数）
@@ -197,7 +209,7 @@ class WorldGenerator {
               Block(
                 position: Vector3Int(
                   x + xOffset,
-                  (canopyStartY + yOffset),
+                  canopyStartY + yOffset,
                   z + zOffset,
                 ),
                 type: BlockType.leaf,

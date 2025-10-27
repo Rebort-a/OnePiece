@@ -29,7 +29,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 初始化游戏
   void _initialize() {
-    _player = Player(position: Vector3(1, 32, 1));
+    _player = Player(position: Vector3(1, 32, 0));
     _controlManager = ControlManager(_player);
     _chunkManager = ChunkManager();
     _chunkManager.updateChunks(_player.position);

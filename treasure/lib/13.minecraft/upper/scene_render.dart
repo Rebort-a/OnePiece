@@ -115,7 +115,7 @@ class ScenePainter extends CustomPainter {
       Constants.nearClip,
       Constants.farClip,
     );
-    final vpMatrix = projectionMatrix.multiply(viewMatrix);
+    final vpMatrix = projectionMatrix * viewMatrix;
     _frustum = Frustum.fromViewProjectionMatrix(vpMatrix);
   }
 
@@ -382,7 +382,7 @@ class ScenePainter extends CustomPainter {
       Constants.farClip,
     );
 
-    final vpMatrix = projectionMatrix.multiply(viewMatrix);
+    final vpMatrix = projectionMatrix * viewMatrix;
     final worldPoint = Vector4(point.x, point.y, point.z, 1);
     final clipPoint = vpMatrix.multiplyVector4(worldPoint);
 
@@ -474,7 +474,7 @@ class ScenePainter extends CustomPainter {
       Constants.nearClip,
       Constants.farClip,
     );
-    final vpMatrix = projectionMatrix.multiply(viewMatrix);
+    final vpMatrix = projectionMatrix * viewMatrix;
     final invViewProj = vpMatrix.inverse();
 
     final corners = _frustum.getCorners(invViewProj);

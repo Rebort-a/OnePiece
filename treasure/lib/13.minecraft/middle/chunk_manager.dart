@@ -27,9 +27,9 @@ class ChunkManager {
 
   static Vector3Int getChunkCoord(Vector3 worldPos) {
     return Vector3Int(
-      worldPos.x ~/ chunkSize,
-      worldPos.y ~/ chunkSize,
-      worldPos.z ~/ chunkSize,
+      (worldPos.x / chunkSize).floor(),
+      (worldPos.y / chunkSize).floor(),
+      (worldPos.z / chunkSize).floor(),
     );
   }
 

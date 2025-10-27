@@ -79,7 +79,7 @@ class Constants {
   static const int loadChunkCount = 1;
 
   /// 渲染距离
-  static const double renderDistance = 16;
+  static const double renderDistance = 32;
 
   // ============================
   // 八叉树参数

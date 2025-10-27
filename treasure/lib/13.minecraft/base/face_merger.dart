@@ -6,6 +6,21 @@ import 'block.dart';
 import 'constant.dart';
 import 'vector.dart';
 
+/// 辅助类：2D矩形
+class _Rectangle2D {
+  final int minX, minY, maxX, maxY;
+
+  _Rectangle2D(this.minX, this.minY, this.maxX, this.maxY);
+}
+
+/// 辅助类：元组
+class Tuple<T1, T2> {
+  final T1 item1;
+  final T2 item2;
+
+  Tuple(this.item1, this.item2);
+}
+
 /// 合并后的面
 class MergedFace {
   final BlockType blockType;
@@ -58,11 +73,6 @@ class MergedFace {
   }
 
   AABBInt get bounds => AABBInt(min, max);
-
-  @override
-  String toString() {
-    return 'MergedFace(type: $blockType, normal: $normal, min: $min, max: $max)';
-  }
 }
 
 /// 面合并器
@@ -85,8 +95,8 @@ class FaceMerger {
         final blockPos = block.position;
 
         // 改进的分组键：法线 + 类型 + 区块坐标（避免远距离合并）
-        final chunkX = blockPos.x ~/ 4;
-        final chunkZ = blockPos.z ~/ 4;
+        final chunkX = (blockPos.x / 4).floor(); // 每4个单位一个区块
+        final chunkZ = (blockPos.z / 4).floor();
 
         final key =
             '${normal.x},${normal.y},${normal.z},'
@@ -425,25 +435,4 @@ class FaceMerger {
   static bool _approxEqual(int a, int b) {
     return (a - b).abs() < 0;
   }
-}
-
-/// 辅助类：2D矩形
-class _Rectangle2D {
-  final int minX, minY, maxX, maxY;
-
-  _Rectangle2D(this.minX, this.minY, this.maxX, this.maxY);
-
-  @override
-  String toString() => 'Rectangle2D(x: $minX→$maxX, y: $minY→$maxY)';
-}
-
-/// 辅助类：元组
-class Tuple<T1, T2> {
-  final T1 item1;
-  final T2 item2;
-
-  Tuple(this.item1, this.item2);
-
-  @override
-  String toString() => 'Tuple($item1, $item2)';
 }
