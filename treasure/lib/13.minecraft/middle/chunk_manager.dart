@@ -4,6 +4,7 @@ import '../base/aabb.dart';
 import '../base/block.dart';
 import '../base/chunk.dart';
 import '../base/constant.dart';
+import '../base/player.dart';
 import '../base/vector.dart';
 import 'world_generator.dart';
 
@@ -109,25 +110,30 @@ class ChunkManager {
   }
 
   /// 获取玩家附近方块
-  List<Block> getBlocksNearPlayer(Vector3 playerPos, double radius) {
-    final min = Vector3(
-      playerPos.x - radius,
-      playerPos.y - radius,
-      playerPos.z - radius,
-    );
-    final max = Vector3(
-      playerPos.x + radius,
-      playerPos.y + radius,
-      playerPos.z + radius,
-    );
-
+  List<Block> _getBlocksNearPlayer(AABB aabb) {
     final List<Block> blocks = [];
     for (final chunk in _loadedChunks.values) {
-      final chunkBlocks = chunk.octree.queryRange(AABB(min, max));
+      final chunkBlocks = chunk.octree.queryRange(aabb);
       blocks.addAll(chunkBlocks);
     }
 
     return blocks;
+  }
+
+  List<Block> getRenderBlocks(Player player) {
+    final AABB aabb = AABB.fromCenterAndHalfSize(
+      player.position,
+      Vector3.all(Constants.renderDistance),
+    );
+
+    return _getBlocksNearPlayer(aabb);
+  }
+
+  List<Block> getCollisionBlocks(Player player) {
+    final AABB aabb = player.collider.aabb.expand(
+      Constants.blockSizeHalf.toDouble(),
+    );
+    return _getBlocksNearPlayer(aabb);
   }
 
   /// 检查是否有待加载区块

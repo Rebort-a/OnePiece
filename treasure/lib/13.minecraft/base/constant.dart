@@ -36,9 +36,6 @@ class Constants {
   /// 玩家高度
   static const double playerHeight = 3;
 
-  /// 碰撞检测距离
-  static const double colliderDistance = 4;
-
   // ============================
   // 控制参数
   // ============================
@@ -72,14 +69,17 @@ class Constants {
   // 区块参数
   // ============================
 
-  /// 区块尺寸（16x16x16）
-  static const int chunkBlockCount = 16;
+  /// 区块尺寸
+  static const int chunkBlockCount = 8;
+
+  /// 区块组
+  static const int chunkGroupSize = 3;
 
   /// 渲染区块数量
   static const int loadChunkCount = 1;
 
   /// 渲染距离
-  static const double renderDistance = 32;
+  static const double renderDistance = 16;
 
   // ============================
   // 八叉树参数

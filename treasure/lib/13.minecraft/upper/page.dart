@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../middle/manager.dart';
 import 'scene_render.dart';
-import '../base/widget.dart';
+import 'widget.dart';
 
 /// 主游戏页面
 class MinecraftPage extends StatelessWidget {

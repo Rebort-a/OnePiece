@@ -86,6 +86,22 @@ class AABB {
     }
   }
 
+  AABB expand(double delta) {
+    final newMin = Vector3(
+      min.x - delta, // 左移
+      min.y - delta, // 下移
+      min.z - delta, // 前移
+    );
+
+    final newMax = Vector3(
+      max.x + delta, // 右移
+      max.y + delta, // 上移
+      max.z + delta, // 后移
+    );
+
+    return AABB(newMin, newMax, center: center);
+  }
+
   /// 获取包围盒尺寸
   Vector3 get size => max - min;
 

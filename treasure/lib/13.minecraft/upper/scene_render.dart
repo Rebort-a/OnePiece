@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 
 import '../base/block.dart';
 import '../base/constant.dart';
-import '../base/face_merger.dart';
+import 'face_merger.dart';
 import '../base/matrix.dart';
-import '../base/occlusion_culler.dart';
+import 'occlusion_culler.dart';
 import '../base/vector.dart';
-import '../base/frustum.dart';
+import 'frustum.dart';
 import '../middle/common.dart';
 
 /// 渲染调试配置
@@ -51,7 +51,7 @@ class ScenePainter extends CustomPainter {
   final SceneInfo sceneInfo;
   final String debugInfo;
   final OcclusionCuller occlusionCuller;
-  late Frustum _frustum;
+  late FrustumManager _frustum;
   final RenderDebugConfig debugConfig = RenderDebugConfig();
 
   ScenePainter(this.sceneInfo, this.debugInfo)
@@ -116,7 +116,7 @@ class ScenePainter extends CustomPainter {
       Constants.farClip,
     );
     final vpMatrix = projectionMatrix * viewMatrix;
-    _frustum = Frustum.fromViewProjectionMatrix(vpMatrix);
+    _frustum = FrustumManager.fromViewProjectionMatrix(vpMatrix);
   }
 
   void _updateOcclusionCuller() {
@@ -176,7 +176,10 @@ class ScenePainter extends CustomPainter {
 
   void _renderWithFaceMerging(Canvas canvas, Size size, List<Block> blocks) {
     // 合并面
-    final mergedFaces = FaceMerger.mergeFaces(blocks, sceneInfo.position);
+    final mergedFaces = FaceMerger.mergeVisibleFaces(
+      blocks,
+      sceneInfo.position,
+    );
     _mergedFaces = mergedFaces.length;
 
     // 深度排序
@@ -218,7 +221,7 @@ class ScenePainter extends CustomPainter {
           sceneInfo.position,
         );
 
-        if (occlusionResult == OcclusionResult.occluded) {
+        if (occlusionResult == OcclusionResult.fullyOccluded) {
           _occlusionCulled++;
           continue;
         }
@@ -514,7 +517,7 @@ class ScenePainter extends CustomPainter {
       color: Colors.white,
       fontSize: 12,
       shadows: [
-        Shadow(blurRadius: 2.0, color: Colors.black, offset: Offset(1.0, 1.0)),
+        Shadow(blurRadius: 2, color: Colors.black, offset: Offset(1, 1)),
       ],
     );
 
@@ -525,23 +528,17 @@ Orientation: (${sceneInfo.orientation.x.toStringAsFixed(1)}, ${sceneInfo.orienta
 Total Blocks: $_totalBlocks
 Frustum Culled: $_frustumCulled
 Occlusion Culled: $_occlusionCulled
-Occluders: ${occlusionCuller.occludersCount}
 Rendered Faces: $_renderedFaces
 Merged Faces: $_mergedFaces
-Frustum Cull: ${debugConfig.enableFrustumCulling ? 'ON' : 'OFF'}
-Occlusion Cull: ${debugConfig.enableOcclusionCulling ? 'ON' : 'OFF'}
-Face Merge: ${debugConfig.enableFaceMerging ? 'ON' : 'OFF'}
 $debugInfo
 ''';
 
     final textSpan = TextSpan(text: debugText, style: textStyle);
-    final textPainter = TextPainter(
+    final painter = TextPainter(
       text: textSpan,
       textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    textPainter.paint(canvas, const Offset(10, 10));
+    )..layout();
+    painter.paint(canvas, const Offset(10, 10));
   }
 
   /// 绘制Position坐标（黑色圆角背景+垂直排列）

@@ -29,7 +29,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 初始化游戏
   void _initialize() {
-    _player = Player(position: Vector3(1, 32, 0));
+    _player = Player(position: Vector3(0, 16, 1));
     _controlManager = ControlManager(_player);
     _chunkManager = ChunkManager();
     _chunkManager.updateChunks(_player.position);
@@ -60,10 +60,7 @@ class Manager with ChangeNotifier implements TickerProvider {
     _controlManager.updatePlayerMovement(deltaTime);
 
     // 获取碰撞检测所需方块
-    final nearbyBlocks = _chunkManager.getBlocksNearPlayer(
-      _player.position,
-      Constants.colliderDistance,
-    );
+    final nearbyBlocks = _chunkManager.getCollisionBlocks(_player);
     _player.update(deltaTime, nearbyBlocks);
 
     // 分批处理加载队列
@@ -87,10 +84,7 @@ class Manager with ChangeNotifier implements TickerProvider {
 
   /// 更新可见方块
   void _updateVisibleBlocks() {
-    final blocks = _chunkManager.getBlocksNearPlayer(
-      _player.position,
-      Constants.renderDistance,
-    );
+    final blocks = _chunkManager.getRenderBlocks(_player);
     _lastInfo = SceneInfo(
       position: _player.position,
       orientation: _player.orientation,
