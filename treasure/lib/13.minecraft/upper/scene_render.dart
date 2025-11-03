@@ -104,12 +104,12 @@ class ScenePainter extends CustomPainter {
   }
 
   void _updateFrustum(Size size) {
-    final viewMatrix = Matrix.lookAtLH(
+    final viewMatrix = ColMat4.lookAtLH(
       sceneInfo.position,
       sceneInfo.position + sceneInfo.orientation.normalized,
       Vector3Unit.up,
     );
-    final projectionMatrix = Matrix.perspectiveLH(
+    final projectionMatrix = ColMat4.perspectiveLH(
       Constants.fieldOfView * math.pi / 180,
       size.width / size.height,
       Constants.nearClip,
@@ -372,13 +372,13 @@ class ScenePainter extends CustomPainter {
   /// 3D到2D投影变换
   Offset _project3DTo2D(Vector3 point, Size size) {
     // 构建视图投影矩阵
-    final viewMatrix = Matrix.lookAtLH(
+    final viewMatrix = ColMat4.lookAtLH(
       sceneInfo.position,
       sceneInfo.position + sceneInfo.orientation.normalized,
       Vector3Unit.up,
     );
 
-    final projectionMatrix = Matrix.perspectiveLH(
+    final projectionMatrix = ColMat4.perspectiveLH(
       Constants.fieldOfView * math.pi / 180,
       size.width / size.height,
       Constants.nearClip,
@@ -466,12 +466,12 @@ class ScenePainter extends CustomPainter {
   }
 
   void _drawFrustum(Canvas canvas, Size size) {
-    final viewMatrix = Matrix.lookAtLH(
+    final viewMatrix = ColMat4.lookAtLH(
       sceneInfo.position,
       sceneInfo.position + sceneInfo.orientation.normalized,
       Vector3Unit.up,
     );
-    final projectionMatrix = Matrix.perspectiveLH(
+    final projectionMatrix = ColMat4.perspectiveLH(
       Constants.fieldOfView * math.pi / 180,
       size.width / size.height,
       Constants.nearClip,

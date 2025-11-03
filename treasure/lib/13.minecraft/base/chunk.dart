@@ -31,6 +31,8 @@ class Chunk {
 
   Vector3Int get max => min + Vector3Int.all(chunkSize);
 
+  AABBInt get aabb => AABBInt(min, max);
+
   /// 添加方块到区块
   bool addBlock(Block block) {
     // 检查方块坐标是否在区块范围内

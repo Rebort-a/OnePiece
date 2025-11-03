@@ -8,9 +8,9 @@ import '../base/vector.dart';
 
 /// 预计算的树木数据
 class PrecomputedTree {
-  final Vector3Int coord; // 树干基部坐标
+  final Vector3Int coord; // 树干基部坐标（实际地表高度）
   final int trunkHeight; // 树干高度
-  final AABBInt treeAABB; // 整棵树包围盒（包含树干和树冠）
+  final AABBInt treeAABB; // 整棵树包围盒
 
   PrecomputedTree({
     required this.coord,
@@ -19,30 +19,78 @@ class PrecomputedTree {
   });
 }
 
+/// 生物群系类型
+enum BiomeType {
+  plains, // 平原
+  forest, // 森林
+  desert, // 沙漠
+  mountains, // 山脉
+  snowy, // 雪地
+  beach, // 海滩
+  swamp, // 沼泽
+}
+
 /// 世界生成器
 class WorldGenerator {
-  // 核心参数（与常量绑定）
+  // ---------------------- 核心常量 ----------------------
   static const int _blockSize = Constants.blockSize;
-  static const int _blockSizeHalf = Constants.blockSizeHalf;
+  static const int _blockSizeHalf = Constants.blockSizeHalf; // 确保为奇数（如1,3等）
   static const int _chunkBlockCount = Constants.chunkBlockCount;
   static const int _groupSize = Constants.chunkGroupSize;
 
   // 衍生尺寸
   static const int _chunkSize = _chunkBlockCount * _blockSize;
   static const int _groupTotalSize = _chunkSize * _groupSize;
+
+  // 树木配置
   static const int _treeCanopyRadius = 2 * _blockSize;
   static const int _treeCanopyHeight = 4 * _blockSize;
-  static const int _worldHeightMin = _blockSizeHalf;
+  static const int _canopyHalfHeight = _treeCanopyHeight ~/ 2;
 
-  // 组级缓存
+  // 世界高度（worldSurfaceLevel为地表最低高度基准）
+  static const int _minSurfaceY =
+      Constants.worldSurfaceLevel; // 地表最低高度（符合y坐标规则）
+  static const int _bedrockY = Constants.worldBedrockLevel;
+
+  // 地表层数配置（最少1层，最多6层，零层概率1%）
+  static const int _minSurfaceLayers = 1;
+  static const int _maxSurfaceLayers = 6;
+  static const double _zeroLayerChance = 0.01;
+
+  // 噪音配置
+  static const double _noiseTempScale = 0.002;
+  static const double _noiseHumidityScale = 0.003;
+
+  // 生物群系-树木映射
+  static const Map<BiomeType, double> _treeSpawnChances = {
+    BiomeType.forest: 0.1,
+    BiomeType.plains: 0.025,
+    BiomeType.swamp: 0.075,
+  };
+  static const Map<BiomeType, (int base, int range)> _treeHeightConfig = {
+    BiomeType.forest: (4, 3),
+    BiomeType.plains: (3, 2),
+    BiomeType.swamp: (2, 2),
+  };
+
+  // ---------------------- 缓存与成员变量 ----------------------
   final Map<Vector3Int, int> _groupSeeds = {};
-  final Map<Vector3Int, List<List<int>>> _groupHeightMaps = {};
+  final Map<Vector3Int, List<List<BiomeType>>> _groupBiomeMaps = {};
+  final Map<Vector3Int, List<List<int>>> _groupSurfaceTopYs =
+      {}; // 存储每个(x,z)的地表顶层Y坐标
   final Map<Vector3Int, List<PrecomputedTree>> _groupPrecomputedTrees = {};
   final int index;
 
   WorldGenerator(this.index);
 
-  // ---------------------- 坐标转换工具方法 ----------------------
+  // ---------------------- 通用工具：缓存获取 ----------------------
+  T _getCached<T>(
+    Map<Vector3Int, T> cache,
+    Vector3Int key,
+    T Function() generator,
+  ) => cache.putIfAbsent(key, generator);
+
+  // ---------------------- 坐标转换 ----------------------
   static Vector3Int _getGroupCoord(Vector3Int chunkCoord) => Vector3Int(
     chunkCoord.x ~/ _groupSize,
     chunkCoord.y ~/ _groupSize,
@@ -55,99 +103,109 @@ class WorldGenerator {
     chunkCoord.z % _groupSize,
   );
 
-  // ---------------------- 种子与高度图生成 ----------------------
-  int _getGroupSeed(Vector3Int groupCoord) {
-    if (!_groupSeeds.containsKey(groupCoord)) {
-      final baseSeed = math.Random(index).nextInt(0x7FFFFFFF);
-      _groupSeeds[groupCoord] =
-          (baseSeed ^ groupCoord.x ^ groupCoord.y ^ groupCoord.z) & 0x7FFFFFFF;
-    }
-    return _groupSeeds[groupCoord]!;
-  }
+  // ---------------------- 种子与生物群系生成 ----------------------
+  int _getGroupSeed(Vector3Int groupCoord) =>
+      _getCached(_groupSeeds, groupCoord, () {
+        final baseSeed = math.Random(index).nextInt(0x7FFFFFFF);
+        return (baseSeed ^ groupCoord.x ^ groupCoord.y ^ groupCoord.z) &
+            0x7FFFFFFF;
+      });
 
-  List<List<int>> _getGroupHeightMap(
+  List<List<BiomeType>> _getGroupBiomeMap(
     Vector3Int groupCoord,
     math.Random groupRandom,
-  ) {
-    if (_groupHeightMaps.containsKey(groupCoord)) {
-      return _groupHeightMaps[groupCoord]!;
-    }
-
-    // 生成高度图
+  ) => _getCached(_groupBiomeMaps, groupCoord, () {
     final groupWorldX = groupCoord.x * _groupTotalSize;
     final groupWorldZ = groupCoord.z * _groupTotalSize;
-    final groupHeightMap = List.generate(
+    final biomeMap = List.generate(
       _groupTotalSize,
-      (_) => List.filled(_groupTotalSize, 0),
+      (_) => List.filled(_groupTotalSize, BiomeType.plains),
     );
+
     for (int x = _blockSizeHalf; x < _groupTotalSize; x += _blockSize) {
       for (int z = _blockSizeHalf; z < _groupTotalSize; z += _blockSize) {
-        final heightOffset = _calculateTerrainHeight(
-          groupWorldX + x,
-          groupWorldZ + z,
-          groupRandom,
-        );
-        groupHeightMap[x][z] = _blockSizeHalf + heightOffset;
+        final worldX = groupWorldX + x;
+        final worldZ = groupWorldZ + z;
+
+        final temperature =
+            _simpleNoise(
+                  worldX * _noiseTempScale,
+                  worldZ * _noiseTempScale,
+                  groupRandom,
+                ) *
+                0.5 +
+            0.5;
+        final humidity =
+            _simpleNoise(
+                  worldX * _noiseHumidityScale,
+                  worldZ * _noiseHumidityScale,
+                  groupRandom,
+                ) *
+                0.5 +
+            0.5;
+
+        biomeMap[x][z] = _getBiomeType(temperature, humidity);
       }
     }
+    return biomeMap;
+  });
 
-    // 预计算组内所有树木（使用整棵树的AABB）
-    final groupTrees = <PrecomputedTree>[];
-    for (int x = _blockSizeHalf; x < _groupTotalSize; x += _blockSize) {
-      for (int z = _blockSizeHalf; z < _groupTotalSize; z += _blockSize) {
-        final surfaceY = groupHeightMap[x][z];
-        final blockWorldX = groupWorldX + x;
-        final blockWorldZ = groupWorldZ + z;
-
-        if (_shouldGenerateTree(surfaceY, groupRandom) &&
-            _isAwayFromGroupEdge(
-              blockWorldX,
-              blockWorldZ,
-              groupWorldX,
-              groupWorldZ,
-            )) {
-          // 计算树干参数
-          final trunkBaseY = _getSoilTopY(surfaceY);
-          final trunkHeight =
-              3 * _blockSize +
-              groupRandom.nextInt(
-                    ((4 * _blockSize - 3 * _blockSize) ~/ _blockSize) + 1,
-                  ) *
-                  _blockSize;
-
-          // 计算整棵树的包围盒（包含树干和树冠）
-          final treeMin = Vector3Int(
-            blockWorldX - _treeCanopyRadius,
-            trunkBaseY, // 从树干基部开始
-            blockWorldZ - _treeCanopyRadius,
-          );
-          final treeMax = Vector3Int(
-            blockWorldX + _treeCanopyRadius,
-            trunkBaseY + trunkHeight + _treeCanopyHeight, // 到树冠顶部结束
-            blockWorldZ + _treeCanopyRadius,
-          );
-          final treeAABB = AABBInt(treeMin, treeMax);
-
-          // 存入组缓存
-          groupTrees.add(
-            PrecomputedTree(
-              coord: Vector3Int(blockWorldX, trunkBaseY, blockWorldZ),
-              trunkHeight: trunkHeight,
-              treeAABB: treeAABB,
-            ),
-          );
-        }
-      }
+  // ---------------------- 地表高度生成（核心修改） ----------------------
+  /// 获取地表层数（1-6层为主，1%概率0层）
+  int _getSurfaceLayers(math.Random random) {
+    if (random.nextDouble() < _zeroLayerChance) {
+      return 0; // 零层（空）
     }
-
-    _groupHeightMaps[groupCoord] = groupHeightMap;
-    _groupPrecomputedTrees[groupCoord] = groupTrees;
-    return groupHeightMap;
+    return _minSurfaceLayers +
+        random.nextInt(_maxSurfaceLayers - _minSurfaceLayers + 1);
   }
 
-  // ---------------------- 树木生成辅助方法 ----------------------
-  bool _shouldGenerateTree(int surfaceY, math.Random groupRandom) =>
-      surfaceY > 8 && groupRandom.nextDouble() < 0.2;
+  /// 计算地表顶层Y坐标（基于层数，确保符合y坐标规则）
+  int _getSurfaceTopY(int layers) {
+    if (layers == 0) {
+      return _minSurfaceY - _blockSize; // 零层时低于最低高度
+    }
+    // 层数为n时，顶层Y = 最低高度 + (n-1)*blockSize（确保步进为blockSize）
+    return _minSurfaceY + (layers - 1) * _blockSize;
+  }
+
+  /// 获取群组内所有位置的地表顶层Y坐标缓存
+  List<List<int>> _getGroupSurfaceTopYs(
+    Vector3Int groupCoord,
+    math.Random groupRandom,
+  ) => _getCached(_groupSurfaceTopYs, groupCoord, () {
+    final surfaceTopYs = List.generate(
+      _groupTotalSize,
+      (_) => List.filled(_groupTotalSize, _minSurfaceY),
+    );
+
+    for (int x = _blockSizeHalf; x < _groupTotalSize; x += _blockSize) {
+      for (int z = _blockSizeHalf; z < _groupTotalSize; z += _blockSize) {
+        final layers = _getSurfaceLayers(groupRandom);
+        surfaceTopYs[x][z] = _getSurfaceTopY(layers);
+      }
+    }
+    return surfaceTopYs;
+  });
+
+  // ---------------------- 生物群系判断 ----------------------
+  BiomeType _getBiomeType(double temperature, double humidity) {
+    if (temperature > 0.7) {
+      return humidity < 0.3 ? BiomeType.desert : BiomeType.plains;
+    }
+    if (temperature < 0.3) return BiomeType.swamp;
+    if (humidity > 0.6) return BiomeType.forest;
+    return BiomeType.plains;
+  }
+
+  // ---------------------- 树木生成辅助（修改基准为实际地表高度） ----------------------
+  bool _shouldGenerateTree(BiomeType biome, math.Random groupRandom) =>
+      groupRandom.nextDouble() < (_treeSpawnChances[biome] ?? 0.0);
+
+  int _getTreeHeight(BiomeType biome, math.Random groupRandom) {
+    final (base, range) = _treeHeightConfig[biome] ?? (3, 0);
+    return base * _blockSize + groupRandom.nextInt(range) * _blockSize;
+  }
 
   bool _isAwayFromGroupEdge(
     int worldX,
@@ -155,55 +213,23 @@ class WorldGenerator {
     int groupWorldX,
     int groupWorldZ,
   ) {
-    final groupInnerX = worldX - groupWorldX;
-    final groupInnerZ = worldZ - groupWorldZ;
-    return groupInnerX >= _treeCanopyRadius &&
-        groupInnerX <= _groupTotalSize - _treeCanopyRadius &&
-        groupInnerZ >= _treeCanopyRadius &&
-        groupInnerZ <= _groupTotalSize - _treeCanopyRadius;
+    final edgeMargin = _treeCanopyRadius;
+    final innerX = worldX - groupWorldX;
+    final innerZ = worldZ - groupWorldZ;
+    return innerX >= edgeMargin &&
+        innerX <= _groupTotalSize - edgeMargin &&
+        innerZ >= edgeMargin &&
+        innerZ <= _groupTotalSize - edgeMargin;
   }
 
-  int _getSoilTopY(int surfaceY) {
-    final soilYOffset = (surfaceY - _blockSizeHalf) % _blockSize;
-    return surfaceY - soilYOffset;
-  }
+  // ---------------------- 地表方块类型 ----------------------
+  BlockType _getSurfaceBlockType(BiomeType biome) => switch (biome) {
+    BiomeType.desert || BiomeType.beach => BlockType.sand,
+    BiomeType.snowy => BlockType.snow,
+    _ => BlockType.grass,
+  };
 
-  // ---------------------- 地形高度与方块类型 ----------------------
-  static BlockType _getBlockType(int worldY, int surfaceY) {
-    if (worldY == surfaceY) return BlockType.grass;
-    if (worldY >= surfaceY - 3 * _blockSize) return BlockType.dirt;
-    return BlockType.stone;
-  }
-
-  static int _calculateTerrainHeight(
-    int worldX,
-    int worldZ,
-    math.Random groupRandom,
-  ) {
-    final scale = 1.0 / _blockSize;
-    final totalHeight =
-        (_simpleNoise(
-                      worldX * 0.01 * scale,
-                      worldZ * 0.01 * scale,
-                      groupRandom,
-                    ) *
-                    8 +
-                _simpleNoise(
-                      worldX * 0.05 * scale,
-                      worldZ * 0.05 * scale,
-                      groupRandom,
-                    ) *
-                    4 +
-                _simpleNoise(
-                      worldX * 0.1 * scale,
-                      worldZ * 0.1 * scale,
-                      groupRandom,
-                    ) *
-                    2)
-            .round();
-    return totalHeight.clamp(0, _groupTotalSize - _blockSizeHalf);
-  }
-
+  // ---------------------- 噪音生成 ----------------------
   static double _simpleNoise(double x, double z, math.Random groupRandom) {
     final seed =
         (((x * 73856093).toInt()) ^ ((z * 19349663).toInt())) & 0x7FFFFFFF;
@@ -212,127 +238,167 @@ class WorldGenerator {
         1;
   }
 
-  // ---------------------- 区块生成核心逻辑 ----------------------
+  // ---------------------- 区块生成核心（修改地表和树木生成逻辑） ----------------------
   void generateChunk(Chunk chunk) {
     final chunkCoord = chunk.chunkCoord;
     final groupCoord = _getGroupCoord(chunkCoord);
     final groupRandom = math.Random(_getGroupSeed(groupCoord));
-    final groupHeightMap = _getGroupHeightMap(groupCoord, groupRandom);
-    final groupTrees = _groupPrecomputedTrees[groupCoord] ?? [];
+    final groupBiomeMap = _getGroupBiomeMap(groupCoord, groupRandom);
+    final groupSurfaceTopYs = _getGroupSurfaceTopYs(groupCoord, groupRandom);
+    final groupTrees = _precomputeTrees(
+      groupCoord,
+      groupBiomeMap,
+      groupSurfaceTopYs,
+      groupRandom,
+    );
 
-    // 1. 生成地面方块
+    // 计算区块坐标范围
     final groupOffset = _getGroupOffset(chunkCoord);
     final chunkXStart = groupOffset.x * _chunkSize;
     final chunkZStart = groupOffset.z * _chunkSize;
     final worldXBase = chunkCoord.x * _chunkSize;
     final worldZBase = chunkCoord.z * _chunkSize;
 
+    // 生成地表（多层结构，基于实际高度）
     for (int x = _blockSizeHalf; x < _chunkSize; x += _blockSize) {
       for (int z = _blockSizeHalf; z < _chunkSize; z += _blockSize) {
-        final surfaceY = groupHeightMap[chunkXStart + x][chunkZStart + z];
-        for (
-          int worldY = _worldHeightMin;
-          worldY <= surfaceY;
-          worldY += _blockSize
-        ) {
-          chunk.addBlock(
-            Block(
-              position: Vector3Int(worldXBase + x, worldY, worldZBase + z),
-              type: _getBlockType(worldY, surfaceY),
+        final mapX = chunkXStart + x;
+        final mapZ = chunkZStart + z;
+        final biome = groupBiomeMap[mapX][mapZ];
+        final surfaceTopY = groupSurfaceTopYs[mapX][mapZ];
+        final layers = (surfaceTopY - _minSurfaceY) ~/ _blockSize + 1;
+
+        // 生成地表层（顶层为生物群系对应类型，下层为泥土）
+        if (layers > 0) {
+          for (int i = 0; i < layers; i++) {
+            final y = surfaceTopY - i * _blockSize; // y坐标步进为blockSize，保持奇数
+            final blockType = i == 0
+                ? _getSurfaceBlockType(biome)
+                : BlockType.dirt; // 下层用泥土
+
+            final surfaceBlock = Block(
+              position: Vector3Int(worldXBase + x, y, worldZBase + z),
+              type: blockType,
+            );
+            chunk.addBlock(surfaceBlock);
+          }
+        }
+
+        // 生成基岩（固定高度，确保y坐标符合规则）
+        final bedrockBlock = Block(
+          position: Vector3Int(worldXBase + x, _bedrockY, worldZBase + z),
+          type: BlockType.bedrock,
+        );
+        chunk.addBlock(bedrockBlock);
+      }
+    }
+
+    // 生成重叠的树木部分
+    for (final tree in groupTrees) {
+      if (tree.treeAABB.intersects(chunk.aabb)) {
+        _generateOverlappedTreePart(chunk, tree, groupRandom);
+      }
+    }
+  }
+
+  // ---------------------- 树木预计算（基于实际地表高度） ----------------------
+  List<PrecomputedTree> _precomputeTrees(
+    Vector3Int groupCoord,
+    List<List<BiomeType>> groupBiomeMap,
+    List<List<int>> groupSurfaceTopYs,
+    math.Random groupRandom,
+  ) => _getCached(_groupPrecomputedTrees, groupCoord, () {
+    final groupWorldX = groupCoord.x * _groupTotalSize;
+    final groupWorldZ = groupCoord.z * _groupTotalSize;
+    final trees = <PrecomputedTree>[];
+
+    for (int x = _blockSizeHalf; x < _groupTotalSize; x += _blockSize) {
+      for (int z = _blockSizeHalf; z < _groupTotalSize; z += _blockSize) {
+        final worldX = groupWorldX + x;
+        final worldZ = groupWorldZ + z;
+        final biome = groupBiomeMap[x][z];
+        final surfaceTopY = groupSurfaceTopYs[x][z];
+        final layers = (surfaceTopY - _minSurfaceY) ~/ _blockSize + 1;
+
+        // 零层地表不生成树木
+        if (layers <= 0) continue;
+
+        if (_shouldGenerateTree(biome, groupRandom) &&
+            _isAwayFromGroupEdge(worldX, worldZ, groupWorldX, groupWorldZ)) {
+          final trunkHeight = _getTreeHeight(biome, groupRandom);
+          final trunkBaseY = surfaceTopY; // 树干从实际地表顶层开始
+
+          // 计算树木包围盒（基于实际地表高度）
+          final treeMin = Vector3Int(
+            worldX - _treeCanopyRadius,
+            trunkBaseY, // 包围盒从树干基部（实际地表）开始
+            worldZ - _treeCanopyRadius,
+          );
+          final treeMax = Vector3Int(
+            worldX + _treeCanopyRadius,
+            trunkBaseY + trunkHeight + _treeCanopyHeight,
+            worldZ + _treeCanopyRadius,
+          );
+
+          trees.add(
+            PrecomputedTree(
+              coord: Vector3Int(worldX, trunkBaseY, worldZ),
+              trunkHeight: trunkHeight,
+              treeAABB: AABBInt(treeMin, treeMax),
             ),
           );
         }
       }
     }
+    return trees;
+  });
 
-    // 2. 生成树木（使用整棵树的AABB检测重叠）
-    // 创建当前区块的包围盒
-    final chunkMin = Vector3Int(
-      chunkCoord.x * _chunkSize,
-      chunkCoord.y * _chunkSize,
-      chunkCoord.z * _chunkSize,
-    );
-    final chunkMax = Vector3Int(
-      (chunkCoord.x + 1) * _chunkSize,
-      (chunkCoord.y + 1) * _chunkSize,
-      (chunkCoord.z + 1) * _chunkSize,
-    );
-    final chunkAABB = AABBInt(chunkMin, chunkMax);
-
-    // 遍历组内树木，检测重叠并生成
-    for (final tree in groupTrees) {
-      if (tree.treeAABB.intersects(chunkAABB)) {
-        _generateOverlappedTreePart(chunk, tree, chunkAABB, groupRandom);
-      }
-    }
-  }
-
-  // ---------------------- 生成重叠部分的树木 ----------------------
+  // ---------------------- 生成重叠树木（确保y坐标符合规则） ----------------------
   void _generateOverlappedTreePart(
     Chunk chunk,
     PrecomputedTree tree,
-    AABBInt chunkAABB,
     math.Random groupRandom,
   ) {
-    final trunkX = tree.coord.x;
-    final trunkZ = tree.coord.z;
-    final trunkBaseY = tree.coord.y;
+    final (trunkX, trunkBaseY, trunkZ) = (
+      tree.coord.x,
+      tree.coord.y,
+      tree.coord.z,
+    );
     final trunkHeight = tree.trunkHeight;
+    final canopyBaseY = trunkBaseY + trunkHeight;
 
-    // 1. 生成当前区块内的树干
-    for (int yOffset = 0; yOffset < trunkHeight; yOffset += _blockSize) {
-      final trunkPos = Vector3Int(trunkX, trunkBaseY + yOffset, trunkZ);
-      if (chunkAABB.contains(trunkPos)) {
-        chunk.addBlock(Block(position: trunkPos, type: BlockType.wood));
+    // 1. 生成树干（y坐标步进为blockSize，保持奇数）
+    for (int y = trunkBaseY; y < trunkBaseY + trunkHeight; y += _blockSize) {
+      final pos = Vector3Int(trunkX, y, trunkZ);
+      if (chunk.aabb.contains(pos)) {
+        chunk.addBlock(Block(position: pos, type: BlockType.wood));
       }
     }
 
-    // 2. 生成当前区块内的树叶
-    final canopyBaseY = trunkBaseY + trunkHeight; // 树冠基部Y坐标
+    // 2. 生成树叶（y坐标符合规则）
+    final canopyMin = -_treeCanopyRadius;
+    final canopyMax = _treeCanopyRadius;
+    final step = _blockSize;
 
-    for (
-      int xOffset = -_treeCanopyRadius;
-      xOffset <= _treeCanopyRadius;
-      xOffset += _blockSize
-    ) {
-      for (
-        int zOffset = -_treeCanopyRadius;
-        zOffset <= _treeCanopyRadius;
-        zOffset += _blockSize
-      ) {
-        for (
-          int yOffset = 0;
-          yOffset < _treeCanopyHeight;
-          yOffset += _blockSize
-        ) {
+    for (int xOff = canopyMin; xOff <= canopyMax; xOff += step) {
+      for (int zOff = canopyMin; zOff <= canopyMax; zOff += step) {
+        for (int yOff = 0; yOff < _treeCanopyHeight; yOff += step) {
           final leafPos = Vector3Int(
-            trunkX + xOffset,
-            canopyBaseY + yOffset,
-            trunkZ + zOffset,
+            trunkX + xOff,
+            canopyBaseY + yOff, // yOff步进为blockSize，确保整体为奇数
+            trunkZ + zOff,
           );
+          if (!chunk.aabb.contains(leafPos)) continue;
 
-          // 仅生成区块内的树叶
-          if (chunkAABB.contains(leafPos)) {
-            // 计算2D平面距离
-            final distance2D = math.sqrt(
-              (xOffset * xOffset + zOffset * zOffset).toDouble(),
-            );
+          // 球形树冠判断
+          final dist2D = math.sqrt((xOff * xOff + zOff * zOff).toDouble());
+          final heightFactor = 1.0 - (yOff / _treeCanopyHeight);
+          final maxDist = _treeCanopyRadius * (0.3 + 0.7 * heightFactor);
+          final yDiff = yOff - _canopyHalfHeight;
+          final dist3D = math.sqrt(dist2D * dist2D + (yDiff / 2) * (yDiff / 2));
 
-            // 根据高度调整最大距离（顶部较小，底部较大）
-            final heightFactor = 1.0 - (yOffset / _treeCanopyHeight);
-            final maxDistance = _treeCanopyRadius * (0.3 + 0.7 * heightFactor);
-
-            // 简单的球形检测
-            final distance3D = math.sqrt(
-              distance2D * distance2D +
-                  (yOffset - _treeCanopyHeight / 2) *
-                      (yOffset - _treeCanopyHeight / 2) /
-                      4.0,
-            );
-
-            if (distance3D <= maxDistance) {
-              chunk.addBlock(Block(position: leafPos, type: BlockType.leaf));
-            }
+          if (dist3D <= maxDist) {
+            chunk.addBlock(Block(position: leafPos, type: BlockType.leaf));
           }
         }
       }

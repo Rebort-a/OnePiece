@@ -99,7 +99,7 @@ class Constants {
   static const double nearClip = 0.1;
 
   /// 远裁剪平面距离
-  static const double farClip = 1000.0;
+  static const double farClip = 300.0;
 
   /// 垂直视野角度（单位：度）
   static const double fieldOfView = 60.0;
@@ -152,4 +152,23 @@ class Constants {
 
   /// 十字准星交叉部分尺寸
   static const double crosshairCrossSize = 8;
+
+  // ============================
+  // 世界生成参数
+  // ============================
+
+  /// 世界最大高度
+  static const int worldMaxHeight = 128;
+
+  /// 世界最小高度
+  static const int worldMinHeight = -64;
+
+  /// 基岩层
+  static const int worldBedrockLevel = worldMinHeight + blockSizeHalf;
+
+  /// 海平面
+  static const int worldSeaLevel = 0;
+
+  /// 地表
+  static const int worldSurfaceLevel = 16;
 }

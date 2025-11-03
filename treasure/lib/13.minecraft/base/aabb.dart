@@ -211,6 +211,5 @@ class AABBInt {
   /// 获取包围盒尺寸（整型向量）
   Vector3Int get size => max - min;
 
-  AABB toAABB() =>
-      AABB(min.toVector3(), max.toVector3(), center: center.toVector3());
+  AABB toAABB() => AABB(min.toVector3(), max.toVector3());
 }

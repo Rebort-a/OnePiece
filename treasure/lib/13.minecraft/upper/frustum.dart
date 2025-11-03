@@ -37,14 +37,19 @@ class FrustumManager {
   FrustumManager._(this._planes);
 
   /// 从视图投影矩阵构造视锥体
-  factory FrustumManager.fromViewProjectionMatrix(Matrix m) {
+  factory FrustumManager.fromViewProjectionMatrix(ColMat4 m) {
     return FrustumManager._([
-      _createPlane(m[3] + m[0], m[7] + m[4], m[11] + m[8], m[15] + m[12]), // 左
-      _createPlane(m[3] - m[0], m[7] - m[4], m[11] - m[8], m[15] - m[12]), // 右
-      _createPlane(m[3] + m[1], m[7] + m[5], m[11] + m[9], m[15] + m[13]), // 下
-      _createPlane(m[3] - m[1], m[7] - m[5], m[11] - m[9], m[15] - m[13]), // 上
-      _createPlane(m[3] + m[2], m[7] + m[6], m[11] + m[10], m[15] + m[14]), // 近
-      _createPlane(m[3] - m[2], m[7] - m[6], m[11] - m[10], m[15] - m[14]), // 远
+      _createPlane(m[3] + m[0], m[7] + m[4], m[11] + m[8], m[15] + m[12]),
+      _createPlane(m[3] - m[0], m[7] - m[4], m[11] - m[8], m[15] - m[12]),
+      _createPlane(m[3] + m[1], m[7] + m[5], m[11] + m[9], m[15] + m[13]),
+      _createPlane(m[3] - m[1], m[7] - m[5], m[11] - m[9], m[15] - m[13]),
+      _createPlane(m[3] + m[2], m[7] + m[6], m[11] + m[10], m[15] + m[14]),
+      _createPlane(
+        m[3] - m[2] * 0.99,
+        m[7] - m[6] * 0.99,
+        m[11] - m[10] * 0.99,
+        m[15] - m[14] * 0.99,
+      ),
     ]);
   }
 
@@ -84,7 +89,7 @@ class FrustumManager {
   }
 
   /// 获取视锥体角点（用于调试）
-  List<Vector3> getCorners(Matrix inverseViewProjection) {
+  List<Vector3> getCorners(ColMat4 inverseViewProjection) {
     const homogenousCorners = [
       Vector4(-1, -1, -1, 1),
       Vector4(1, -1, -1, 1),

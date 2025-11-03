@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:collection';
 
 import '../base/aabb.dart';
@@ -23,7 +24,7 @@ class ChunkManager {
   Vector3Int _lastPlayerChunk = Vector3Int.zero;
 
   ChunkManager() {
-    _worldGenerator = WorldGenerator(0);
+    _worldGenerator = WorldGenerator(math.Random().nextInt(1000000));
   }
 
   static Vector3Int getChunkCoord(Vector3 worldPos) {
@@ -57,10 +58,13 @@ class ChunkManager {
 
     // 3. 加载需要但未加载的区块
     for (final chunkCoord in aroundChunks) {
-      if (!_loadedChunks.containsKey(chunkCoord) &&
-          !_chunkLoadQueue.contains(chunkCoord)) {
-        _chunkLoadQueue.addLast(chunkCoord);
+      if (!_loadedChunks.containsKey(chunkCoord)) {
+        _loadChunk(chunkCoord);
       }
+      // if (!_loadedChunks.containsKey(chunkCoord) &&
+      //     !_chunkLoadQueue.contains(chunkCoord)) {
+      //   _chunkLoadQueue.addLast(chunkCoord);
+      // }
     }
   }
 

@@ -12,66 +12,75 @@ enum BlockType {
   dirt, // 泥土
   grass, // 草方块
   sand, // 沙子
+  snow, // 雪
+  ice, // 冰
   // 矿石
   coalOre, // 煤矿石
   ironOre, // 铁矿石
   goldOre, // 金矿石
   diamondOre, // 钻石矿石
+  emeraldOre, // 绿宝石矿石
   // 植物相关
   wood, // 树干
   leaf, // 树叶
   sapling, // 树苗
+  cactus, // 仙人掌
   // 液体
   water, // 水
+  lava, // 岩浆
   // 人造方块
   glass, // 玻璃
   planks, // 木板
+  brick, // 砖块
   // 特殊类型
   air, // 空气
 }
 
-/// 方块类型属性扩展
 extension BlockTypeProperties on BlockType {
-  /// 方块颜色（含透明度）
   Color get color => {
-    BlockType.bedrock: const Color(0xFF424242), // 深灰色
-    BlockType.stone: const Color(0xFF9E9E9E), // 灰色
-    BlockType.dirt: const Color(0xFF8D6E63), // 棕褐色
-    BlockType.grass: const Color(0xFF4CAF50), // 绿色
-    BlockType.sand: const Color(0xFFFFF3E0), // 浅黄色
-    BlockType.coalOre: const Color(0xFF212121), // 近黑色（带煤点）
-    BlockType.ironOre: const Color(0xFFB0BEC5), // 浅灰棕色（带铁矿点）
-    BlockType.goldOre: const Color(0xFFFFD700), // 金黄色（带金矿点）
-    BlockType.diamondOre: const Color(0xFF00BCD4), // 亮蓝色（带钻石点）
-    BlockType.wood: const Color(0xFFFF9800), // 棕色（树干）
-    BlockType.leaf: const Color(0xCC4CAF50), // 半透明绿色（树叶）
-    BlockType.sapling: const Color(0xFF795548), // 深棕色（树苗）
-    BlockType.water: const Color(0x882196F3), // 半透明蓝色（水）
-    BlockType.glass: const Color(0xCCFFFFFF), // 半透明白色（玻璃）
-    BlockType.planks: const Color(0xFF8D6E63), // 棕褐色（木板）
-    BlockType.air: const Color(0x00000000), // 全透明（空气）
+    BlockType.bedrock: const Color(0xFF424242),
+    BlockType.stone: const Color(0xFF9E9E9E),
+    BlockType.dirt: const Color(0xFF8D6E63),
+    BlockType.grass: const Color(0xFF4CAF50),
+    BlockType.sand: const Color(0xFFFFF3E0),
+    BlockType.snow: const Color(0xFFFFFFFF),
+    BlockType.ice: const Color(0xAAE0F7FA),
+    BlockType.coalOre: const Color(0xFF212121),
+    BlockType.ironOre: const Color(0xFFB0BEC5),
+    BlockType.goldOre: const Color(0xFFFFD700),
+    BlockType.diamondOre: const Color(0xFF00BCD4),
+    BlockType.emeraldOre: const Color(0xFF00E676),
+    BlockType.wood: const Color(0xFF795548),
+    BlockType.leaf: const Color(0xCC4CAF50),
+    BlockType.sapling: const Color(0xFF795548),
+    BlockType.cactus: const Color(0xFF4CAF50),
+    BlockType.water: const Color(0x882196F3),
+    BlockType.lava: const Color(0xFFFF5722),
+    BlockType.glass: const Color(0xCCFFFFFF),
+    BlockType.planks: const Color(0xFF8D6E63),
+    BlockType.brick: const Color(0xFFB71C1C),
+    BlockType.air: const Color(0x00000000),
   }[this]!;
 
   bool get isPenetrate =>
       [BlockType.air, BlockType.water, BlockType.leaf].contains(this);
 
-  /// 是否透明（是否能透过看到后方）
   bool get isTransparent => [
     BlockType.leaf,
     BlockType.water,
     BlockType.glass,
+    BlockType.ice,
     BlockType.air,
   ].contains(this);
 
-  /// 是否为液体（特殊物理特性）
-  bool get isLiquid => this == BlockType.water;
+  bool get isLiquid => [BlockType.water, BlockType.lava].contains(this);
 
-  /// 是否为矿石（可被开采获得资源）
   bool get isOre => [
     BlockType.coalOre,
     BlockType.ironOre,
     BlockType.goldOre,
     BlockType.diamondOre,
+    BlockType.emeraldOre,
   ].contains(this);
 }
 

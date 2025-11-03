@@ -5,17 +5,17 @@ import 'vector.dart';
 /// 核心用途：3D图形变换（视图矩阵、投影矩阵、坐标变换等）
 /// 存储格式：[c0r0, c0r1, c0r2, c0r3, c1r0, c1r1, c1r2, c1r3, c2r0, c2r1, c2r2, c2r3, c3r0, c3r1, c3r2, c3r3]
 /// 其中 c=列（column），r=行（row），索引范围 0-3
-class Matrix {
+class ColMat4 {
   // 存储矩阵元素的浮点列表（长度固定为16）
   final List<double> _values;
 
   // ========================== 构造函数 ==========================
   /// 创建全零矩阵（所有元素为0.0）
-  Matrix.zero() : _values = List.filled(16, 0.0);
+  ColMat4.zero() : _values = List.filled(16, 0.0);
 
   /// 创建单位矩阵（对角线元素为1.0，其余为0.0）
   /// 单位矩阵特性：与任意矩阵相乘后，原矩阵保持不变
-  Matrix.identity() : _values = List.filled(16, 0.0) {
+  ColMat4.identity() : _values = List.filled(16, 0.0) {
     _values[0] = 1.0; // 第0列第0行（c0r0）
     _values[5] = 1.0; // 第1列第1行（c1r1）
     _values[10] = 1.0; // 第2列第2行（c2r2）
@@ -24,7 +24,7 @@ class Matrix {
 
   /// 从浮点列表初始化矩阵
   /// [list]：输入的浮点列表，不足16个元素时补0.0，超出部分忽略
-  Matrix.fromList(List<double> list) : _values = List.filled(16, 0.0) {
+  ColMat4.fromList(List<double> list) : _values = List.filled(16, 0.0) {
     final copyLength = list.length < 16 ? list.length : 16;
     for (int i = 0; i < copyLength; i++) {
       _values[i] = list[i];
@@ -62,8 +62,8 @@ class Matrix {
   // ========================== 核心运算 ==========================
   /// 矩阵乘法（this × other）
   /// 结果矩阵的元素 = this的行向量 · other的列向量
-  Matrix operator *(Matrix other) {
-    final result = Matrix.zero();
+  ColMat4 operator *(ColMat4 other) {
+    final result = ColMat4.zero();
     for (int col = 0; col < 4; col++) {
       // 遍历结果矩阵的列
       for (int row = 0; row < 4; row++) {
@@ -108,8 +108,8 @@ class Matrix {
 
   /// 矩阵标量乘法（矩阵所有元素 × 标量）
   /// [scalar]：要相乘的浮点数，返回新的矩阵
-  Matrix multiplyScalar(double scalar) {
-    final result = Matrix.zero();
+  ColMat4 multiplyScalar(double scalar) {
+    final result = ColMat4.zero();
     for (int i = 0; i < 16; i++) {
       result._values[i] = _values[i] * scalar;
     }
@@ -119,11 +119,11 @@ class Matrix {
   /// 计算矩阵的逆矩阵（伴随矩阵法）
   /// 逆矩阵特性：原矩阵 × 逆矩阵 = 单位矩阵
   /// 注意：若矩阵行列式绝对值<1e-10（奇异矩阵），返回全零矩阵（避免除以零）
-  Matrix inverse() {
+  ColMat4 inverse() {
     final determinantValue = determinant();
     // 处理奇异矩阵（行列式接近零，无有效逆矩阵）
     if (determinantValue.abs() < 1e-10) {
-      return Matrix.zero();
+      return ColMat4.zero();
     }
     // 逆矩阵 = 伴随矩阵 × (1/行列式)
     return adjugate().multiplyScalar(1.0 / determinantValue);
@@ -159,7 +159,7 @@ class Matrix {
 
   /// 计算伴随矩阵（逆矩阵计算的中间步骤）
   /// 伴随矩阵 = 余子式矩阵的转置（余子式 = 代数余子式，包含符号）
-  Matrix adjugate() {
+  ColMat4 adjugate() {
     // 提取矩阵元素（按列主序映射）
     final a00 = getElement(0, 0),
         a01 = getElement(1, 0),
@@ -193,7 +193,7 @@ class Matrix {
     final b11 = a22 * a33 - a23 * a32;
 
     // 第二步：计算余子式（符号交替），并组成伴随矩阵（列主序）
-    return Matrix.fromList([
+    return ColMat4.fromList([
       // 第0列：det00（+）、det10（-）、det20（+）、det30（-）
       (a11 * b11 - a12 * b10 + a13 * b09),
       -(a01 * b11 - a02 * b10 + a03 * b09),
@@ -224,7 +224,7 @@ class Matrix {
   /// 创建左手坐标系的视图矩阵（View Matrix）
   /// 作用：将世界坐标转换为相机（眼）坐标
   /// [eye]：相机位置（眼点），[target]：相机看向的目标点，[up]：世界空间的上方向（单位向量）
-  static Matrix lookAtLH(Vector3 eye, Vector3 target, Vector3Unit up) {
+  static ColMat4 lookAtLH(Vector3 eye, Vector3 target, Vector3Unit up) {
     // 1. 计算相机的前向向量（Z轴，指向目标，左手系中Z轴向里）
     final forward = (target - eye).normalized;
     // 2. 计算相机的右向向量（X轴，垂直于上方向和前向向量）
@@ -233,7 +233,7 @@ class Matrix {
     final newUp = forward.cross(right).normalized;
 
     // 视图矩阵公式（左手系）：旋转部分（正交矩阵）+ 平移部分（-eye在相机轴上的投影）
-    return Matrix.fromList([
+    return ColMat4.fromList([
       right.x, newUp.x, forward.x, 0.0, // 第0列（右向向量）
       right.y, newUp.y, forward.y, 0.0, // 第1列（上向向量）
       right.z, newUp.z, forward.z, 0.0, // 第2列（前向向量）
@@ -245,7 +245,7 @@ class Matrix {
   /// 作用：将相机坐标转换为裁剪空间坐标，实现近大远小效果
   /// [fovY]：垂直视场角（弧度），[aspect]：宽高比（窗口宽/窗口高）
   /// [near]：近裁剪面距离（必须>0），[far]：远裁剪面距离（必须>near）
-  static Matrix perspectiveLH(
+  static ColMat4 perspectiveLH(
     double fovY,
     double aspect,
     double near,
@@ -259,7 +259,7 @@ class Matrix {
     final depthRange = far / (far - near);
 
     // 透视投影矩阵公式（左手系）：缩放+深度变换，无平移
-    return Matrix.fromList([
+    return ColMat4.fromList([
       horizontalScale, 0.0, 0.0, 0.0, // 第0列（X轴缩放）
       0.0, verticalScale, 0.0, 0.0, // 第1列（Y轴缩放）
       0.0, 0.0, depthRange, 1.0, // 第2列（深度变换：Z→W）
@@ -289,7 +289,7 @@ class Matrix {
   void _validateIndex(int index) {
     if (index < 0 || index >= 16) {
       throw ArgumentError(
-        'Matrix index must be between 0 and 15, current value: $index',
+        'ColMat4 index must be between 0 and 15, current value: $index',
       );
     }
   }
@@ -298,12 +298,12 @@ class Matrix {
   void _validateColumnRow(int column, int row) {
     if (column < 0 || column >= 4) {
       throw ArgumentError(
-        'Matrix column index must be between 0 and 3, current value: $column',
+        'ColMat4 column index must be between 0 and 3, current value: $column',
       );
     }
     if (row < 0 || row >= 4) {
       throw ArgumentError(
-        'Matrix row index must be between 0 and 3, current value: $row',
+        'ColMat4 row index must be between 0 and 3, current value: $row',
       );
     }
   }
@@ -312,16 +312,16 @@ class Matrix {
 /// 4x4 整数矩阵类（列主序存储）
 /// 核心用途：整数精度的坐标变换（如网格计算、像素对齐变换）
 /// 存储格式与Matrix一致，仅元素类型为int，不支持浮点运算（需转换为Matrix后使用）
-class MatrixInt {
+class ColMat4Int {
   // 存储矩阵元素的整数列表（长度固定为16）
   final List<int> _values;
 
   // ========================== 构造函数 ==========================
   /// 创建全零整数矩阵（所有元素为0）
-  MatrixInt.zero() : _values = List.filled(16, 0);
+  ColMat4Int.zero() : _values = List.filled(16, 0);
 
   /// 创建整数单位矩阵（对角线元素为1，其余为0）
-  MatrixInt.identity() : _values = List.filled(16, 0) {
+  ColMat4Int.identity() : _values = List.filled(16, 0) {
     _values[0] = 1; // 第0列第0行（c0r0）
     _values[5] = 1; // 第1列第1行（c1r1）
     _values[10] = 1; // 第2列第2行（c2r2）
@@ -330,7 +330,7 @@ class MatrixInt {
 
   /// 从整数列表初始化矩阵
   /// [list]：输入的整数列表，不足16个元素时补0，超出部分忽略
-  MatrixInt.fromList(List<int> list) : _values = List.filled(16, 0) {
+  ColMat4Int.fromList(List<int> list) : _values = List.filled(16, 0) {
     final copyLength = list.length < 16 ? list.length : 16;
     for (int i = 0; i < copyLength; i++) {
       _values[i] = list[i];
@@ -353,8 +353,8 @@ class MatrixInt {
   // ========================== 核心功能 ==========================
   /// 转换为浮点矩阵Matrix
   /// 作用：将整数矩阵转换为支持浮点运算的矩阵（如逆矩阵、投影变换）
-  Matrix toMatrix() {
-    return Matrix.fromList(_values.map((value) => value.toDouble()).toList());
+  ColMat4 toMatrix() {
+    return ColMat4.fromList(_values.map((value) => value.toDouble()).toList());
   }
 
   // ========================== 私有工具方法 ==========================
