@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../base/energy.dart';
-import 'foundation_combat_manager.dart';
 
+import 'foundation_combat_manager.dart';
 import 'elemental.dart';
 import 'common.dart';
 
@@ -174,7 +173,7 @@ class BattleInfoRegion extends StatelessWidget {
         color: resume.health > 0 ? Colors.blue : Colors.grey,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(energyNames[resume.type.index]),
+      child: Text(resume.type.text),
     );
   }
 }

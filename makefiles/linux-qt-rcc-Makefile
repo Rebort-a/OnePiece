@@ -33,13 +33,14 @@ DUMMY := $(QT_TOOL_PATH)mkspecs/features/data/dummy.cpp
 CC_MARK := .xc
 CX_MARK := .xc++
 DEFINES := -DQT_QML_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_XML_LIB -DQT_CORE_LIB
-CC_FLAG := -xc -pipe -g -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-CX_FLAG := -xc++ -g -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-LD_FLAG := -Wl,-rpath,$(QT_TOOL_PATH)lib/ -Wl,-rpath,/root/workspace/code/third_party/log4cplus/lib/
+CC_FLAG := -xc -g -O2 -fdata-sections -ffunction-sections -pipe -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
+CX_FLAG := -xc++ -g -O2 -fdata-sections -ffunction-sections -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
+LD_FLAG := -Wl,-rpath,$(QT_TOOL_PATH)lib/ -Wl,--gc-sections -Wl,-rpath=/root/workspace/code/third_party/opencv_4.11.0/lib/
 # LD_FLAG := -shared -fPIC
 
 # 设置自定义源文件和路径列表
 HEAD_PATH := $(QT_TOOL_PATH)include/ \
+             $(TOOLCHAIN_DIR)include/x86_64-linux-gnu/ \
              $(QT_TOOL_PATH)include/QtWidgets/ \
              $(QT_TOOL_PATH)include/QtGui/ \
              $(QT_TOOL_PATH)include/QtCore/ \
@@ -49,20 +50,15 @@ HEAD_PATH := $(QT_TOOL_PATH)include/ \
              $(QT_TOOL_PATH)include/QtXml/ \
              $(QT_TOOL_PATH)include/QtNetwork/ \
              $(QT_TOOL_PATH)mkspecs/linux-g++/ \
-             /root/workspace/code/third_party/log4cplus/include/ \
-            ./
+             /root/workspace/code/third_party/opencv_4.11.0/include/opencv4/
 LIB_PATH := $(TOOLCHAIN_DIR)lib/ \
-            $(QT_TOOL_PATH)lib/
-LIB_FLAG := $(QT_TOOL_PATH)lib/libQt5Widgets.so \
-            $(QT_TOOL_PATH)lib/libQt5Gui.so \
-            $(QT_TOOL_PATH)lib/libQt5Core.so \
-            $(QT_TOOL_PATH)lib/libQt5Xml.so \
-            $(QT_TOOL_PATH)lib/libQt5Multimedia.so \
-            $(QT_TOOL_PATH)lib/libQt5MultimediaWidgets.so \
-            $(QT_TOOL_PATH)lib/libQt5Concurrent.so \
-            $(QT_TOOL_PATH)lib/libQt5Network.so \
-            /root/workspace/code/third_party/log4cplus/lib/liblog4cplus.so \
-            -lGL -lpthread -lprotobuf
+            $(QT_TOOL_PATH)lib/ \
+            /root/workspace/code/third_party/opencv_4.11.0/lib/
+LIB_FLAG := -lGL -lpthread -lm -latomic -lavformat -lz -lavcodec -llzma -lswresample -lswscale -lavutil -ljpeg -lrt \
+            -lQt5Widgets -lQt5Gui -lQt5Core -lQt5Xml -lQt5Multimedia \
+            -lQt5MultimediaWidgets -lQt5Concurrent -lQt5Network \
+            -lopencv_calib3d -lopencv_highgui -lopencv_imgcodecs \
+            -lopencv_imgproc -lopencv_videoio -lopencv_core
 SRC_LIB :=
 SRC_CC :=
 SRC_CX :=
@@ -196,7 +192,7 @@ json: $(SRC_CC) $(SRC_CX)
 
 # 定义清理规则
 clean:
-	rm -fR $(BUILD_DIR) $(TARGET) moc_predefs.h $(MOC_CPP_FILES) $(UI_H_FILES) resource.qrc resource.rcc
+	rm -fR $(BUILD_DIR) $(TARGET) moc_predefs.h moc_*.cpp ui_*.h resource.qrc resource.rcc
 
 # 定义伪目标
 .PHONY: all clean json debug

@@ -168,7 +168,7 @@ json: $(SRC_CC) $(SRC_CX)
 
 # 定义清理规则
 clean:
-	rm -fR $(BUILD_DIR) $(TARGET) moc_predefs.h $(MOC_CPP_FILES) resource.qrc resource.rcc
+	rm -fR $(BUILD_DIR) $(TARGET) moc_predefs.h moc_*.cpp ui_*.h resource.qrc resource.rcc
 
 # 定义伪目标
 .PHONY: all clean json debug

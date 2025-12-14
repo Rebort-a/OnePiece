@@ -44,14 +44,32 @@ enum SkillID {
 enum SkillType { active, passive }
 
 // 技能目标类型
-enum SkillTarget { selfFront, selfAny, enemyFront, enemyAny }
+enum SkillTarget {
+  selfFront,
+  selfAny,
+  enemyFront,
+  enemyAny;
+
+  String get text {
+    switch (this) {
+      case SkillTarget.selfFront:
+        return '所属灵根';
+      case SkillTarget.selfAny:
+        return '任一灵根';
+      case SkillTarget.enemyFront:
+        return '敌方当前灵根';
+      case SkillTarget.enemyAny:
+        return '敌方任一灵根';
+    }
+  }
+}
 
 // 技能
 class CombatSkill {
   final SkillID id;
   final String name;
   final String description;
-  SkillType type;
+  final SkillType type;
   SkillTarget targetType;
   void Function(List<CombatSkill> skills, List<CombatEffect> effects) handler;
   bool learned = false;
@@ -83,19 +101,6 @@ class CombatSkill {
       targetType: targetType ?? this.targetType,
       handler: handler ?? this.handler,
     );
-  }
-
-  static String getTargetText(SkillTarget target) {
-    switch (target) {
-      case SkillTarget.selfFront:
-        return '所属灵根';
-      case SkillTarget.selfAny:
-        return '任一灵根';
-      case SkillTarget.enemyFront:
-        return '敌方当前灵根';
-      case SkillTarget.enemyAny:
-        return '敌方任一灵根';
-    }
   }
 }
 

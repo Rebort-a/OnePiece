@@ -171,7 +171,7 @@ class EnergyConfigs {
 
 class EnergyManager extends Energy with EnergyConfigMixin {
   EnergyManager({required super.type, required String baseName})
-    : super(name: '$baseName.${energyNames[type.index]}');
+    : super(name: '$baseName.${type.text}}');
 
   @override
   set healthPoints(int value) => _updateAttribute(AttributeType.hp, value);
@@ -258,9 +258,7 @@ class EnergyResume {
 class ElementalPreview {
   final ValueNotifier<String> name = ValueNotifier("");
   final ValueNotifier<EnergyType> type = ValueNotifier(EnergyType.metal);
-  final ValueNotifier<String> typeString = ValueNotifier(
-    energyNames[EnergyType.metal.index],
-  );
+  final ValueNotifier<String> typeString = ValueNotifier(EnergyType.metal.text);
   final ValueNotifier<int> level = ValueNotifier(0);
   final ValueNotifier<int> health = ValueNotifier(0);
   final ValueNotifier<int> capacity = ValueNotifier(0);
@@ -307,7 +305,7 @@ class ElementalPreview {
     EnergyManager energy = strategy[current];
     name.value = energy.name;
     type.value = energy.type;
-    typeString.value = energyNames[energy.type.index];
+    typeString.value = energy.type.text;
     level.value = energy.level;
     health.value = energy.health;
     capacity.value = energy.capacityTotal;
@@ -400,7 +398,7 @@ class Elemental {
   int getAppointHealth(EnergyType sign) => _core[sign].health;
   int getAppointAttack(EnergyType sign) => _core[sign].attackTotal;
   int getAppointDefence(EnergyType sign) => _core[sign].defenceTotal;
-  String getAppointTypeString(EnergyType sign) => energyNames[sign.index];
+  String getAppointTypeString(EnergyType sign) => sign.text;
 
   List<CombatSkill> getAppointSkills(EnergyType sign) => _core[sign].skills;
   List<CombatEffect> getAppointEffects(EnergyType sign) => _core[sign].effects;
@@ -408,7 +406,7 @@ class Elemental {
   void updateAllNames(String newName) {
     _baseName = newName;
     for (EnergyType sign in EnergyType.values) {
-      _core[sign].changeName('$_baseName.${energyNames[sign.index]}');
+      _core[sign].changeName('$_baseName.${sign.text}');
     }
     _updatePreview();
   }

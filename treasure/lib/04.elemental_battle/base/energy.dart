@@ -3,12 +3,34 @@ import 'dart:math';
 import 'effect.dart';
 import 'skill.dart';
 
+// 属性枚举类型
+enum AttributeType {
+  hp,
+  atk,
+  def;
+
+  String get text {
+    switch (this) {
+      case AttributeType.hp:
+        return "❤️";
+      case AttributeType.atk:
+        return "⚔️";
+      case AttributeType.def:
+        return "🛡️";
+    }
+  }
+}
+
 // 灵根：特征，体系，潜力的统称（实在找不到更合适的单词[允悲]），灵根拥有独立的属性，技能和效果
 
-// 五灵根枚举类型
-enum EnergyType { metal, wood, water, fire, earth }
+// 灵根枚举类型
+enum EnergyType {
+  metal,
+  wood,
+  water,
+  fire,
+  earth;
 
-extension EnergyTypeExtension on EnergyType {
   EnergyType getPreviousType() {
     return EnergyType.values[(index + EnergyType.values.length - 1) %
         EnergyType.values.length];
@@ -32,25 +54,37 @@ extension EnergyTypeExtension on EnergyType {
         return EnergyType.metal;
     }
   }
+
+  String get text {
+    switch (this) {
+      case EnergyType.metal:
+        return "🔩";
+      case EnergyType.wood:
+        return "🪵";
+      case EnergyType.water:
+        return "🌊";
+      case EnergyType.fire:
+        return "🔥";
+      case EnergyType.earth:
+        return "🪨";
+    }
+  }
+
+  List<int> get baseAttributes {
+    switch (this) {
+      case EnergyType.metal:
+        return [128, 32, 32];
+      case EnergyType.wood:
+        return [256, 32, 16];
+      case EnergyType.water:
+        return [160, 16, 64];
+      case EnergyType.fire:
+        return [96, 64, 16];
+      case EnergyType.earth:
+        return [384, 16, 0];
+    }
+  }
 }
-
-// 五灵根名称
-const List<String> energyNames = ["🔩", "🪵", "🌊", "🔥", "🪨"];
-
-// 属性枚举类型
-enum AttributeType { hp, atk, def }
-
-// 属性名称
-const List<String> attributeNames = ["❤️", "⚔️", "🛡️"];
-
-// 初始数值
-const List<List<int>> _baseAttributes = [
-  [128, 32, 32], // metal
-  [256, 32, 16], // wood
-  [160, 16, 64], // water
-  [96, 64, 16], // fire
-  [384, 16, 0], // earth
-];
 
 // 灵根类
 class Energy {
@@ -78,10 +112,9 @@ class Energy {
 
   // 初始化属性
   void _initAttributes() {
-    List<int> attributes = baseAttributes[_type.index];
-    _capacityBase = attributes[0];
-    _attackBase = attributes[1];
-    _defenceBase = attributes[2];
+    _capacityBase = _type.baseAttributes[AttributeType.hp.index];
+    _attackBase = _type.baseAttributes[AttributeType.atk.index];
+    _defenceBase = _type.baseAttributes[AttributeType.def.index];
     restoreAttributes();
   }
 
@@ -122,7 +155,6 @@ class Energy {
   List<CombatSkill> get skills => _skills;
   List<CombatEffect> get effects => _effects;
 
-  static List<List<int>> get baseAttributes => _baseAttributes;
   static int get healthStep => 32;
   static int get attackStep => 8;
   static int get defenceStep => 8;

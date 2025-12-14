@@ -127,11 +127,11 @@ class ElementalDialog {
         context: context,
         builder: (BuildContext context) {
           List<int> elementsForDialog = List.generate(
-            energyNames.length,
+            EnergyType.values.length,
             (index) => index,
           );
           List<int> attributesForDialog = List.generate(
-            attributeNames.length,
+            AttributeType.values.length,
             (index) => index,
           );
 
@@ -149,7 +149,7 @@ class ElementalDialog {
                         ...elementsForDialog.map(
                           (elementIndex) => ListTile(
                             title: Text(
-                              energyNames[elementIndex],
+                              EnergyType.values[elementIndex].text,
                               style: Theme.of(context).textTheme.labelLarge,
                             ),
                             onTap: () {
@@ -171,7 +171,7 @@ class ElementalDialog {
                           ...attributesForDialog.map(
                             (attributeIndex) => ListTile(
                               title: Text(
-                                attributeNames[attributeIndex],
+                                AttributeType.values[attributeIndex].text,
                                 style: Theme.of(context).textTheme.labelLarge,
                               ),
                               onTap: () {

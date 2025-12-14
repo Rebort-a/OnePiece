@@ -98,9 +98,7 @@ class _SkillsPageState extends State<SkillsPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '目标: ${CombatSkill.getTargetText(_showSkills[index].targetType)}',
-          ),
+          Text('目标: ${_showSkills[index].targetType.text}'),
           Text('效果: ${_showSkills[index].description}'),
         ],
       ),

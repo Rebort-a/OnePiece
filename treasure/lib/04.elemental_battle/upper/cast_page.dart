@@ -141,7 +141,7 @@ class _CastPageState extends State<CastPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  energyNames[type.index],
+                  type.text,
                   style: TextStyle(
                     fontSize: 32,
                     color: isEnabled ? null : Colors.grey,
@@ -218,13 +218,13 @@ class _CastPageState extends State<CastPage> {
       AttributeType.atk => Energy.attackStep,
       AttributeType.def => Energy.defenceStep,
     };
-    final baseValue = Energy.baseAttributes[_currentEnergy.index][type.index];
+    final baseValue = _currentEnergy.baseAttributes[type.index];
     final value = baseValue + points * step;
 
     return Column(
       children: [
         Text(
-          attributeNames[type.index],
+          type.text,
           style: TextStyle(color: isEnabled ? null : Colors.grey),
         ),
         Padding(
@@ -412,7 +412,7 @@ class _CastPageState extends State<CastPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('目标: ${CombatSkill.getTargetText(skill.targetType)}'),
+            Text('目标: ${skill.targetType.text}'),
             Text('效果: ${skill.description}'),
           ],
         ),

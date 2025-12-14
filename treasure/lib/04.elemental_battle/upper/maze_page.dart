@@ -160,15 +160,15 @@ class MazePage extends StatelessWidget {
     final infoItems = [
       _InfoItem(label: "🌈", value: _manager.player.preview.typeString),
       _InfoItem(
-        label: attributeNames[AttributeType.hp.index],
+        label: AttributeType.hp.text,
         value: _manager.player.preview.health,
       ),
       _InfoItem(
-        label: attributeNames[AttributeType.atk.index],
+        label: AttributeType.atk.text,
         value: _manager.player.preview.attack,
       ),
       _InfoItem(
-        label: attributeNames[AttributeType.def.index],
+        label: AttributeType.def.text,
         value: _manager.player.preview.defence,
       ),
     ];
