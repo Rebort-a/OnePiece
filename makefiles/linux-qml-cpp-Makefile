@@ -74,7 +74,7 @@ QRC_FILES := $(shell find . -type f -regex ".*\.\($(QRC_TYPE_SHIFT)\)" -printf "
 LOCAL_CX += resource.cpp
 
 # 设置需要转换为moc文件的h文件
-MOC_H_FILES := $(notdir $(shell grep -l 'Q_OBJECT' $(LOCAL_HEAD)))
+MOC_H_FILES := $(if $(LOCAL_HEAD),$(notdir $(shell grep -l 'Q_OBJECT' $(LOCAL_HEAD))))
 MOC_CPP_FILES := $(MOC_H_FILES:%=moc_%.cpp)
 LOCAL_CX += $(MOC_CPP_FILES)
 

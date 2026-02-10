@@ -23,6 +23,7 @@ AR      := $(COMPILER_PATH)ar
 OBJCOPY := $(COMPILER_PATH)objcopy
 
 # Qt相关工具
+QT_INCLUDE_PATH := /usr/include/x86_64-linux-gnu/qt5/
 QT_TOOL_PATH := /root/workspace/code/third_party/Qt5.12.12/5.12.12/gcc_64/
 UIC := $(QT_TOOL_PATH)bin/uic
 RCC := $(QT_TOOL_PATH)bin/rcc
@@ -92,7 +93,7 @@ UI_CPP_FILES := $(notdir $(UI_FILES:.ui=.cpp))
 UI_H_FILES :=  $(patsubst %.ui,ui_%.h,$(notdir $(UI_FILES)))
 
 # 设置需要转换为moc文件的h文件
-MOC_H_FILES := $(notdir $(shell grep -l 'Q_OBJECT' $(LOCAL_HEAD)))
+MOC_H_FILES := $(if $(LOCAL_HEAD),$(notdir $(shell grep -l 'Q_OBJECT' $(LOCAL_HEAD))))
 MOC_CPP_FILES := $(MOC_H_FILES:%=moc_%.cpp)
 LOCAL_CX += $(MOC_CPP_FILES)
 
