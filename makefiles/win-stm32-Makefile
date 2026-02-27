@@ -107,12 +107,12 @@ json: $(SRC_CC) $(SRC_CX)
 	@echo "Generating compile_commands.json"
 	@rm -f compile_commands.json
 	@echo "[" > compile_commands.json
-	@printf "%s\n" $(SRC_CC) > $(BUILD_DIR)cc_files.tmp
-	@printf "%s\n" $(SRC_CX) > $(BUILD_DIR)cx_files.tmp
-	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CC) $(CC_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CC_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < $(BUILD_DIR)cc_files.tmp >> compile_commands.json
-	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CX) $(CX_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CX_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < $(BUILD_DIR)cx_files.tmp >> compile_commands.json
+	@printf "%s\n" $(SRC_CC) > cc_files.tmp
+	@printf "%s\n" $(SRC_CX) > cx_files.tmp
+	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CC) $(CC_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CC_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < cc_files.tmp >> compile_commands.json
+	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CX) $(CX_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CX_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < cx_files.tmp >> compile_commands.json
 	@sed -i '$$ s/,$$/\n]/' compile_commands.json
-	@rm -f $(BUILD_DIR)cc_files.tmp $(BUILD_DIR)cx_files.tmp
+	@rm -f cc_files.tmp cx_files.tmp
 
 # 定义清理规则
 clean:
