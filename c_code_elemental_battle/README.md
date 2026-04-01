@@ -12,28 +12,22 @@
 
 ## 项目结构
 
-```mermaid
-graph TB
-    A[五行元素战斗模拟器] --> B[代码架构]
-    B --> C[base层]
-    B --> D[middle层]
-    B --> E[upper层]
-    
-    C --> F[attribute.c/.h]
-    C --> G[custom.c/.h]
-    C --> H[effect.c/.h]
-    C --> I[energy.c/.h]
-    
-    D --> J[action.c/.h]
-    D --> K[battle.c/.h]
-    D --> L[combat.c/.h]
-    
-    E --> M[run.c/.h]
-    E --> N[main.c]
-    
-    C -.->|基础功能| D
-    D -.->|中间件| E
-    E -.->|上层逻辑| N
+```
+.
+├── base/           # 基础功能模块
+│   ├── attribute.c/.h    # 属性系统
+│   ├── custom.c/.h       # 自定义功能
+│   ├── effect.c/.h       # 效果系统
+│   └── energy.c/.h       # 能量系统
+├── middle/         # 中间件层
+│   ├── action.c/.h       # 动作系统
+│   ├── battle.c/.h       # 战斗系统
+│   └── combat.c/.h       # 战斗逻辑
+├── upper/          # 上层逻辑
+│   ├── run.c/.h         # 运行控制
+├── main.c          # 主程序入口
+├── Makefile           # 构建配置文件
+└── README.md          # 项目说明文档
 ```
 
 ## 核心功能
