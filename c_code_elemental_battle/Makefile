@@ -1,6 +1,3 @@
-# linux下使用/bin/dash，echo -e 会将 -e 输出，windows下可删除此行
-SHELL = /bin/bash
-
 # 根据CPU的核心数提升编译速度
 MAKEFLAGS := -j $(shell nproc)
 
@@ -9,7 +6,7 @@ BUILD_DIR := ./build/
 TARGET := ./execute.exe
 
 # 设置编译工具链路径和编译器路径
-TOOLCHAIN_DIR := D:/workspace/path/w64devkit/
+TOOLCHAIN_DIR := C:/Progra~1/Git/mingw64/
 COMPILER_PATH := $(TOOLCHAIN_DIR)bin/
 
 # 设置编译器
@@ -30,7 +27,7 @@ LD_FLAG :=
 # LD_FLAG := -shared -fPIC
 
 # 设置自定义源文件列表
-HEAD_PATH :=
+HEAD_PATH := $(TOOLCHAIN_DIR)include/
 LIB_PATH :=
 LIB_FLAG := -lpthread
 SRC_LIB :=
@@ -102,17 +99,12 @@ json: $(SRC_CC) $(SRC_CX)
 	@echo "Generating compile_commands.json"
 	@rm -f compile_commands.json
 	@echo "[" > compile_commands.json
-	@for file in $(SRC_CC); do \
-		compile_cmd="$(CC) $(CC_FLAG) $(addprefix -I,$(HEAD_PATH)) -c $${file} -o $(addprefix $(BUILD_DIR),$$(basename $${file}$(CC_MARK).o))" \
-		command_json=" { \"arguments\": [ \"$$compile_cmd\" ], \"directory\": \"${PWD}\", \"file\": \"$$file\" },"; \
-		echo -e "$$command_json" >> compile_commands.json ; \
-	done
-	@for file in $(SRC_CX); do \
-		compile_cmd="$(CX) $(CX_FLAG) $(addprefix -I,$(HEAD_PATH)) -c $${file} -o $(addprefix $(BUILD_DIR),$$(basename $${file}$(CX_MARK).o))" \
-		command_json=" { \"arguments\": [ \"$$compile_cmd\" ], \"directory\": \"${PWD}\", \"file\": \"$$file\" },"; \
-		echo -e "$$command_json" >> compile_commands.json ; \
-	done
+	@printf "%s\n" $(SRC_CC) > cc_files.tmp
+	@printf "%s\n" $(SRC_CX) > cx_files.tmp
+	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CC) $(CC_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CC_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < cc_files.tmp >> compile_commands.json
+	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CX) $(CX_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CX_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < cx_files.tmp >> compile_commands.json
 	@sed -i '$$ s/,$$/\n]/' compile_commands.json
+	@rm -f cc_files.tmp cx_files.tmp
 
 # 定义清理规则
 clean:
