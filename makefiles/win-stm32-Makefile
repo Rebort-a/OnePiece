@@ -109,8 +109,8 @@ json: $(SRC_CC) $(SRC_CX)
 	@echo "[" > compile_commands.json
 	@printf "%s\n" $(SRC_CC) > cc_files.tmp
 	@printf "%s\n" $(SRC_CX) > cx_files.tmp
-	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CC) $(CC_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CC_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < cc_files.tmp >> compile_commands.json
-	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CX) $(CX_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CX_MARK).o\" ], \"directory\": \"$(CURDIR)\", \"file\": \"{}\" },\n"' < cx_files.tmp >> compile_commands.json
+	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CC) $(CC_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CC_MARK).o\" ], \"directory\": \"$(shell cygpath -m ${CURDIR})\", \"file\": \"{}\" },\n"' < cc_files.tmp >> compile_commands.json
+	@xargs -I {} sh -c 'printf "  { \"arguments\": [ \"$(CX) $(CX_FLAG) $(addprefix -I,$(HEAD_PATH)) -c {} -o $(BUILD_DIR)$$(basename {})$(CX_MARK).o\" ], \"directory\": \"$(shell cygpath -m ${CURDIR})\", \"file\": \"{}\" },\n"' < cx_files.tmp >> compile_commands.json
 	@sed -i '$$ s/,$$/\n]/' compile_commands.json
 	@rm -f cc_files.tmp cx_files.tmp
 
